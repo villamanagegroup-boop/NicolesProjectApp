@@ -18,7 +18,7 @@ export default function LoginPage() {
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#ffffff' }}>
 
       {/* Left panel — hero image */}
-      <div style={{
+      <div className="auth-left-panel" style={{
         flex: 1,
         position: 'relative',
         display: 'flex',
@@ -92,7 +92,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right light panel */}
-      <div style={{
+      <div className="auth-form-panel" style={{
         width: '480px',
         display: 'flex',
         flexDirection: 'column',

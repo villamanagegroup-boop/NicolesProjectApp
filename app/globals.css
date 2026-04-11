@@ -102,10 +102,52 @@ html, body {
   }
   .card-left-col { width: 100% !important; position: relative !important; top: auto !important; }
   .journal-sidebar { width: 100% !important; position: relative !important; top: auto !important; }
+
+  /* Landing page */
+  .landing-shell {
+    flex-direction: column !important;
+    min-height: 100svh !important;
+  }
+  .landing-right-panel {
+    display: none !important;
+  }
+  .landing-bottom-row {
+    display: none !important;
+  }
+  .landing-left-col {
+    padding: 80px 28px 48px !important;
+  }
+  .landing-nav {
+    padding: 16px 24px !important;
+  }
+
+  /* Auth pages */
+  .auth-left-panel {
+    display: none !important;
+  }
+  .auth-form-panel {
+    width: 100% !important;
+    padding: 48px 28px !important;
+  }
+
+  /* Hamburger — show on mobile */
+  .hamburger-btn {
+    display: flex !important;
+  }
+  .topbar-search-wrap {
+    display: none !important;
+  }
 }
 
 @media (min-width: 769px) {
   .mobile-nav {
+    display: none !important;
+  }
+  .hamburger-btn {
+    display: none !important;
+  }
+  /* Mobile drawer never shows on desktop */
+  .mobile-drawer-overlay {
     display: none !important;
   }
 }

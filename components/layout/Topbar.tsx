@@ -2,6 +2,10 @@
 import React, { useState } from 'react'
 import { useApp } from '@/context/AppContext'
 
+interface TopbarProps {
+  onMenuOpen?: () => void
+}
+
 function SearchIcon() {
   return (
     <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -29,7 +33,7 @@ function GearIcon() {
   )
 }
 
-export default function Topbar() {
+export default function Topbar({ onMenuOpen }: TopbarProps) {
   const { user, avatarUrl } = useApp()
   const [searchFocused, setSearchFocused] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
@@ -38,6 +42,7 @@ export default function Topbar() {
 
   return (
     <header
+      className="topbar"
       style={{
         height: '56px',
         position: 'sticky',
@@ -53,8 +58,30 @@ export default function Topbar() {
         padding: '0 32px',
       }}
     >
-      {/* Search pill */}
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+      {/* Hamburger — mobile only */}
+      <button
+        className="hamburger-btn"
+        onClick={onMenuOpen}
+        style={{
+          display: 'none', // overridden to flex on mobile via CSS
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          padding: '6px',
+          color: 'var(--ink)',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: '6px',
+        }}
+        aria-label="Open menu"
+      >
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <path d="M3 6h16M3 11h16M3 16h16" />
+        </svg>
+      </button>
+
+      {/* Search pill — hidden on mobile */}
+      <div className="topbar-search-wrap" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
         <span
           style={{
             position: 'absolute',
@@ -87,7 +114,7 @@ export default function Topbar() {
             transition: 'border-color 0.15s ease',
           }}
         />
-      </div>
+      </div>{/* end topbar-search-wrap */}
 
       {/* Right side */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

@@ -3,10 +3,10 @@ import Link from 'next/link'
 
 export default function LandingPage() {
   return (
-    <div style={{ backgroundColor: 'var(--ink)', minHeight: '100vh', position: 'relative', fontFamily: 'var(--font-body)', display: 'flex' }}>
+    <div className="landing-shell" style={{ backgroundColor: 'var(--ink)', minHeight: '100vh', position: 'relative', fontFamily: 'var(--font-body)', display: 'flex' }}>
 
       {/* Fixed nav */}
-      <nav style={{
+      <nav className="landing-nav" style={{
         position: 'fixed',
         top: 0,
         left: 0,
@@ -57,7 +57,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Left — hero text */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '120px 64px 120px', position: 'relative', zIndex: 1 }}>
+      <div className="landing-left-col" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '120px 64px 120px', position: 'relative', zIndex: 1 }}>
 
         {/* Hero content */}
         <p style={{
@@ -149,7 +149,7 @@ export default function LandingPage() {
       </div>
 
       {/* Right — image panel */}
-      <div style={{
+      <div className="landing-right-panel" style={{
         width: '42%',
         flexShrink: 0,
         position: 'relative',
@@ -175,7 +175,7 @@ export default function LandingPage() {
       </div>
 
       {/* Bottom feature row */}
-      <div style={{
+      <div className="landing-bottom-row" style={{
         position: 'absolute',
         bottom: 0,
         left: 0,
