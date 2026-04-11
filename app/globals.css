@@ -1,26 +1,118 @@
 @import "tailwindcss";
 
+@theme {
+  --color-ink: #0c0c0a;
+  --color-paper: #f7f4ef;
+  --color-paper2: #f0ebe2;
+  --color-paper3: #e8e2d8;
+  --color-gold: #b8922a;
+  --color-gold-dim: #c9a84c;
+  --color-gold-pale: #f5edd8;
+  --color-green: #1f5c3a;
+  --color-green-dim: #2d7a52;
+  --color-green-pale: #e8f3ec;
+  --color-red: #8b1f2f;
+  --color-red-pale: #f5e8ea;
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body: 'Instrument Sans', sans-serif;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #0c0c0a;
+  --paper: #f7f4ef;
+  --paper2: #f0ebe2;
+  --paper3: #e8e2d8;
+  --gold: #b8922a;
+  --gold-dim: #c9a84c;
+  --gold-pale: #f5edd8;
+  --gold-line: rgba(184,146,42,0.2);
+  --green: #1f5c3a;
+  --green-dim: #2d7a52;
+  --green-pale: #e8f3ec;
+  --red: #8b1f2f;
+  --red-pale: #f5e8ea;
+  --line: rgba(12,12,10,0.08);
+  --line-md: rgba(12,12,10,0.12);
+  --text-muted: rgba(12,12,10,0.45);
+  --text-soft: rgba(12,12,10,0.65);
+  --sidebar: 210px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #ffffff;
+  color: #0c0c0a;
+  font-family: 'Instrument Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== RESPONSIVE ===== */
+
+/* Portal layout */
+@media (max-width: 768px) {
+  .portal-shell {
+    flex-direction: column !important;
+  }
+  .sidebar {
+    display: none !important;
+  }
+  .topbar {
+    padding: 0 16px !important;
+  }
+  .topbar-search {
+    display: none !important;
+  }
+  .portal-main {
+    padding: 20px 16px 80px !important; /* bottom padding for mobile nav */
+    max-width: 100% !important;
+  }
+  .two-col-grid {
+    grid-template-columns: 1fr !important;
+    flex-direction: column !important;
+  }
+  .three-col-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .four-col-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .stats-row {
+    flex-direction: column !important;
+  }
+  .stats-row-wrapper > div { flex-direction: column; }
+  .mobile-nav {
+    display: flex !important;
+  }
+  .hide-mobile {
+    display: none !important;
+  }
+  .card-left-col { width: 100% !important; position: relative !important; top: auto !important; }
+  .journal-sidebar { width: 100% !important; position: relative !important; top: auto !important; }
+}
+
+@media (min-width: 769px) {
+  .mobile-nav {
+    display: none !important;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Desktop fill */
+@media (min-width: 1200px) {
+  .portal-main {
+    padding: 32px 48px !important;
+  }
 }
