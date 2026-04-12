@@ -6,16 +6,21 @@ interface QuizProgressProps {
 }
 
 export default function QuizProgress({ current, total }: QuizProgressProps) {
-  const pct = ((current - 1) / total) * 100
+  const pct = (current / total) * 100
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
       <div
+        role="progressbar"
+        aria-valuenow={current}
+        aria-valuemin={1}
+        aria-valuemax={total}
+        aria-label={`Question ${current} of ${total}`}
         style={{
-          width: 200,
-          height: 2,
-          backgroundColor: 'var(--line)',
-          borderRadius: 2,
+          flex: 1,
+          height: '2px',
+          background: 'rgba(12,12,10,0.08)',
+          borderRadius: '1px',
           overflow: 'hidden',
         }}
       >
@@ -23,20 +28,21 @@ export default function QuizProgress({ current, total }: QuizProgressProps) {
           style={{
             width: `${pct}%`,
             height: '100%',
-            backgroundColor: 'var(--green)',
+            background: '#1f5c3a',
+            borderRadius: '1px',
             transition: 'width 0.3s ease',
           }}
         />
       </div>
       <span
         style={{
-          fontSize: 11,
-          fontFamily: 'var(--font-body)',
+          fontSize: '11px',
           color: 'var(--text-muted)',
-          letterSpacing: '0.02em',
+          fontFamily: 'var(--font-body)',
+          whiteSpace: 'nowrap',
         }}
       >
-        Question {current} of {total}
+        {current} / {total}
       </span>
     </div>
   )

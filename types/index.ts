@@ -91,3 +91,10 @@ export interface Win {
   description: string
   createdAt: Date
 }
+
+export interface QuizLead {
+  name: string
+  email: string
+  quiz_result: QuizResultId
+  answers_json: Record<number, number>
+}

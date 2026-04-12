@@ -129,7 +129,7 @@ export default function Sidebar() {
             color: 'var(--ink)',
           }}
         >
-          <span style={{ color: 'var(--gold)' }}>✦</span> Clarity
+          <span style={{ color: 'var(--gold)' }}>✦</span> Seal Your Leak
         </div>
         <p
           style={{

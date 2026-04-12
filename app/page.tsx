@@ -1,9 +1,27 @@
 'use client'
 import Link from 'next/link'
 
+const IRIDESCENT_BG = `
+  radial-gradient(ellipse at 8% 18%, rgba(60, 160, 90, 0.15) 0%, transparent 54%),
+  radial-gradient(ellipse at 92% 12%, rgba(210, 72, 60, 0.13) 0%, transparent 50%),
+  radial-gradient(ellipse at 50% 92%, rgba(230, 185, 40, 0.13) 0%, transparent 54%),
+  radial-gradient(ellipse at 78% 62%, rgba(210, 72, 60, 0.08) 0%, transparent 44%),
+  radial-gradient(ellipse at 15% 80%, rgba(60, 160, 90, 0.08) 0%, transparent 46%)
+`.trim()
+
 export default function LandingPage() {
   return (
-    <div className="landing-shell" style={{ backgroundColor: 'var(--ink)', minHeight: '100vh', position: 'relative', fontFamily: 'var(--font-body)', display: 'flex' }}>
+    <div
+      className="landing-shell"
+      style={{
+        background: '#fdfcfa',
+        backgroundImage: IRIDESCENT_BG,
+        minHeight: '100vh',
+        position: 'relative',
+        fontFamily: 'var(--font-body)',
+        display: 'flex',
+      }}
+    >
 
       {/* Fixed nav */}
       <nav className="landing-nav" style={{
@@ -16,29 +34,32 @@ export default function LandingPage() {
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: '20px 40px',
+        background: 'rgba(253,252,250,0.85)',
+        backdropFilter: 'blur(8px)',
+        borderBottom: '1px solid rgba(12,12,10,0.06)',
       }}>
-        <span style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: 500, color: '#ffffff' }}>
-          <span style={{ color: 'var(--gold)' }}>✦</span> Clarity
+        <span style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: 500, color: 'var(--ink)' }}>
+          <span style={{ color: 'var(--gold)' }}>✦</span> Seal Your Leak
         </span>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <Link
             href="/login"
             style={{
-              border: '1px solid rgba(255,255,255,0.2)',
-              color: '#ffffff',
+              border: '1px solid rgba(12,12,10,0.18)',
+              color: 'var(--ink)',
               padding: '8px 16px',
               borderRadius: '8px',
               fontSize: '14px',
               textDecoration: 'none',
               transition: 'background-color 0.15s ease',
             }}
-            onMouseOver={(e) => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = 'rgba(255,255,255,0.05)' }}
+            onMouseOver={(e) => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = 'rgba(12,12,10,0.04)' }}
             onMouseOut={(e) => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = 'transparent' }}
           >
             Sign In
           </Link>
           <Link
-            href="/signup"
+            href="/quiz"
             style={{
               backgroundColor: 'var(--gold)',
               color: '#ffffff',
@@ -68,37 +89,37 @@ export default function LandingPage() {
           marginBottom: '24px',
           marginTop: 0,
         }}>
-          A Personal Growth Portal
+          Daily Clarity App &amp; Program
         </p>
 
         <h1 style={{
           fontFamily: 'var(--font-display)',
           fontWeight: 300,
           fontSize: 'clamp(48px, 6vw, 64px)',
-          color: '#ffffff',
+          color: 'var(--ink)',
           lineHeight: 1.1,
           margin: 0,
         }}>
-          Your Most<br />
-          <em style={{ color: 'var(--gold)', fontStyle: 'italic' }}>Aligned</em><br />
-          Life Awaits
+          Stop the<br />
+          <em style={{ color: 'var(--gold)', fontStyle: 'italic' }}>Leak.</em><br />
+          Reclaim Your Energy
         </h1>
 
         <p style={{
           fontFamily: 'var(--font-body)',
           fontSize: '14px',
-          color: 'rgba(255,255,255,0.55)',
+          color: 'rgba(12,12,10,0.55)',
           maxWidth: '380px',
           marginTop: '24px',
           marginBottom: '40px',
           lineHeight: 1.8,
         }}>
-          A 365-day journey of daily clarity cards, guided reflection, and self-discovery — built around your unique archetype.
+          A daily clarity app and step-by-step reset program — personalized to your energy archetype. Stop leaking and start living aligned.
         </p>
 
         <div style={{ display: 'flex', gap: '12px' }}>
           <Link
-            href="/signup"
+            href="/quiz"
             style={{
               backgroundColor: 'var(--gold)',
               color: '#ffffff',
@@ -112,38 +133,24 @@ export default function LandingPage() {
             onMouseOver={(e) => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#a07822' }}
             onMouseOut={(e) => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = 'var(--gold)' }}
           >
-            Take the Quiz →
+            Find My Leak →
           </Link>
           <Link
             href="/login"
             style={{
-              border: '1px solid rgba(255,255,255,0.2)',
-              color: 'rgba(255,255,255,0.7)',
+              border: '1px solid rgba(12,12,10,0.18)',
+              color: 'rgba(12,12,10,0.6)',
               padding: '12px 24px',
               borderRadius: '8px',
               fontSize: '14px',
               textDecoration: 'none',
               transition: 'background-color 0.15s ease',
             }}
-            onMouseOver={(e) => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = 'rgba(255,255,255,0.05)' }}
+            onMouseOver={(e) => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = 'rgba(12,12,10,0.04)' }}
             onMouseOut={(e) => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = 'transparent' }}
           >
             Sign In
           </Link>
-        </div>
-
-        <div style={{ marginTop: '64px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.08)' }} />
-          <span style={{
-            fontSize: '10px',
-            fontVariant: 'small-caps',
-            color: 'rgba(255,255,255,0.3)',
-            letterSpacing: '0.2em',
-            whiteSpace: 'nowrap',
-          }}>
-            Scroll to explore
-          </span>
-          <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.08)' }} />
         </div>
 
       </div>
@@ -157,7 +164,7 @@ export default function LandingPage() {
       }}>
         <img
           src="/hero-alignment.jpg"
-          alt="Clarity"
+          alt="Seal Your Leak"
           style={{
             width: '100%',
             height: '100%',
@@ -166,12 +173,6 @@ export default function LandingPage() {
             display: 'block',
           }}
         />
-        {/* Left fade so image blends into the dark background */}
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(to right, var(--ink) 0%, transparent 30%)',
-        }} />
       </div>
 
       {/* Bottom feature row */}
@@ -180,8 +181,8 @@ export default function LandingPage() {
         bottom: 0,
         left: 0,
         right: 0,
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        backgroundColor: 'rgba(255,255,255,0.02)',
+        borderTop: '1px solid rgba(12,12,10,0.07)',
+        backgroundColor: 'rgba(12,12,10,0.02)',
         padding: '24px 64px',
         display: 'flex',
         alignItems: 'stretch',
@@ -189,17 +190,17 @@ export default function LandingPage() {
         {[
           { title: '365 Daily Cards', label: 'Wisdom. One day at a time.' },
           { title: '4 Archetypes', label: 'Know your pattern.' },
-          { title: 'Path A & B', label: 'Choose your journey.' },
+          { title: '3 Paths', label: 'Choose your journey.' },
         ].map((item, i) => (
           <div key={item.title} style={{ display: 'flex', alignItems: 'stretch', flex: 1 }}>
             {i > 0 && (
-              <div style={{ width: '1px', backgroundColor: 'rgba(255,255,255,0.06)', marginRight: '40px' }} />
+              <div style={{ width: '1px', backgroundColor: 'rgba(12,12,10,0.08)', marginRight: '40px' }} />
             )}
-            <div style={{ paddingLeft: i > 0 ? 0 : 0 }}>
+            <div>
               <div style={{
                 fontFamily: 'var(--font-display)',
                 fontSize: '18px',
-                color: 'rgba(255,255,255,0.8)',
+                color: 'var(--ink)',
                 marginBottom: '4px',
               }}>
                 {item.title}
@@ -208,7 +209,7 @@ export default function LandingPage() {
                 fontSize: '10px',
                 textTransform: 'uppercase',
                 letterSpacing: '0.1em',
-                color: 'rgba(255,255,255,0.35)',
+                color: 'rgba(12,12,10,0.4)',
               }}>
                 {item.label}
               </div>

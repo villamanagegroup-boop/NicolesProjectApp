@@ -19,8 +19,8 @@ const instrumentSans = Instrument_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'Clarity — Find Your Center',
-  description: 'A personal growth portal for your most aligned life.',
+  title: 'Seal Your Leak — Daily Clarity App & Program',
+  description: 'Stop the leak. Reclaim your energy. A daily clarity app and program built around your unique archetype.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

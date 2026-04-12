@@ -89,7 +89,7 @@ export default function MobileDrawer({ open, onClose }: Props) {
           borderBottom: '1px solid var(--line)',
         }}>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: 500, color: 'var(--ink)' }}>
-            <span style={{ color: 'var(--gold)' }}>✦</span> Clarity
+            <span style={{ color: 'var(--gold)' }}>✦</span> Seal Your Leak
           </div>
           <button
             onClick={onClose}

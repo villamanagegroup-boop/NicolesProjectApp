@@ -1,20 +1,51 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 
-export default function SignupPage() {
-  const router = useRouter()
+const STRIPE_PATH_A = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK ?? '#'
+const STRIPE_PATH_B = process.env.NEXT_PUBLIC_STRIPE_PATH_B_LINK ?? '#'
+const STRIPE_PATH_C = process.env.NEXT_PUBLIC_STRIPE_PATH_C_LINK ?? '#'
+
+const PATH_LABELS: Record<string, string> = {
+  A: 'Fix This Now — Seal the Leak Program ($27)',
+  B: 'Stay Aligned Daily — Daily Clarity App ($12/mo)',
+  C: 'Go Deeper With Me — Coaching Experience (Premium)',
+}
+
+function SignupForm() {
+  const searchParams = useSearchParams()
+  const path = (searchParams.get('path') ?? 'A') as 'A' | 'B' | 'C'
+  const stripeLink = path === 'B' ? STRIPE_PATH_B : path === 'C' ? STRIPE_PATH_C : STRIPE_PATH_A
+
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState('')
+
+  // Pre-fill from quiz lead capture
+  useEffect(() => {
+    const savedName = sessionStorage.getItem('clarity_lead_name') ?? ''
+    const savedEmail = sessionStorage.getItem('clarity_lead_email') ?? ''
+    if (savedName) setName(savedName)
+    if (savedEmail) setEmail(savedEmail)
+  }, [])
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    // TODO: connect Supabase auth
-    // TODO: create user row in users table
-    router.push('/quiz')
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.')
+      return
+    }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.')
+      return
+    }
+    setError('')
+    // TODO: connect Supabase auth — createUser(name, email, password)
+    // On success, redirect to Stripe:
+    window.location.href = stripeLink
   }
 
   const inputStyle: React.CSSProperties = {
@@ -28,6 +59,7 @@ export default function SignupPage() {
     fontFamily: 'var(--font-body)',
     color: 'var(--ink)',
     outline: 'none',
+    boxSizing: 'border-box',
   }
 
   const labelStyle: React.CSSProperties = {
@@ -41,7 +73,7 @@ export default function SignupPage() {
   }
 
   function handleFocus(e: React.FocusEvent<HTMLInputElement>) {
-    e.currentTarget.style.borderBottomColor = 'var(--gold)'
+    e.currentTarget.style.borderBottomColor = 'var(--green)'
   }
   function handleBlur(e: React.FocusEvent<HTMLInputElement>) {
     e.currentTarget.style.borderBottomColor = 'var(--line-md)'
@@ -50,7 +82,7 @@ export default function SignupPage() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#ffffff' }}>
 
-      {/* Left panel — hero image */}
+      {/* Left panel */}
       <div className="auth-left-panel" style={{
         flex: 1,
         position: 'relative',
@@ -61,7 +93,6 @@ export default function SignupPage() {
         overflow: 'hidden',
         minHeight: '100vh',
       }}>
-        {/* Background image */}
         <img
           src="/hero-energy.jpg"
           alt=""
@@ -74,43 +105,50 @@ export default function SignupPage() {
             objectPosition: 'center',
           }}
         />
-        {/* Dark overlay for text readability */}
         <div style={{
           position: 'absolute',
           inset: 0,
           background: 'linear-gradient(to bottom, rgba(12,12,10,0.55) 0%, rgba(12,12,10,0.75) 100%)',
         }} />
 
-        {/* Wordmark */}
         <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: '#ffffff', position: 'relative', zIndex: 1 }}>
-          <span style={{ color: 'var(--gold)' }}>✦</span> Clarity
+          <span style={{ color: 'var(--gold)' }}>✦</span> Seal Your Leak
         </div>
 
-        {/* Center quote */}
         <div style={{ maxWidth: '360px', position: 'relative', zIndex: 1 }}>
+          <p style={{
+            fontSize: '10px',
+            letterSpacing: '2px',
+            textTransform: 'uppercase',
+            color: 'var(--gold)',
+            margin: '0 0 16px',
+            fontFamily: 'var(--font-body)',
+            fontWeight: 500,
+          }}>
+            Path {path} selected
+          </p>
           <h2 style={{
             fontFamily: 'var(--font-display)',
-            fontSize: '48px',
+            fontSize: '44px',
             fontStyle: 'italic',
             fontWeight: 300,
             color: '#ffffff',
             lineHeight: 1.15,
-            margin: 0,
+            margin: '0 0 16px',
           }}>
-            Begin where you are.
+            One step from your journey.
           </h2>
           <p style={{
             fontFamily: 'var(--font-body)',
             fontSize: '14px',
-            color: 'rgba(255,255,255,0.6)',
-            marginTop: '16px',
-            marginBottom: 0,
+            color: 'rgba(255,255,255,0.5)',
+            margin: 0,
+            lineHeight: 1.7,
           }}>
-            Take the quiz and find your archetype.
+            Create your account, then complete your purchase to unlock your portal.
           </p>
         </div>
 
-        {/* Bottom keywords */}
         <div style={{
           fontSize: '10px',
           textTransform: 'uppercase',
@@ -124,7 +162,7 @@ export default function SignupPage() {
         </div>
       </div>
 
-      {/* Right light panel */}
+      {/* Right form panel */}
       <div className="auth-form-panel" style={{
         width: '480px',
         display: 'flex',
@@ -132,6 +170,23 @@ export default function SignupPage() {
         justifyContent: 'center',
         padding: '64px 56px',
       }}>
+        {/* Selected path badge */}
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          background: 'var(--green-pale)',
+          border: '1px solid rgba(31,92,58,0.15)',
+          borderRadius: '4px',
+          padding: '6px 12px',
+          marginBottom: '28px',
+          alignSelf: 'flex-start',
+        }}>
+          <span style={{ fontSize: '11px', color: 'var(--green)', fontFamily: 'var(--font-body)', fontWeight: 500, letterSpacing: '0.3px' }}>
+            ✓ {PATH_LABELS[path]}
+          </span>
+        </div>
+
         <h1 style={{
           fontFamily: 'var(--font-display)',
           fontSize: '32px',
@@ -147,13 +202,12 @@ export default function SignupPage() {
           fontSize: '14px',
           color: 'var(--text-muted)',
           marginTop: 0,
-          marginBottom: '40px',
+          marginBottom: '32px',
         }}>
-          Start your 365-day journey today.
+          Then you&apos;ll complete your purchase to unlock your portal.
         </p>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {/* Full name */}
           <div>
             <label style={labelStyle}>Full name</label>
             <input
@@ -167,7 +221,6 @@ export default function SignupPage() {
             />
           </div>
 
-          {/* Email */}
           <div>
             <label style={labelStyle}>Email address</label>
             <input
@@ -181,7 +234,6 @@ export default function SignupPage() {
             />
           </div>
 
-          {/* Password */}
           <div>
             <label style={labelStyle}>Password</label>
             <input
@@ -195,7 +247,6 @@ export default function SignupPage() {
             />
           </div>
 
-          {/* Confirm password */}
           <div>
             <label style={labelStyle}>Confirm password</label>
             <input
@@ -209,14 +260,19 @@ export default function SignupPage() {
             />
           </div>
 
-          {/* Submit */}
+          {error && (
+            <p style={{ fontSize: '13px', color: 'rgba(180,40,40,0.85)', margin: 0, fontFamily: 'var(--font-body)' }}>
+              {error}
+            </p>
+          )}
+
           <button
             type="submit"
             style={{
               width: '100%',
-              backgroundColor: 'var(--ink)',
+              backgroundColor: 'var(--green)',
               color: '#ffffff',
-              padding: '12px',
+              padding: '13px',
               borderRadius: '8px',
               fontSize: '14px',
               fontWeight: 500,
@@ -224,11 +280,12 @@ export default function SignupPage() {
               border: 'none',
               cursor: 'pointer',
               transition: 'opacity 0.15s ease',
+              letterSpacing: '0.2px',
             }}
-            onMouseOver={(e) => { e.currentTarget.style.opacity = '0.85' }}
+            onMouseOver={(e) => { e.currentTarget.style.opacity = '0.88' }}
             onMouseOut={(e) => { e.currentTarget.style.opacity = '1' }}
           >
-            Create Account →
+            Create Account & Continue to Payment →
           </button>
         </form>
 
@@ -242,7 +299,7 @@ export default function SignupPage() {
           <Link
             href="/login"
             style={{
-              color: 'var(--gold)',
+              color: 'var(--green)',
               textDecoration: 'underline',
               textUnderlineOffset: '3px',
             }}
@@ -250,8 +307,60 @@ export default function SignupPage() {
             Sign in
           </Link>
         </p>
+
+        <p style={{
+          marginTop: '16px',
+          fontSize: '12px',
+          color: 'var(--text-muted)',
+          fontFamily: 'var(--font-body)',
+        }}>
+          🔒 Secure checkout via Stripe
+        </p>
+
+        <div style={{
+          marginTop: '28px',
+          paddingTop: '24px',
+          borderTop: '1px solid var(--line)',
+          textAlign: 'center',
+        }}>
+          <Link
+            href="/quiz/paths"
+            style={{
+              fontSize: '13px',
+              color: 'var(--text-muted)',
+              fontFamily: 'var(--font-body)',
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+            onMouseOver={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--ink)' }}
+            onMouseOut={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)' }}
+          >
+            ← Pick a different journey
+          </Link>
+        </div>
       </div>
 
+      <style>{`
+        @media (max-width: 768px) {
+          .auth-left-panel { display: none !important; }
+          .auth-form-panel {
+            width: 100% !important;
+            padding: 48px 24px 64px !important;
+            justify-content: flex-start !important;
+            padding-top: 56px !important;
+          }
+        }
+      `}</style>
     </div>
+  )
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
   )
 }

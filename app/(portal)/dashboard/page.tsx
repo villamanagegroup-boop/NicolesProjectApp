@@ -374,7 +374,7 @@ export default function DashboardPage() {
                     letterSpacing: '0.02em',
                   }}
                 >
-                  <span style={{ color: 'rgba(191,155,67,0.35)' }}>✦</span> Clarity
+                  <span style={{ color: 'rgba(191,155,67,0.35)' }}>✦</span> Seal Your Leak
                 </span>
               </div>
             )

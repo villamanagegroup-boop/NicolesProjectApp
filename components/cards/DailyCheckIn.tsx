@@ -54,7 +54,7 @@ export default function DailyCheckIn({ onComplete }: DailyCheckInProps) {
             letterSpacing: '0.03em',
           }}
         >
-          ✦ Clarity
+          ✦ Seal Your Leak
         </p>
 
         {/* Eyebrow */}

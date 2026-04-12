@@ -50,7 +50,7 @@ export default function LoginPage() {
 
         {/* Wordmark */}
         <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: '#ffffff', position: 'relative', zIndex: 1 }}>
-          <span style={{ color: 'var(--gold)' }}>✦</span> Clarity
+          <span style={{ color: 'var(--gold)' }}>✦</span> Seal Your Leak
         </div>
 
         {/* Center quote */}
@@ -98,7 +98,28 @@ export default function LoginPage() {
         flexDirection: 'column',
         justifyContent: 'center',
         padding: '64px 56px',
+        position: 'relative',
       }}>
+        {/* Back link */}
+        <Link
+          href="/"
+          style={{
+            position: 'absolute',
+            top: '28px',
+            left: '56px',
+            fontSize: '13px',
+            color: 'var(--text-muted)',
+            textDecoration: 'none',
+            fontFamily: 'var(--font-body)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+          onMouseOver={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--ink)' }}
+          onMouseOut={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)' }}
+        >
+          ← Back
+        </Link>
         <h1 style={{
           fontFamily: 'var(--font-display)',
           fontSize: '32px',
@@ -213,24 +234,39 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p style={{
-          marginTop: '24px',
-          fontSize: '14px',
-          fontFamily: 'var(--font-body)',
-          color: 'var(--text-muted)',
+        <div style={{
+          marginTop: '28px',
+          padding: '16px 20px',
+          border: '1px solid var(--line-md)',
+          borderRadius: '8px',
+          background: 'var(--paper)',
         }}>
-          Don&apos;t have an account?{' '}
+          <p style={{
+            fontSize: '13px',
+            fontFamily: 'var(--font-body)',
+            color: 'var(--text-soft)',
+            margin: '0 0 10px',
+            lineHeight: 1.5,
+          }}>
+            New here? Accounts are created through our quiz — it helps us personalize your experience.
+          </p>
           <Link
-            href="/signup"
+            href="/quiz"
             style={{
-              color: 'var(--gold)',
-              textDecoration: 'underline',
-              textUnderlineOffset: '3px',
+              display: 'inline-block',
+              fontSize: '13px',
+              fontWeight: 500,
+              fontFamily: 'var(--font-body)',
+              color: 'var(--green)',
+              textDecoration: 'none',
+              letterSpacing: '0.1px',
             }}
+            onMouseOver={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = 'underline' }}
+            onMouseOut={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = 'none' }}
           >
-            Create one
+            Sign up by taking our quiz →
           </Link>
-        </p>
+        </div>
 
         {/* TODO: Remove before launch */}
         <div style={{
