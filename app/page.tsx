@@ -41,7 +41,7 @@ export default function LandingPage() {
         <span style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: 500, color: 'var(--ink)' }}>
           <span style={{ color: 'var(--gold)' }}>✦</span> Seal Your Leak
         </span>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className="landing-nav-buttons" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <Link
             href="/login"
             style={{
@@ -78,9 +78,8 @@ export default function LandingPage() {
       </nav>
 
       {/* Left — hero text */}
-      <div className="landing-left-col" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '120px 64px 120px', position: 'relative', zIndex: 1 }}>
+      <div className="landing-left-col" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '120px 64px 160px', position: 'relative', zIndex: 1 }}>
 
-        {/* Hero content */}
         <p style={{
           fontSize: '11px',
           textTransform: 'uppercase',
@@ -117,7 +116,7 @@ export default function LandingPage() {
           A daily clarity app and step-by-step reset program — personalized to your energy archetype. Stop leaking and start living aligned.
         </p>
 
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div className="landing-cta-row" style={{ display: 'flex', gap: '12px' }}>
           <Link
             href="/quiz"
             style={{
@@ -194,7 +193,7 @@ export default function LandingPage() {
         ].map((item, i) => (
           <div key={item.title} style={{ display: 'flex', alignItems: 'stretch', flex: 1 }}>
             {i > 0 && (
-              <div style={{ width: '1px', backgroundColor: 'rgba(12,12,10,0.08)', marginRight: '40px' }} />
+              <div className="landing-divider" style={{ width: '1px', backgroundColor: 'rgba(12,12,10,0.08)', marginRight: '40px' }} />
             )}
             <div>
               <div style={{
@@ -217,6 +216,61 @@ export default function LandingPage() {
           </div>
         ))}
       </div>
+
+      <style>{`
+        @media (max-width: 768px) {
+          /* Nav: wordmark only, no buttons */
+          .landing-nav {
+            padding: 16px 20px !important;
+          }
+          .landing-nav-buttons {
+            display: none !important;
+          }
+
+          /* Shell: stack vertically */
+          .landing-shell {
+            flex-direction: column !important;
+            padding-bottom: 0 !important;
+          }
+
+          /* Photo: show full-width at top, below nav */
+          .landing-right-panel {
+            width: 100% !important;
+            height: 280px !important;
+            order: -1;
+            margin-top: 57px; /* clear fixed nav */
+            flex-shrink: 0 !important;
+          }
+
+          /* Hero text: full width, tighter padding */
+          .landing-left-col {
+            padding: 32px 24px 24px !important;
+            justify-content: flex-start !important;
+          }
+
+          /* CTA buttons: stack on very small screens */
+          .landing-cta-row {
+            flex-wrap: wrap !important;
+          }
+          .landing-cta-row a {
+            flex: 1 1 auto !important;
+            text-align: center !important;
+            min-width: 120px !important;
+          }
+
+          /* Bottom row: pull out of absolute, flow naturally */
+          .landing-bottom-row {
+            position: static !important;
+            padding: 20px 24px !important;
+            gap: 0 !important;
+          }
+
+          /* Tighten dividers on mobile */
+          .landing-divider {
+            margin-right: 16px !important;
+          }
+        }
+      `}</style>
 
     </div>
   )
