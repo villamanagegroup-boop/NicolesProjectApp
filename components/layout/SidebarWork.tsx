@@ -185,7 +185,7 @@ export default function SidebarWork() {
         <div style={{ padding: '0 8px', marginTop: '16px' }}>
           <div style={{ borderTop: '1px solid var(--line)', marginBottom: '12px' }} />
           <button
-            onClick={() => setSidebarMode('cards')}
+            onClick={() => { setSidebarMode('cards'); router.push('/dashboard') }}
             style={{
               width: '100%',
               display: 'flex',

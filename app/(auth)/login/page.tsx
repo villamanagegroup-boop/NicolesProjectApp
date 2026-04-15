@@ -2,16 +2,18 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useApp } from '@/context/AppContext'
 
 export default function LoginPage() {
   const router = useRouter()
+  const { setSidebarMode } = useApp()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     // TODO: connect Supabase auth
-    router.push('/dashboard')
+    router.push('/choose-path')
   }
 
   return (
@@ -274,32 +276,76 @@ export default function LoginPage() {
           paddingTop: '24px',
           borderTop: '1px solid var(--line)',
         }}>
-          <button
-            type="button"
-            onClick={() => router.push('/dashboard')}
-            style={{
-              width: '100%',
-              backgroundColor: 'transparent',
-              border: '1px dashed var(--line-md)',
-              color: 'var(--text-muted)',
-              padding: '10px',
-              borderRadius: '8px',
-              fontSize: '12px',
-              fontFamily: 'var(--font-body)',
-              cursor: 'pointer',
-              letterSpacing: '0.05em',
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.borderColor = 'var(--gold)'
-              e.currentTarget.style.color = 'var(--gold)'
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.borderColor = 'var(--line-md)'
-              e.currentTarget.style.color = 'var(--text-muted)'
-            }}
-          >
-            ⚙ Admin — Skip to Dashboard
-          </button>
+          <p style={{
+            fontSize: '10px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            color: 'var(--text-muted)',
+            fontFamily: 'var(--font-body)',
+            margin: '0 0 10px',
+          }}>
+            ⚙ Admin — Skip to
+          </p>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              type="button"
+              onClick={() => { setSidebarMode('work'); router.push('/program') }}
+              style={{
+                flex: 1,
+                backgroundColor: 'transparent',
+                border: '1px dashed rgba(61,48,128,0.3)',
+                color: 'rgba(61,48,128,0.6)',
+                padding: '10px 8px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontFamily: 'var(--font-body)',
+                cursor: 'pointer',
+                lineHeight: 1.4,
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.borderColor = '#3D3080'
+                e.currentTarget.style.color = '#3D3080'
+                e.currentTarget.style.backgroundColor = 'rgba(61,48,128,0.05)'
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(61,48,128,0.3)'
+                e.currentTarget.style.color = 'rgba(61,48,128,0.6)'
+                e.currentTarget.style.backgroundColor = 'transparent'
+              }}
+            >
+              Seal the Leak<br />
+              <span style={{ fontSize: '10px', opacity: 0.7 }}>→ The Work</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setSidebarMode('cards'); router.push('/dashboard') }}
+              style={{
+                flex: 1,
+                backgroundColor: 'transparent',
+                border: '1px dashed rgba(26,82,48,0.3)',
+                color: 'rgba(26,82,48,0.6)',
+                padding: '10px 8px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontFamily: 'var(--font-body)',
+                cursor: 'pointer',
+                lineHeight: 1.4,
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.borderColor = '#1A5230'
+                e.currentTarget.style.color = '#1A5230'
+                e.currentTarget.style.backgroundColor = 'rgba(26,82,48,0.05)'
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(26,82,48,0.3)'
+                e.currentTarget.style.color = 'rgba(26,82,48,0.6)'
+                e.currentTarget.style.backgroundColor = 'transparent'
+              }}
+            >
+              365 Daily Cards<br />
+              <span style={{ fontSize: '10px', opacity: 0.7 }}>→ Dashboard</span>
+            </button>
+          </div>
         </div>
       </div>
 

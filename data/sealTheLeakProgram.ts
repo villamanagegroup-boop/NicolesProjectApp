@@ -5,7 +5,7 @@ export interface ProgramDay {
   title: string
   phase: Phase
   openingFrame: string
-  prompt: { title: string; body: string }
+  prompt: { title: string; body: string; instruction?: string; items: string[] }
   action: { title: string; body: string }
   seal: string
   sealedIdentity?: string // Day 7 only
@@ -59,6 +59,12 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The honest inventory',
           body: "Write down the last 5 times you gave your energy — time, attention, help, or emotional presence — to someone or something. Next to each one, mark: was this asked of me, or did I offer it before being asked? Was I replenished or depleted after? Don't judge what you find. Just see it.",
+          items: [
+            "Write down the last 5 times you gave your energy — time, attention, help, or emotional presence — to someone or something.",
+            "Was each one asked of you, or did you offer before being asked?",
+            "Were you replenished or depleted after each one?",
+            "What patterns do you notice without judgment?",
+          ],
         },
         action: {
           title: 'The 24-hour audit',
@@ -74,6 +80,11 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The origin question',
           body: "Think back to the first relationship where you learned that being available, helpful, or needed kept things okay. It might have been a parent, a friend dynamic, a home environment. What did giving get you then? (Safety? Love? Peace? Approval?) How much of that trade is still running in the background today?",
+          items: [
+            "Think back to the first relationship where you learned that being available kept things okay. What was that environment like?",
+            "What did giving get you then? Safety? Love? Peace? Approval?",
+            "How much of that trade is still running in the background today?",
+          ],
         },
         action: {
           title: 'Delay one response by 30 minutes',
@@ -89,6 +100,11 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The consultation',
           body: "Before you say yes to anything today, ask yourself three questions in under 10 seconds: Do I actually want to do this? Do I have the energy for this right now? If I do this, what am I not doing for myself? You don't have to say no. You just have to check in first.",
+          items: [
+            "Do I actually want to do this?",
+            "Do I have the energy for this right now?",
+            "If I do this, what am I not doing for myself?",
+          ],
         },
         action: {
           title: '"Let me check and get back to you" — once today',
@@ -104,6 +120,11 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The protection inventory',
           body: "List three ways you protected someone else's comfort or peace in the last week. Then ask: who protected mine? If the answer is 'me' or 'no one' — that's the leak. Not dramatic. Just true. Write one thing you will protect for yourself today. One thing that is yours.",
+          items: [
+            "List three ways you protected someone else's comfort or peace in the last week.",
+            "Who protected yours? If the answer is 'me' or 'no one' — that's the leak.",
+            "Write one thing you will protect for yourself today. One thing that is yours.",
+          ],
         },
         action: {
           title: 'One full no — or one quiet boundary',
@@ -119,6 +140,13 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The want list',
           body: "Finish these sentences without editing yourself: I want more time for... I feel most like myself when... The last time I did something just for me was... If no one needed anything from me for 24 hours, I would... Don't worry if the answers feel small or selfish. That voice that called them selfish is exactly what we're retraining.",
+          instruction: "Finish these sentences without editing yourself.",
+          items: [
+            "I want more time for...",
+            "I feel most like myself when...",
+            "The last time I did something just for me was...",
+            "If no one needed anything from me for 24 hours, I would...",
+          ],
         },
         action: {
           title: '30 uninterrupted minutes — yours entirely',
@@ -134,6 +162,12 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The difference question',
           body: "Think of one relationship where you give the most. Write about what it would look like to show up for that person from a full cup instead of a depleted one. What would you offer? What would you stop offering? What would actually change — and what wouldn't?",
+          items: [
+            "Think of one relationship where you give the most. What does it look like right now?",
+            "What would you offer from a full cup instead of a depleted one?",
+            "What would you stop offering?",
+            "What would actually change — and what wouldn't?",
+          ],
         },
         action: {
           title: 'Protect your calendar for 2 hours today',
@@ -149,6 +183,12 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The new identity letter',
           body: "Write a short letter (5–10 sentences) from your future self — the version of you six months from now who has been living with the door intentionally open and intentionally closed. What does she want you to know right now? What did she have to let go of? What did she get back?",
+          items: [
+            "Write a letter from your future self — six months from now — who has been living with the door on her terms.",
+            "What does she want you to know right now?",
+            "What did she have to let go of?",
+            "What did she get back?",
+          ],
         },
         action: {
           title: 'One full yes — and one full no',
@@ -183,6 +223,11 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The mental inventory',
           body: "For 10 minutes, write down every thought that's been cycling through your mind this week. Everything — big, small, mundane. Don't organize it. Let it pour out messy. At the end, look at the list and ask: how many of these are things I can actually control or change right now? Circle those. Everything else is the noise.",
+          items: [
+            "Write down every thought that's been cycling this week — big, small, mundane. Let it pour out messy.",
+            "Which of these can you actually control or change right now?",
+            "What is the loudest piece of mental noise you're ready to name?",
+          ],
         },
         action: {
           title: 'Write it once — then close the tab',
@@ -198,6 +243,11 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The payoff question',
           body: "What has overthinking protected you from? Write honestly — has it kept you from failing? From being judged? From having to be vulnerable? From deciding and being wrong? And then: what has it kept you from having? The relationship? The business? The conversation? The move? Both answers are true. Hold them both.",
+          items: [
+            "What has overthinking protected you from? (Failing? Being judged? Being vulnerable? Being wrong?)",
+            "What has it kept you from having? (A relationship? A business? A conversation? A move?)",
+            "What does it feel like to hold both of those truths at once?",
+          ],
         },
         action: {
           title: 'Make one decision in under 60 seconds',
@@ -213,6 +263,12 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'Map the loop',
           body: "Think about the last time you spiraled on a thought or decision. Write out exactly how it moved: what triggered it, how it escalated, how long it lasted, how it ended. Then ask: what physical action, done in that first moment, might have interrupted the spiral before it started?",
+          items: [
+            "What triggered the last spiral?",
+            "How did it escalate, and how long did it last?",
+            "How did it end?",
+            "What physical action, done in that first moment, might have interrupted it before it started?",
+          ],
         },
         action: {
           title: "Take one imperfect action on something you've been overthinking",
@@ -228,6 +284,11 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The decision drain',
           body: "List every decision — small and large — that is currently 'open' in your mind. Things you haven't decided yet. Things you keep revisiting. Look at each one and ask: if I had to decide this right now with what I already know, what would I choose? Write the answer.",
+          items: [
+            "List every decision — small and large — currently 'open' in your mind.",
+            "For each one: if you had to decide right now with what you already know, what would you choose?",
+            "Which open decision is draining the most energy? What's actually stopping you from closing it?",
+          ],
         },
         action: {
           title: 'Close three open loops today',
@@ -243,6 +304,11 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The body question',
           body: "When did your mind last feel genuinely quiet? Not numbed out, not exhausted — actually quiet. What were you doing? Where were you? What did your body feel like in that moment? Write about it in detail. You're not just remembering it — you're identifying your personal pathway to mental rest.",
+          items: [
+            "When did your mind last feel genuinely quiet — not numbed, not exhausted, actually quiet?",
+            "What were you doing? Where were you?",
+            "What did your body feel like in that moment?",
+          ],
         },
         action: {
           title: 'One hour with no analyzing',
@@ -258,6 +324,11 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The reclaimed gifts',
           body: "Write about three ways your mind serves you powerfully — not anxiously, but genuinely. How does your depth of thinking benefit your life, your work, your relationships? Now: what would you gain if you could turn it on and off by choice instead of having it run constantly?",
+          items: [
+            "Write about three ways your mind serves you powerfully — not anxiously, but genuinely.",
+            "How does your depth of thinking benefit your life, your work, your relationships?",
+            "What would you gain if you could turn it on and off by choice instead of having it run constantly?",
+          ],
         },
         action: {
           title: 'Use your mind on purpose today',
@@ -273,6 +344,12 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The identity shift letter',
           body: "Write to the version of you who used to stay up turning things over and over. Tell her what you know now. Tell her what changed this week. Tell her what it feels like to take an imperfect action and survive it. Tell her she can put it down.",
+          items: [
+            "Write to the version of you who used to stay up turning things over and over.",
+            "Tell her what you know now that she didn't.",
+            "Tell her what changed this week.",
+            "Tell her what it feels like to take an imperfect action and survive it.",
+          ],
         },
         action: {
           title: "Make one real move on something you've been overthinking for weeks",
@@ -307,6 +384,11 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The restart inventory',
           body: "Write down every major thing you've started and restarted in the last year. A goal, a habit, a project, a plan. Next to each one, don't write 'why I stopped.' Write what it felt like to have to start again. Was it shame? Frustration? A quiet giving-up? The emotional cost is what matters here, not the logistics.",
+          items: [
+            "Write down every major thing you've started and restarted in the last year — a goal, habit, project, plan.",
+            "For each one: what did it feel like to have to start again? (Shame? Frustration? A quiet giving-up?)",
+            "What is the emotional cost you've been carrying without naming it?",
+          ],
         },
         action: {
           title: 'Name the actual interruption pattern',
@@ -322,6 +404,11 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The flow state autopsy',
           body: "Think of a time in the last two years when you were genuinely in momentum. Describe it in detail: what were you working on? What time of day? What was your environment like? What had you done the night before? Understanding your personal flow conditions is how you start engineering them.",
+          items: [
+            "Think of a time in the last two years when you were genuinely in momentum. What were you working on?",
+            "What time of day was it? What was your environment like?",
+            "What had you done the night before? What conditions made it possible?",
+          ],
         },
         action: {
           title: 'Recreate one flow condition today',
@@ -337,6 +424,11 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The minimum version',
           body: "Think about the goal or project you've restarted most often. What is the absolute smallest version of showing up to it? Not 2 hours. Not a full session. The version that takes 10 minutes or less but still counts. Write that minimum version down. Make it embarrassingly small.",
+          items: [
+            "What is the goal or project you've restarted most often?",
+            "What is the absolute smallest version of showing up to it — 10 minutes or less, but still counts?",
+            "Why has 'minimum' felt like not enough? What story are you ready to let go of?",
+          ],
         },
         action: {
           title: 'Do the minimum version right now',
@@ -352,6 +444,12 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The protection plan',
           body: "For the one thing that matters most to you right now, answer: What time of day is this most protected? What one thing usually interrupts it, and how can I reduce that this week? Who knows I'm working on this? What does 'showing up even when it's imperfect' look like for this specific thing?",
+          items: [
+            "What is the one thing that matters most to you right now?",
+            "What time of day is it most protected?",
+            "What one thing usually interrupts it — and how can you reduce that this week?",
+            "What does 'showing up even when it's imperfect' look like for this specific thing?",
+          ],
         },
         action: {
           title: 'Set up one protection',
@@ -367,6 +465,11 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The trust ledger',
           body: "Write two lists. First: things I said I would do for myself that I didn't follow through on. Second: things I said I would do for myself and I did. Look at both lists. Which is longer? Now ask: how would I treat a friend who showed the same pattern with me?",
+          items: [
+            "Things I said I would do for myself that I didn't follow through on:",
+            "Things I said I would do for myself and I actually did:",
+            "Which list is longer? How would you treat a friend who showed the same pattern with you?",
+          ],
         },
         action: {
           title: 'Keep one promise to yourself today — a small one',
@@ -382,6 +485,11 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The consistency question',
           body: "Think about one area of your life where you are already consistent — even if it feels mundane. How did you build that consistency? Was it forced at first? Did it eventually become natural? You already have this skill. The question is: where else are you going to apply it?",
+          items: [
+            "What is one area of your life where you're already consistent — even if it feels mundane?",
+            "How did you build that consistency? Was it forced at first?",
+            "Where else are you going to apply this same capacity?",
+          ],
         },
         action: {
           title: "Repeat yesterday's action",
@@ -397,6 +505,11 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The proof letter',
           body: "Write out the evidence from this week. What did you actually do — even the small things? What did you keep going despite? What surprised you about your own follow-through? You are writing the new story about who you are.",
+          items: [
+            "What did you actually do this week — even the small things?",
+            "What did you keep going despite?",
+            "What surprised you about your own follow-through?",
+          ],
         },
         action: {
           title: 'Complete one thing fully today',
@@ -431,6 +544,11 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The body audit',
           body: "Right now, sit quietly for 3 minutes. Starting from your feet and moving up through your body — what do you notice? Where is there tension? Where do you feel heavy or tight? Where are you holding something? Write it down without trying to fix it. Your body has been keeping score of everything you've pushed through.",
+          items: [
+            "Sit quietly for 3 minutes. Starting from your feet and moving up — what do you notice?",
+            "Where is there tension? Where do you feel heavy or tight?",
+            "Where are you holding something? What has your body been keeping score of?",
+          ],
         },
         action: {
           title: 'Pause for 10 minutes — no input',
@@ -446,6 +564,11 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The origin of the push',
           body: "When did you first learn that pushing through was the right thing to do? Was it praised at home? Necessary for survival? A way to feel in control? Write about the version of you who first learned to override — what were they dealing with? What did pushing through get them?",
+          items: [
+            "When did you first learn that pushing through was the right thing to do?",
+            "Was it praised at home? Necessary for survival? A way to feel in control?",
+            "What was that version of you dealing with — and what did pushing through get her?",
+          ],
         },
         action: {
           title: 'Stop one thing earlier than you normally would',
@@ -461,6 +584,11 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The signal log',
           body: "Set three reminders on your phone today at random times. When each one goes off, stop and write: What is my body telling me right now? What am I doing instead of responding to that? What would responding to it actually take? This is not about always responding — it's about always knowing.",
+          items: [
+            "What is my body telling me right now?",
+            "What am I doing instead of responding to that?",
+            "What would responding to it actually take?",
+          ],
         },
         action: {
           title: 'Respond to one signal today — in the moment',
@@ -476,6 +604,11 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The rest question',
           body: "What does genuine rest feel like for you — not just sleep, but true restoration? Is it quiet? Movement? Creative? Social? Time in nature? Solitude? Write about the last time you felt genuinely restored. What were the ingredients?",
+          items: [
+            "What does genuine rest feel like for you — not just sleep, but true restoration?",
+            "Is it quiet? Movement? Creative? Social? Time in nature? Solitude?",
+            "Write about the last time you felt genuinely restored. What were the ingredients?",
+          ],
         },
         action: {
           title: 'Slow your pace intentionally for one hour',
@@ -491,6 +624,12 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The fuel gauge check',
           body: "On a scale of 1–10, rate your current energy in these four areas: physical, mental, emotional, spiritual. Write a sentence about each. Where are you running lowest? What would replenish it — not temporarily, but actually?",
+          items: [
+            "Physical energy (1–10) — what does that number feel like in your body right now?",
+            "Mental energy (1–10) — what's draining it most?",
+            "Emotional energy (1–10) — what are you carrying?",
+            "Spiritual energy (1–10) — what would actually replenish it?",
+          ],
         },
         action: {
           title: 'Rest before you need to — today',
@@ -506,6 +645,12 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The connection check',
           body: "Check in with your body three times today at set intervals — morning, midday, evening. Each time, write three words that describe what you physically feel. At the end of the day, look at the three entries. What changed throughout the day? What stayed the same?",
+          items: [
+            "Morning check-in — three words that describe what you physically feel:",
+            "Midday check-in — three words:",
+            "Evening check-in — three words:",
+            "What changed throughout the day? What stayed the same?",
+          ],
         },
         action: {
           title: 'Move your body in a way that feels good — not productive',
@@ -521,6 +666,12 @@ export const programRoutes: Record<string, ProgramRoute> = {
         prompt: {
           title: 'The letter to your body',
           body: "Write a letter to your body. Acknowledge what you've asked it to carry. Thank it for what it's continued to do despite being overridden. Tell it what's changing. Tell it what you're committing to. Make it a real commitment — not a list of habits, but a promise of relationship.",
+          items: [
+            "Acknowledge what you've asked your body to carry.",
+            "Thank it for what it's continued to do despite being overridden.",
+            "Tell it what's changing.",
+            "Tell it what you're committing to — not a list of habits, but a promise of relationship.",
+          ],
         },
         action: {
           title: 'Move slowly and intentionally all day',

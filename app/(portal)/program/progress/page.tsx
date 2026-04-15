@@ -1,10 +1,10 @@
 'use client'
 import React, { useState } from 'react'
+import Link from 'next/link'
 import { useApp } from '@/context/AppContext'
 import { programRoutes, archetypeToRoute, PHASE_DAYS } from '@/data/sealTheLeakProgram'
 import type { ProgramDay } from '@/data/sealTheLeakProgram'
 
-// How many days the user has completed (mock: based on dayNumber, capped at 7)
 function useWorkProgress(dayNumber: number) {
   const completedDays = Math.min(Math.max(dayNumber - 1, 0), 7)
   const currentDay = Math.min(dayNumber, 7)
@@ -47,15 +47,15 @@ function DayDot({
   active: boolean
 }) {
   const isCompleted = status === 'completed'
-  const isCurrent = status === 'current'
+  const isCurrent   = status === 'current'
 
   return (
     <button
       onClick={onClick}
       title={`Day ${day}`}
       style={{
-        width: 40,
-        height: 40,
+        width: 38,
+        height: 38,
         borderRadius: '50%',
         border: active
           ? `2px solid ${color}`
@@ -64,11 +64,7 @@ function DayDot({
             : isCurrent
               ? `2px dashed ${color}`
               : '2px solid rgba(12,12,10,0.12)',
-        background: isCompleted
-          ? color
-          : isCurrent
-            ? `${color}18`
-            : 'white',
+        background: isCompleted ? color : isCurrent ? `${color}18` : 'white',
         color: isCompleted ? 'white' : isCurrent ? color : 'var(--text-muted)',
         fontSize: '13px',
         fontWeight: 600,
@@ -91,7 +87,7 @@ function DayDot({
 function DayCard({ dayData, color, isCompleted }: { dayData: ProgramDay; color: string; isCompleted: boolean }) {
   return (
     <div style={{
-      border: `1px solid rgba(12,12,10,0.08)`,
+      border: '1px solid rgba(12,12,10,0.08)',
       borderRadius: '12px',
       overflow: 'hidden',
       backgroundColor: 'white',
@@ -149,14 +145,9 @@ function DayCard({ dayData, color, isCompleted }: { dayData: ProgramDay; color: 
           </p>
         </div>
 
-        {/* Prompt + Action side by side on wider screens */}
+        {/* Prompt + Action */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-          {/* Prompt */}
-          <div style={{
-            background: 'var(--paper2)',
-            borderRadius: '8px',
-            padding: '14px',
-          }}>
+          <div style={{ background: 'var(--paper2)', borderRadius: '8px', padding: '14px' }}>
             <p style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 6px', fontFamily: 'var(--font-body)' }}>
               Today&apos;s prompt
             </p>
@@ -167,13 +158,7 @@ function DayCard({ dayData, color, isCompleted }: { dayData: ProgramDay; color: 
               {dayData.prompt.body}
             </p>
           </div>
-
-          {/* Action */}
-          <div style={{
-            background: 'var(--paper2)',
-            borderRadius: '8px',
-            padding: '14px',
-          }}>
+          <div style={{ background: 'var(--paper2)', borderRadius: '8px', padding: '14px' }}>
             <p style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 6px', fontFamily: 'var(--font-body)' }}>
               Today&apos;s action
             </p>
@@ -215,7 +200,7 @@ function DayCard({ dayData, color, isCompleted }: { dayData: ProgramDay; color: 
                   borderRadius: '8px',
                   padding: '10px 12px',
                 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 500, color: color, margin: '0 0 4px', fontFamily: 'var(--font-body)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 500, color, margin: '0 0 4px', fontFamily: 'var(--font-body)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                     {proof.label}
                   </p>
                   <p style={{ fontSize: '12px', color: 'var(--text-soft)', fontStyle: 'italic', lineHeight: 1.6, margin: 0, fontFamily: 'var(--font-body)' }}>
@@ -226,6 +211,32 @@ function DayCard({ dayData, color, isCompleted }: { dayData: ProgramDay; color: 
             </div>
           </div>
         )}
+
+        {/* Link to Today's Session for this day */}
+        <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--line)' }}>
+          <Link
+            href={`/program/today?day=${dayData.day}`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '12px',
+              fontWeight: 500,
+              color,
+              fontFamily: 'var(--font-body)',
+              textDecoration: 'none',
+              padding: '7px 14px',
+              borderRadius: '6px',
+              border: `1px solid ${color}30`,
+              background: `${color}06`,
+              transition: 'opacity 0.15s',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = '0.75' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = '1' }}
+          >
+            {isCompleted ? 'Review reflections →' : 'Open Today\'s Session →'}
+          </Link>
+        </div>
       </div>
     </div>
   )
@@ -235,234 +246,231 @@ export default function MyProgressPage() {
   const { user, dayNumber } = useApp()
 
   const routeId = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
-  const route = programRoutes[routeId]
+  const route   = programRoutes[routeId]
   const { completedDays, currentDay } = useWorkProgress(dayNumber)
 
   const [viewingDay, setViewingDay] = useState(currentDay)
 
-  const viewingDayData = route.days.find(d => d.day === viewingDay) ?? route.days[0]
+  const viewingDayData    = route.days.find(d => d.day === viewingDay) ?? route.days[0]
   const isViewingCompleted = viewingDay < currentDay
 
-  // Phase progress
-  const currentPhaseEntry = Object.entries(PHASE_DAYS).find(([, days]) =>
-    days.includes(currentDay)
-  )
-  const currentPhase = currentPhaseEntry?.[0] ?? 'Awareness'
-
-  const progressPercent = Math.round((completedDays / 7) * 100)
+  const currentPhaseEntry = Object.entries(PHASE_DAYS).find(([, days]) => days.includes(currentDay))
+  const currentPhase      = currentPhaseEntry?.[0] ?? 'Awareness'
+  const progressPercent   = Math.round((completedDays / 7) * 100)
 
   return (
-    <div style={{ maxWidth: '860px', margin: '0 auto' }}>
+    <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
 
-      {/* Header */}
-      <div style={{ marginBottom: '28px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-          <span style={{
-            fontSize: '11px',
-            fontWeight: 500,
-            padding: '3px 10px',
-            borderRadius: '4px',
-            background: route.badgeColor,
-            color: route.textColor,
-            fontFamily: 'var(--font-body)',
-            letterSpacing: '0.04em',
-          }}>
-            {route.name}
-          </span>
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
-            Day {currentDay} of 7
-          </span>
-        </div>
-        <h1 style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: '30px',
-          fontWeight: 300,
-          color: 'var(--ink)',
-          margin: '0 0 6px',
-        }}>
-          My Progress
-        </h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-soft)', fontFamily: 'var(--font-body)', margin: 0, lineHeight: 1.6 }}>
-          {route.coreWound}
-        </p>
-      </div>
-
-      {/* Progress bar + phase */}
+      {/* Two-column grid */}
       <div style={{
-        background: 'white',
-        border: '1px solid var(--line)',
-        borderRadius: '12px',
-        padding: '20px 24px',
-        marginBottom: '20px',
-        display: 'flex',
-        alignItems: 'center',
+        display: 'grid',
+        gridTemplateColumns: '340px 1fr',
         gap: '24px',
+        alignItems: 'start',
       }}>
-        {/* Bar */}
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              Overall progress
-            </span>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: route.color, fontFamily: 'var(--font-body)' }}>
-              {progressPercent}%
-            </span>
+
+        {/* ── LEFT: header + stats + day selector ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+          {/* Header */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <span style={{
+                fontSize: '11px',
+                fontWeight: 500,
+                padding: '3px 10px',
+                borderRadius: '4px',
+                background: route.badgeColor,
+                color: route.textColor,
+                fontFamily: 'var(--font-body)',
+                letterSpacing: '0.04em',
+              }}>
+                {route.name}
+              </span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
+                Day {currentDay} of 7
+              </span>
+            </div>
+            <h1 style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '30px',
+              fontWeight: 300,
+              color: 'var(--ink)',
+              margin: '0 0 6px',
+            }}>
+              My Progress
+            </h1>
+            <p style={{ fontSize: '13px', color: 'var(--text-soft)', fontFamily: 'var(--font-body)', margin: 0, lineHeight: 1.6 }}>
+              {route.coreWound}
+            </p>
           </div>
-          <div style={{ height: '6px', background: 'var(--line)', borderRadius: '3px' }}>
-            <div style={{
-              height: '100%',
-              width: `${progressPercent}%`,
-              background: route.color,
-              borderRadius: '3px',
-              transition: 'width 0.4s ease',
-            }} />
-          </div>
-        </div>
 
-        {/* Divider */}
-        <div style={{ width: '1px', height: '36px', background: 'var(--line)', flexShrink: 0 }} />
-
-        {/* Phase */}
-        <div style={{ textAlign: 'center', flexShrink: 0 }}>
-          <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 4px' }}>
-            Current phase
-          </p>
-          <PhaseTag phase={currentPhase} color={route.color} />
-        </div>
-
-        {/* Divider */}
-        <div style={{ width: '1px', height: '36px', background: 'var(--line)', flexShrink: 0 }} />
-
-        {/* Days done */}
-        <div style={{ textAlign: 'center', flexShrink: 0 }}>
-          <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 4px' }}>
-            Days done
-          </p>
-          <p style={{ fontSize: '18px', fontWeight: 600, color: route.color, fontFamily: 'var(--font-body)', margin: 0 }}>
-            {completedDays}<span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 400 }}>/7</span>
-          </p>
-        </div>
-      </div>
-
-      {/* Day selector */}
-      <div style={{
-        background: 'white',
-        border: '1px solid var(--line)',
-        borderRadius: '12px',
-        padding: '20px 24px',
-        marginBottom: '20px',
-      }}>
-        <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 16px' }}>
-          Your journey — tap a day to review
-        </p>
-
-        {/* Phase labels + dots */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {(['Awareness', 'Interruption', 'Reclamation', 'Identity'] as const).map((phase) => {
-            const phaseDays = PHASE_DAYS[phase]
-            return (
-              <div key={phase} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{
-                  fontSize: '10px',
-                  color: 'var(--text-muted)',
-                  fontFamily: 'var(--font-body)',
-                  width: '80px',
-                  flexShrink: 0,
-                  letterSpacing: '0.04em',
-                }}>
-                  {phase}
-                </span>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {phaseDays.map((d) => {
-                    const status = d < currentDay ? 'completed' : d === currentDay ? 'current' : 'upcoming'
-                    return (
-                      <DayDot
-                        key={d}
-                        day={d}
-                        status={status}
-                        color={route.color}
-                        active={viewingDay === d}
-                        onClick={() => setViewingDay(d)}
-                      />
-                    )
-                  })}
-                </div>
-                {/* Phase connector line for completed phases */}
-                {phaseDays.every(d => d < currentDay) && (
-                  <span style={{ fontSize: '10px', color: route.color, fontFamily: 'var(--font-body)' }}>✓</span>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Viewing day label */}
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '12px' }}>
-        <h2 style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: '20px',
-          fontWeight: 400,
-          color: 'var(--ink)',
-          margin: 0,
-        }}>
-          Day {viewingDay} — {viewingDayData.title}
-        </h2>
-        {viewingDay === currentDay && (
-          <span style={{
-            fontSize: '10px',
-            fontWeight: 500,
-            color: route.color,
-            border: `1px solid ${route.color}40`,
-            borderRadius: '999px',
-            padding: '2px 8px',
-            fontFamily: 'var(--font-body)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-          }}>
-            Today
-          </span>
-        )}
-        {viewingDay > currentDay && (
-          <span style={{
-            fontSize: '10px',
-            color: 'var(--text-muted)',
+          {/* Stats card */}
+          <div style={{
+            background: 'white',
             border: '1px solid var(--line)',
-            borderRadius: '999px',
-            padding: '2px 8px',
-            fontFamily: 'var(--font-body)',
+            borderRadius: '12px',
+            overflow: 'hidden',
           }}>
-            Upcoming
-          </span>
-        )}
-      </div>
+            <div style={{ height: '3px', background: route.color }} />
+            <div style={{ padding: '16px 20px' }}>
+              {/* Progress bar */}
+              <div style={{ marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    Overall progress
+                  </span>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: route.color, fontFamily: 'var(--font-body)' }}>
+                    {progressPercent}%
+                  </span>
+                </div>
+                <div style={{ height: '6px', background: 'var(--line)', borderRadius: '3px' }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${progressPercent}%`,
+                    background: route.color,
+                    borderRadius: '3px',
+                    transition: 'width 0.4s ease',
+                  }} />
+                </div>
+              </div>
 
-      {/* Day content — locked if upcoming */}
-      {viewingDay > currentDay ? (
-        <div style={{
-          border: '1px dashed var(--line-md)',
-          borderRadius: '12px',
-          padding: '48px 24px',
-          textAlign: 'center',
-          background: 'var(--paper2)',
-        }}>
-          <p style={{ fontSize: '24px', margin: '0 0 12px' }}>🔒</p>
-          <p style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 300, color: 'var(--ink)', margin: '0 0 6px' }}>
-            Day {viewingDay} unlocks soon.
-          </p>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: 0 }}>
-            Complete each day in order — the arc builds on itself.
-          </p>
+              {/* Phase + Days done */}
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 6px' }}>
+                    Current phase
+                  </p>
+                  <PhaseTag phase={currentPhase} color={route.color} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 4px' }}>
+                    Days done
+                  </p>
+                  <p style={{ fontSize: '20px', fontWeight: 600, color: route.color, fontFamily: 'var(--font-body)', margin: 0 }}>
+                    {completedDays}<span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 400 }}>/7</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Day selector */}
+          <div style={{
+            background: 'white',
+            border: '1px solid var(--line)',
+            borderRadius: '12px',
+            padding: '16px 20px',
+          }}>
+            <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 14px' }}>
+              Your journey — tap a day to review
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {(['Awareness', 'Interruption', 'Reclamation', 'Identity'] as const).map((phase) => {
+                const phaseDays = PHASE_DAYS[phase]
+                return (
+                  <div key={phase} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{
+                      fontSize: '10px',
+                      color: 'var(--text-muted)',
+                      fontFamily: 'var(--font-body)',
+                      width: '76px',
+                      flexShrink: 0,
+                      letterSpacing: '0.04em',
+                    }}>
+                      {phase}
+                    </span>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      {phaseDays.map((d) => {
+                        const status = d < currentDay ? 'completed' : d === currentDay ? 'current' : 'upcoming'
+                        return (
+                          <DayDot
+                            key={d}
+                            day={d}
+                            status={status}
+                            color={route.color}
+                            active={viewingDay === d}
+                            onClick={() => setViewingDay(d)}
+                          />
+                        )
+                      })}
+                    </div>
+                    {phaseDays.every(d => d < currentDay) && (
+                      <span style={{ fontSize: '10px', color: route.color, fontFamily: 'var(--font-body)' }}>✓</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
         </div>
-      ) : (
-        <DayCard dayData={viewingDayData} color={route.color} isCompleted={isViewingCompleted} />
-      )}
 
-      <style>{`
-        @media (max-width: 680px) {
-          .day-two-col { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
+        {/* ── RIGHT: day content ── */}
+        <div>
+          {/* Day label */}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '14px' }}>
+            <h2 style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '20px',
+              fontWeight: 400,
+              color: 'var(--ink)',
+              margin: 0,
+            }}>
+              Day {viewingDay} — {viewingDayData.title}
+            </h2>
+            {viewingDay === currentDay && (
+              <span style={{
+                fontSize: '10px',
+                fontWeight: 500,
+                color: route.color,
+                border: `1px solid ${route.color}40`,
+                borderRadius: '999px',
+                padding: '2px 8px',
+                fontFamily: 'var(--font-body)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+              }}>
+                Today
+              </span>
+            )}
+            {viewingDay > currentDay && (
+              <span style={{
+                fontSize: '10px',
+                color: 'var(--text-muted)',
+                border: '1px solid var(--line)',
+                borderRadius: '999px',
+                padding: '2px 8px',
+                fontFamily: 'var(--font-body)',
+              }}>
+                Upcoming
+              </span>
+            )}
+          </div>
+
+          {/* Day content or locked state */}
+          {viewingDay > currentDay ? (
+            <div style={{
+              border: '1px dashed var(--line-md)',
+              borderRadius: '12px',
+              padding: '64px 24px',
+              textAlign: 'center',
+              background: 'var(--paper2)',
+            }}>
+              <p style={{ fontSize: '28px', margin: '0 0 12px' }}>🔒</p>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 300, color: 'var(--ink)', margin: '0 0 6px' }}>
+                Day {viewingDay} unlocks soon.
+              </p>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: 0 }}>
+                Complete each day in order — the arc builds on itself.
+              </p>
+            </div>
+          ) : (
+            <DayCard dayData={viewingDayData} color={route.color} isCompleted={isViewingCompleted} />
+          )}
+        </div>
+
+      </div>
     </div>
   )
 }

@@ -207,7 +207,7 @@ export default function Sidebar() {
         <div style={{ padding: '0 8px', marginTop: '16px' }}>
           <div style={{ borderTop: '1px solid var(--line)', marginBottom: '12px' }} />
           <button
-            onClick={() => setSidebarMode('work')}
+            onClick={() => { setSidebarMode('work'); router.push('/program') }}
             style={{
               width: '100%',
               display: 'flex',
