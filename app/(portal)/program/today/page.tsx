@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
@@ -161,7 +161,7 @@ function PromptItems({
   )
 }
 
-export default function TodaysSessionPage() {
+function TodaysSessionInner() {
   const { user, dayNumber, adminProgramDay, adminArchetype } = useApp()
   const searchParams = useSearchParams()
 
@@ -482,5 +482,13 @@ function RecordedSection({ routeId, route, currentDay }: {
         ))}
       </div>
     </div>
+  )
+}
+
+export default function TodaysSessionPage() {
+  return (
+    <Suspense fallback={null}>
+      <TodaysSessionInner />
+    </Suspense>
   )
 }
