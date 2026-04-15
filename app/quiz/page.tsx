@@ -6,6 +6,14 @@ import { QUESTIONS } from '@/lib/utils/quizUtils'
 import QuizQuestion from '@/components/quiz/QuizQuestion'
 import QuizProgress from '@/components/quiz/QuizProgress'
 import QuizNav from '@/components/quiz/QuizNav'
+import { QuizResultId } from '@/types'
+
+const PREVIEW_RESULTS: { id: QuizResultId; label: string }[] = [
+  { id: 'healer',   label: 'Open Door' },
+  { id: 'seeker',   label: "Overthinker's Throne" },
+  { id: 'builder',  label: 'Interrupted Engine' },
+  { id: 'visionary',label: 'Pushthrough' },
+]
 
 const TOTAL = 12
 
@@ -33,6 +41,12 @@ export default function QuizPage() {
   const [selected, setSelected] = useState<number | null>(null)
   const [visible, setVisible] = useState(true)
   const [autoAdvancing, setAutoAdvancing] = useState(false)
+  const [adminOpen, setAdminOpen] = useState(false)
+
+  function previewResult(id: QuizResultId) {
+    sessionStorage.setItem('clarity_quiz_result', id)
+    router.push('/quiz/result')
+  }
 
   const question = QUESTIONS[currentIndex]
   const questionNumber = currentIndex + 1
@@ -196,8 +210,79 @@ export default function QuizPage() {
           >
             ✦ Seal Your Leak
           </span>
-          <div style={{ width: '160px' }}>
-            <QuizProgress current={questionNumber} total={TOTAL} />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            {/* Admin preview */}
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                onClick={() => setAdminOpen(o => !o)}
+                style={{
+                  fontSize: '10px',
+                  letterSpacing: '1.5px',
+                  textTransform: 'uppercase',
+                  color: 'rgba(12,12,10,0.3)',
+                  background: 'none',
+                  border: '1px solid rgba(12,12,10,0.15)',
+                  borderRadius: '4px',
+                  padding: '4px 10px',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-body)',
+                }}
+              >
+                Admin
+              </button>
+              {adminOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 8px)',
+                    right: 0,
+                    background: 'white',
+                    border: '1px solid rgba(12,12,10,0.12)',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 20px rgba(12,12,10,0.1)',
+                    padding: '8px',
+                    zIndex: 50,
+                    minWidth: '200px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                  }}
+                >
+                  <p style={{ fontSize: '9px', letterSpacing: '1.5px', textTransform: 'uppercase', color: 'rgba(12,12,10,0.35)', margin: '0 0 6px 6px', fontFamily: 'var(--font-body)' }}>
+                    Preview result
+                  </p>
+                  {PREVIEW_RESULTS.map(r => (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => previewResult(r.id)}
+                      style={{
+                        textAlign: 'left',
+                        background: 'none',
+                        border: 'none',
+                        borderRadius: '5px',
+                        padding: '8px 10px',
+                        fontSize: '13px',
+                        color: 'var(--ink)',
+                        fontFamily: 'var(--font-body)',
+                        cursor: 'pointer',
+                        transition: 'background 0.1s',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(12,12,10,0.05)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                    >
+                      The {r.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={{ width: '160px' }}>
+              <QuizProgress current={questionNumber} total={TOTAL} />
+            </div>
           </div>
         </div>
 

@@ -2,33 +2,37 @@ import { QuizResultId } from '@/types'
 
 const ARCHETYPES = {
   seeker: {
-    titleName: "Seeker",
+    titleName: "Overthinker's Throne",
     emoji: "🌿",
-    outcome: "Your mind rarely gets to rest.",
-    description: "You're always thinking — processing, analyzing, replaying. Your mind is your greatest gift and your biggest drain. Your path is about learning to be in your body, not just your head. Stillness isn't the enemy. It's where your answers actually live.",
-    strengths: ["Deep intuition", "Emotional intelligence", "Natural wisdom-keeper"]
+    tagline: "Your mind doesn't clock out.",
+    body: "You think through things before they happen, while they're happening, and long after they're done.\nYou catch things others miss. You anticipate. You prepare.\nIt feels productive — but it doesn't feel like rest.",
+    unsaid: "you haven't been overthinking because you're anxious. You've been overthinking because it's how you've stayed safe.",
+    resolution: "The exhaustion isn't from doing too much.\nIt's from a mind that's been on surveillance mode for years.\nYou don't need to think less. You need permission to finally put it down.",
   },
   healer: {
-    titleName: "Healer",
+    titleName: "Open Door",
     emoji: "🌸",
-    outcome: "Your energy turns on for others.",
-    description: "You show up fully — for everyone else. You're the one people call, lean on, and count on. But somewhere along the way, you stopped being on your own list. Your path is about learning to receive as freely as you give.",
-    strengths: ["Empathic presence", "Emotional depth", "Transforms pain into purpose"]
+    tagline: "You don't wait to be needed. You just open.",
+    body: "Someone walks in with a problem — your energy shows up before they finish the sentence.\nYou make space. You adjust. You hold things.\nAnd you do it so naturally, most people don't even notice you had to.",
+    unsaid: "you've been more accessible than you've been replenished.",
+    resolution: "You're not tired because you gave too much.\nYou're tired because no one has been holding space for you the way you hold it for them.\nThis isn't about giving less.\nIt's about finally being someone you give to too.",
   },
   builder: {
-    titleName: "Builder",
+    titleName: "Interrupted Engine",
     emoji: "⚡",
-    outcome: "Your energy depends on momentum.",
-    description: "You're wired for progress. When you're moving, you're alive. When you stop, doubt creeps in. Your path is about building something sustainable — not just something fast. Real power has a rhythm, not just a pace.",
-    strengths: ["Decisive leadership", "Strategic thinking", "Consistent follow-through"]
+    tagline: "When you move, you're unstoppable. The problem is everything that stops you.",
+    body: "You don't lack drive. You don't lack discipline.\nWhen momentum is on your side, you can outwork almost anyone.\nBut life keeps interrupting. And every time you have to start again, it costs more than just time.",
+    unsaid: "every restart chips away at the trust you have in yourself.",
+    resolution: "You're not drained because you're lazy.\nYou're drained because rebuilding momentum over and over is a heavy kind of work — and nobody talks about that.\nYou don't need more motivation. You need to stop bleeding energy at the breaks.",
   },
   visionary: {
-    titleName: "Visionary",
+    titleName: "Pushthrough",
     emoji: "✨",
-    outcome: "You keep going past your signals.",
-    description: "You feel everything — deeply — and you keep moving anyway. You've learned to push through so well that you barely notice when your body and spirit are asking you to stop. Your path is about learning to trust the pause as much as the push.",
-    strengths: ["Creative brilliance", "Spiritual sensitivity", "Ahead-of-time thinking"]
-  }
+    tagline: "You don't wait for permission to push. You just go.",
+    body: "Tired? You keep going.\nOverwhelmed? You manage it.\nReady? You've never needed to be — you just move.\nThat's how you've gotten everything you have. That ability is real.",
+    unsaid: "your body has been asking you to stop for a long time. You've just been too good at ignoring it.",
+    resolution: "You're not worn down because you're weak.\nYou're worn down because rest has never felt like something you were allowed to have.\nThis isn't about slowing down forever. It's about learning that pausing is a power move — not a retreat.",
+  },
 }
 
 interface ArchetypeRevealProps {
@@ -70,7 +74,7 @@ export default function ArchetypeReveal({ resultId }: ArchetypeRevealProps) {
           margin: '0 0 16px',
         }}
       >
-        {archetype.outcome}
+        {archetype.tagline}
       </p>
 
       <h1
@@ -80,7 +84,7 @@ export default function ArchetypeReveal({ resultId }: ArchetypeRevealProps) {
           fontSize: '64px',
           fontWeight: 300,
           color: 'var(--ink)',
-          margin: '0 0 28px',
+          margin: '0 0 32px',
           lineHeight: 1,
         }}
       >
@@ -90,47 +94,77 @@ export default function ArchetypeReveal({ resultId }: ArchetypeRevealProps) {
         </em>
       </h1>
 
+      {/* Body */}
       <p
         style={{
           fontSize: '15px',
           color: 'rgba(12,12,10,0.55)',
           fontWeight: 300,
-          lineHeight: 1.8,
+          lineHeight: 1.9,
           maxWidth: '480px',
-          margin: '0 auto 32px',
+          margin: '0 auto 28px',
           fontFamily: 'var(--font-body)',
+          whiteSpace: 'pre-line',
         }}
       >
-        {archetype.description}
+        {archetype.body}
       </p>
 
+      {/* Unsaid */}
       <div
         style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-          gap: '8px',
+          background: 'rgba(12,12,10,0.035)',
+          borderLeft: '2px solid var(--green)',
+          borderRadius: '4px',
+          padding: '16px 20px',
+          margin: '0 auto 28px',
+          maxWidth: '480px',
+          textAlign: 'left',
         }}
       >
-        {archetype.strengths.map((s) => (
-          <span
-            key={s}
-            style={{
-              border: '1px solid rgba(12,12,10,0.18)',
-              color: 'rgba(12,12,10,0.65)',
-              fontSize: '11px',
-              letterSpacing: '0.5px',
-              padding: '6px 14px',
-              borderRadius: '3px',
-              fontFamily: 'var(--font-body)',
-              fontWeight: 400,
-              display: 'inline-block',
-            }}
-          >
-            {s}
-          </span>
-        ))}
+        <p
+          style={{
+            fontSize: '11px',
+            letterSpacing: '1.5px',
+            textTransform: 'uppercase',
+            color: 'var(--green)',
+            fontFamily: 'var(--font-body)',
+            fontWeight: 500,
+            margin: '0 0 8px',
+          }}
+        >
+          Here&apos;s what usually goes unsaid:
+        </p>
+        <p
+          style={{
+            fontSize: '14px',
+            color: 'rgba(12,12,10,0.65)',
+            fontFamily: 'var(--font-body)',
+            fontWeight: 300,
+            lineHeight: 1.7,
+            margin: 0,
+            fontStyle: 'italic',
+          }}
+        >
+          {archetype.unsaid}
+        </p>
       </div>
+
+      {/* Resolution */}
+      <p
+        style={{
+          fontSize: '15px',
+          color: 'rgba(12,12,10,0.55)',
+          fontWeight: 300,
+          lineHeight: 1.9,
+          maxWidth: '480px',
+          margin: '0 auto',
+          fontFamily: 'var(--font-body)',
+          whiteSpace: 'pre-line',
+        }}
+      >
+        {archetype.resolution}
+      </p>
     </div>
   )
 }
