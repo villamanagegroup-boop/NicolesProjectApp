@@ -4,38 +4,27 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 
-// Deep green accent — stays consistent throughout this sidebar
-const GREEN = '#1A5230'
-const GREEN_PALE = 'rgba(26,82,48,0.07)'
-const GREEN_DIM  = 'rgba(26,82,48,0.55)'
-
-// Purple for the Seal the Leak swap button
+// Deep purple accent — stays consistent throughout this sidebar
 const PURPLE = '#3D3080'
+const PURPLE_PALE = 'rgba(61,48,128,0.07)'
+const PURPLE_DIM  = 'rgba(61,48,128,0.55)'
 
 // SVG Icons
-function HomeIcon() {
+function OverviewIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 6.5L8 2l6 4.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V6.5z" />
-      <path d="M6 15V9h4v6" />
+      <rect x="2" y="2" width="5" height="5" rx="1" />
+      <rect x="9" y="2" width="5" height="5" rx="1" />
+      <rect x="2" y="9" width="5" height="5" rx="1" />
+      <rect x="9" y="9" width="5" height="5" rx="1" />
     </svg>
   )
 }
 
-function CardsIcon() {
+function FlameIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="5" width="12" height="9" rx="1.5" />
-      <path d="M4 5V4a2 2 0 012-2h4a2 2 0 012 2v1" />
-    </svg>
-  )
-}
-
-function PastIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="8" cy="8" r="6" />
-      <path d="M8 5v3l2 2" />
+      <path d="M8 14s-5-3.5-5-7.5C3 4 5 2 8 2c1 2 0 3.5-1 4.5C9 6 11 4.5 10 2c2 1.5 3 3.5 3 4.5 0 4-5 7.5-5 7.5z" />
     </svg>
   )
 }
@@ -50,19 +39,11 @@ function JournalIcon() {
   )
 }
 
-function WinsIcon() {
+function ProgressIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8 2l1.5 3.1L13 5.6l-2.5 2.4.6 3.4L8 9.8l-3.1 1.6.6-3.4L3 5.6l3.5-.5L8 2z" />
-    </svg>
-  )
-}
-
-function ProfileIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="8" cy="5.5" r="2.5" />
-      <path d="M2.5 14c0-3.038 2.462-5.5 5.5-5.5s5.5 2.462 5.5 5.5" />
+      <circle cx="8" cy="8" r="6" />
+      <path d="M8 5v3l2 2" />
     </svg>
   )
 }
@@ -81,16 +62,15 @@ interface NavItem {
   icon: React.ComponentType
   label: string
   subtitle: string
-  exact?: boolean
+  exact?: boolean   // if true, only highlight on exact path match
 }
 
-const mainNavItems: NavItem[] = [
-  { href: '/dashboard', icon: HomeIcon,    label: 'The Entry',        subtitle: 'Start where you are',          exact: true },
-  { href: '/card',      icon: CardsIcon,   label: 'Daily Alignment',  subtitle: 'Meet yourself today',          exact: true },
-  { href: '/past',      icon: PastIcon,    label: 'The Becoming',     subtitle: 'See your evolution',           exact: true },
-  { href: '/journal',   icon: JournalIcon, label: 'Reflection',       subtitle: 'Tell the truth'                            },
-  { href: '/wins',      icon: WinsIcon,    label: 'My Wins',          subtitle: 'Victories logged here',        exact: true },
-  { href: '/profile',   icon: ProfileIcon, label: 'Self',             subtitle: 'This is who you are becoming', exact: true },
+// Reflection before My Progress; Self removed
+const workNavItems: NavItem[] = [
+  { href: '/program',          icon: OverviewIcon, label: 'The Work',         subtitle: 'Program overview',           exact: true },
+  { href: '/program/today',    icon: FlameIcon,    label: "Today's Session",  subtitle: 'Pick up where you left off', exact: true },
+  { href: '/journal',          icon: JournalIcon,  label: 'Reflection',       subtitle: 'Tell the truth'                            },
+  { href: '/program/progress', icon: ProgressIcon, label: 'My Progress',      subtitle: 'Your journey so far',        exact: true },
 ]
 
 function isItemActive(href: string, pathname: string, exact?: boolean): boolean {
@@ -98,12 +78,10 @@ function isItemActive(href: string, pathname: string, exact?: boolean): boolean 
   return pathname === href || pathname.startsWith(href + '/')
 }
 
-export default function Sidebar() {
+export default function SidebarWork() {
   const pathname = usePathname()
   const router   = useRouter()
-  const { dayNumber, setSidebarMode } = useApp()
-
-  const vaultUnlocked = dayNumber >= 30
+  const { setSidebarMode } = useApp()
 
   return (
     <aside
@@ -113,7 +91,7 @@ export default function Sidebar() {
         height: '100vh',
         position: 'sticky',
         top: 0,
-        backgroundColor: '#f9fdfb',
+        backgroundColor: '#faf9fd',
         borderRight: '1px solid var(--line)',
         padding: '24px 0',
         display: 'flex',
@@ -129,7 +107,7 @@ export default function Sidebar() {
           fontWeight: 500,
           color: 'var(--ink)',
         }}>
-          <span style={{ color: GREEN }}>✦</span> 365 Days
+          <span style={{ color: PURPLE }}>✦</span> Seal the Leak
         </div>
         <p style={{
           fontSize: '10px',
@@ -139,14 +117,14 @@ export default function Sidebar() {
           fontFamily: 'var(--font-body)',
           margin: '4px 0 0 0',
         }}>
-          Daily Alignment
+          7-Day Reset
         </p>
         <div style={{ borderTop: '1px solid var(--line)', marginTop: '16px', marginBottom: '8px' }} />
       </div>
 
       {/* Main nav */}
       <nav style={{ flex: 1 }}>
-        {mainNavItems.map((item) => {
+        {workNavItems.map((item) => {
           const active = isItemActive(item.href, pathname, item.exact)
           const Icon = item.icon
 
@@ -164,13 +142,13 @@ export default function Sidebar() {
                   padding: '10px 12px',
                   borderRadius: '8px',
                   margin: '1px 8px',
-                  backgroundColor: active ? GREEN_PALE : 'transparent',
-                  color: active ? GREEN : 'var(--text-soft)',
+                  backgroundColor: active ? PURPLE_PALE : 'transparent',
+                  color: active ? PURPLE : 'var(--text-soft)',
                   cursor: 'pointer',
                   transition: 'background-color 0.15s ease, color 0.15s ease',
                 }}
                 onMouseEnter={(e) => {
-                  if (!active) (e.currentTarget as HTMLDivElement).style.backgroundColor = 'rgba(26,82,48,0.04)'
+                  if (!active) (e.currentTarget as HTMLDivElement).style.backgroundColor = 'rgba(61,48,128,0.04)'
                 }}
                 onMouseLeave={(e) => {
                   if (!active) (e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent'
@@ -190,7 +168,7 @@ export default function Sidebar() {
                   </div>
                   <div style={{
                     fontSize: '10px',
-                    color: active ? GREEN_DIM : 'var(--text-muted)',
+                    color: active ? PURPLE_DIM : 'var(--text-muted)',
                     fontFamily: 'var(--font-body)',
                     lineHeight: 1.3,
                     marginTop: '2px',
@@ -203,11 +181,11 @@ export default function Sidebar() {
           )
         })}
 
-        {/* Swap to The Work */}
+        {/* Swap to Daily Cards */}
         <div style={{ padding: '0 8px', marginTop: '16px' }}>
           <div style={{ borderTop: '1px solid var(--line)', marginBottom: '12px' }} />
           <button
-            onClick={() => setSidebarMode('work')}
+            onClick={() => setSidebarMode('cards')}
             style={{
               width: '100%',
               display: 'flex',
@@ -215,31 +193,31 @@ export default function Sidebar() {
               gap: '12px',
               padding: '10px 12px',
               borderRadius: '8px',
-              background: 'rgba(61,48,128,0.07)',
-              border: '1px solid rgba(61,48,128,0.15)',
+              background: 'var(--green-pale)',
+              border: '1px solid rgba(31,92,58,0.15)',
               cursor: 'pointer',
               textAlign: 'left',
             }}
           >
-            <span style={{ color: PURPLE, flexShrink: 0 }}>
+            <span style={{ color: 'var(--green)', flexShrink: 0 }}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 2a6 6 0 016 6v2l1 2H1l1-2V8a6 6 0 016-6z" />
-                <path d="M6.5 14a1.5 1.5 0 003 0" />
+                <rect x="2" y="5" width="12" height="9" rx="1.5" />
+                <path d="M4 5V4a2 2 0 012-2h4a2 2 0 012 2v1" />
               </svg>
             </span>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', color: 'var(--ink)', lineHeight: 1.2 }}>
-                Seal the Leak
+                365 Days
               </div>
               <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', lineHeight: 1.3, marginTop: '2px' }}>
-                → Switch to The Work
+                ← Switch to Daily Cards
               </div>
             </div>
           </button>
         </div>
       </nav>
 
-      {/* Bottom section */}
+      {/* Bottom — shared */}
       <div style={{ padding: '0 20px 24px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {/* New Journal Entry */}
         <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
@@ -247,7 +225,7 @@ export default function Sidebar() {
             onClick={() => router.push('/journal/new')}
             style={{
               width: '100%',
-              backgroundColor: GREEN,
+              backgroundColor: PURPLE,
               color: '#ffffff',
               border: 'none',
               borderRadius: '8px',
@@ -272,36 +250,10 @@ export default function Sidebar() {
             height: '8px',
             borderRadius: '50%',
             backgroundColor: 'var(--red)',
-            border: '1.5px solid #f9fdfb',
+            border: '1.5px solid #faf9fd',
             pointerEvents: 'none',
           }} />
         </div>
-
-        {/* Vault */}
-        {vaultUnlocked ? (
-          <Link
-            href="/vault"
-            style={{
-              textDecoration: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 4px',
-              fontSize: '12px',
-              fontFamily: 'var(--font-body)',
-              color: 'var(--text-soft)',
-              transition: 'color 0.15s ease',
-            }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--ink)' }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-soft)' }}
-          >
-            The Vault →
-          </Link>
-        ) : (
-          <div style={{ padding: '4px', fontSize: '12px', fontFamily: 'var(--font-body)', color: 'var(--text-muted)', opacity: 0.6 }}>
-            🔒 The Vault <span style={{ fontSize: '10px' }}>(Day 30)</span>
-          </div>
-        )}
 
         {/* Settings */}
         <Link

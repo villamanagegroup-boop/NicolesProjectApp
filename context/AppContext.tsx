@@ -73,6 +73,9 @@ interface AppContextValue {
   // Notifications
   dailyReminders: boolean
   setDailyReminders: (on: boolean) => void
+  // Sidebar mode
+  sidebarMode: 'cards' | 'work'
+  setSidebarMode: (mode: 'cards' | 'work') => void
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -89,6 +92,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [wins, setWins] = useState<Win[]>(mockWins)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [dailyReminders, setDailyReminders] = useState(true)
+  const [sidebarMode, setSidebarMode] = useState<'cards' | 'work'>('cards')
 
   // On mount, read today's check-in from localStorage
   useEffect(() => {
@@ -178,6 +182,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setAvatarUrl,
     dailyReminders,
     setDailyReminders,
+    sidebarMode,
+    setSidebarMode,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

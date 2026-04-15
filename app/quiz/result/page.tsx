@@ -118,37 +118,17 @@ export default function QuizResultPage() {
         {/* CTA section */}
         <div>
           <p style={{
-            fontSize: '10px',
-            letterSpacing: '2px',
-            textTransform: 'uppercase',
-            color: 'var(--green)',
-            margin: '0 0 16px',
-            fontWeight: 500,
-          }}>
-            Your journey continues.
-          </p>
-          <h2 style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: '32px',
-            fontWeight: 300,
-            color: 'var(--ink)',
-            margin: '0 0 14px',
-          }}>
-            Three ways to begin.
-          </h2>
-          <p style={{
-            fontSize: '14px',
-            color: 'rgba(12,12,10,0.5)',
+            fontSize: '15px',
+            color: 'rgba(12,12,10,0.6)',
             margin: '0 0 32px',
             lineHeight: 1.7,
+            fontStyle: 'italic',
           }}>
-            Stay aligned daily, reset what's leaking, or go all the way in.
-            <br />
-            Every path is built around your archetype.
+            Here&rsquo;s how you start sealing this leak today.
           </p>
           <button
             type="button"
-            aria-label="Choose my path"
+            aria-label="See my paths"
             onClick={() => router.push('/quiz/paths')}
             style={{
               background: 'var(--ink)',
@@ -165,7 +145,7 @@ export default function QuizResultPage() {
               width: '100%',
             }}
           >
-            Choose My Path →
+            See My Paths →
           </button>
         </div>
       </div>

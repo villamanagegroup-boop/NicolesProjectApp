@@ -1,17 +1,20 @@
 'use client'
 import { useState } from 'react'
 import Sidebar from '@/components/layout/Sidebar'
+import SidebarWork from '@/components/layout/SidebarWork'
 import Topbar from '@/components/layout/Topbar'
 import MobileNav from '@/components/layout/MobileNav'
 import MobileDrawer from '@/components/layout/MobileDrawer'
+import { useApp } from '@/context/AppContext'
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const { sidebarMode } = useApp()
 
   return (
     <div className="portal-shell" style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#ffffff' }}>
       <div className="sidebar">
-        <Sidebar />
+        {sidebarMode === 'work' ? <SidebarWork /> : <Sidebar />}
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <Topbar onMenuOpen={() => setDrawerOpen(true)} />

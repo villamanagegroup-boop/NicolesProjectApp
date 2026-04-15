@@ -6,15 +6,6 @@ interface TopbarProps {
   onMenuOpen?: () => void
 }
 
-function SearchIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="7" cy="7" r="5" />
-      <path d="M10.5 10.5L14 14" />
-    </svg>
-  )
-}
-
 function BellIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -35,7 +26,6 @@ function GearIcon() {
 
 export default function Topbar({ onMenuOpen }: TopbarProps) {
   const { user, avatarUrl } = useApp()
-  const [searchFocused, setSearchFocused] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const firstInitial = user.name.charAt(0).toUpperCase()
   const photoSrc = avatarUrl ?? null
@@ -80,41 +70,8 @@ export default function Topbar({ onMenuOpen }: TopbarProps) {
         </svg>
       </button>
 
-      {/* Search pill — hidden on mobile */}
-      <div className="topbar-search-wrap" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-        <span
-          style={{
-            position: 'absolute',
-            left: '12px',
-            color: 'var(--text-muted)',
-            display: 'flex',
-            alignItems: 'center',
-            pointerEvents: 'none',
-          }}
-        >
-          <SearchIcon />
-        </span>
-        <input
-          type="text"
-          placeholder="Search your journey..."
-          onFocus={() => setSearchFocused(true)}
-          onBlur={() => setSearchFocused(false)}
-          style={{
-            width: '220px',
-            height: '34px',
-            borderRadius: '9999px',
-            backgroundColor: 'var(--paper2)',
-            border: `1px solid ${searchFocused ? 'var(--gold-line)' : 'var(--line-md)'}`,
-            paddingLeft: '32px',
-            paddingRight: '16px',
-            fontSize: '14px',
-            fontFamily: 'var(--font-body)',
-            color: 'var(--ink)',
-            outline: 'none',
-            transition: 'border-color 0.15s ease',
-          }}
-        />
-      </div>{/* end topbar-search-wrap */}
+      {/* Spacer */}
+      <div />
 
       {/* Right side */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

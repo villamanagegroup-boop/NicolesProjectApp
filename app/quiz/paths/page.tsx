@@ -81,66 +81,64 @@ export default function QuizPathsPage() {
             marginBottom: '44px',
           }}
         >
-          {/* OPTION 1 — Stay Aligned Daily */}
+          {/* TIER 1 — Entry */}
           <PathTile
             path="B"
             icon="🌿"
-            title="Stay Aligned Daily"
-            subtitle="Higher Self Woke App"
-            price="$12/mo"
-            priceNote="Cancel anytime"
-            description="Daily check-ins, reflection prompts, and a way to track your growth — all built around your archetype. Consistency without pressure."
+            title="365 Days of Alignment"
+            subtitle="Tier 1 — Entry"
+            price="$9/mo"
+            priceNote="or $67/year (save 38%)"
+            description="Daily support built around your archetype — prompts, wins, and monthly focus to keep you moving forward consistently."
             includes={[
-              'Daily check-ins',
-              'Reflection prompts',
-              'Growth tracking',
-              'Archive & Vault access',
+              'Daily prompt by archetype',
+              'Journal + win tracker',
+              'Monthly theme focus',
+              'Keeps you in your pipeline',
             ]}
-            bestFor="Best if you want consistent support"
+            bestFor="Best if you want consistent daily support"
             ctaLabel="Start Daily Practice →"
             ctaHref="/signup?path=B"
           />
 
-          {/* OPTION 2 — Fix This Now (Featured) */}
+          {/* TIER 2 — Recommended (Featured) */}
           <PathTile
             path="A"
             icon="🔥"
-            title="Fix This Now"
-            subtitle="Seal the Leak Program"
-            price="$27"
+            title="Seal the Leak"
+            subtitle="Tier 2 — Recommended"
+            price="$37"
             priceNote="One-time · Instant access"
-            description="Personalized to your energy pattern. A step-by-step reset built around exactly where you are — designed for immediate shifts, not slow burns."
+            description="A 7-day archetype reset with daily prompts, actions, and shifts — plus 30 days of the 365 Alignment app included. Your conversion engine."
             includes={[
-              'Personalized to your energy pattern',
-              'Step-by-step reset',
-              'Immediate shifts',
-              '7 daily clarity cards',
-              'Journal prompts + progress tracking',
+              '7-day reset by archetype',
+              'Daily prompt + action + shift',
+              'Includes 30-day app trial',
+              'Your conversion engine',
             ]}
-            bestFor="Best if you're tired of feeling like this"
-            ctaLabel="Get the Program →"
+            bestFor="Best if you're ready to fix this now"
+            ctaLabel="Seal the Leak →"
             ctaHref="/signup?path=A"
             featured
           />
 
-          {/* OPTION 3 — Go Deeper With Me */}
+          {/* TIER 3 — High Ticket */}
           <PathTile
             path="C"
             icon="👑"
-            title="Go Deeper With Me"
-            subtitle="Coaching Experience"
-            price="Premium"
-            priceNote="Apply to get started"
-            description="Direct guidance, real-time breakthroughs, and full accountability — for when you're ready to fully shift the pattern, not just manage it."
+            title="Private Coaching"
+            subtitle="Tier 3 — High Ticket"
+            price="$497+"
+            priceNote="Book a discovery call"
+            description="Identity-level shift work with direct access to Nicole. Group or 1:1 intensive — for when you're ready to fully change the pattern."
             includes={[
-              'Direct 1:1 guidance',
-              'Real-time breakthroughs',
-              'Full accountability',
-              'Complete program access',
-              'Daily clarity cards',
+              'Identity-level shift work',
+              'Direct access to Nicole',
+              'Group: $97–$197/mo',
+              '1:1 intensive: $497–$997',
             ]}
-            bestFor="Best if you're ready to fully shift this pattern"
-            ctaLabel="Apply for Coaching →"
+            bestFor="Best if you're ready to go all the way in"
+            ctaLabel="Book a Discovery Call →"
             ctaHref="/signup?path=C"
           />
         </div>

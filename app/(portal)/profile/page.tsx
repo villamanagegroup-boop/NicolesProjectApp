@@ -14,7 +14,8 @@ const archetypeColors: Record<string, string> = {
 }
 
 export default function ProfilePage() {
-  const { user, dayNumber, cards, journalEntries, avatarUrl, setAvatarUrl, dailyReminders, setDailyReminders } = useApp()
+  const { user, dayNumber, cards, journalEntries, avatarUrl, setAvatarUrl, dailyReminders, setDailyReminders, sidebarMode } = useApp()
+  const isWorkMode = sidebarMode === 'work'
 
   // Journal entries from the last 7 days
   const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
@@ -131,7 +132,7 @@ export default function ProfilePage() {
           >
             <span>{user.email}</span>
             <span>· Day {dayNumber}</span>
-            <span>· {user.selectedPath === 'A' ? 'Full Journey' : 'Daily Practice'}</span>
+            <span>· {isWorkMode ? 'Seal the Leak' : user.selectedPath === 'A' ? 'Full Journey' : 'Daily Practice'}</span>
           </div>
 
           {/* Pills */}
@@ -263,61 +264,122 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Right — Journey Stats */}
-        <div
-          style={{
-            border: '1px solid var(--line)',
-            borderRadius: '12px',
-            padding: '24px',
-            backgroundColor: '#ffffff',
-          }}
-        >
-          <h2
+        {/* Right — Journey Stats (cards) or Program Progress (work) */}
+        {isWorkMode ? (
+          <div
             style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: '18px',
-              color: 'var(--ink)',
-              margin: '0 0 16px 0',
-              fontWeight: 400,
+              border: '1px solid var(--gold-line)',
+              borderRadius: '12px',
+              padding: '24px',
+              backgroundColor: 'var(--gold-pale)',
             }}
           >
-            Journey Stats
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {[
-              { label: 'Days active', value: String(dayNumber) },
-              { label: 'Cards unlocked', value: String(Math.min(dayNumber, cards.length)) },
-              { label: 'Journal entries', value: String(journalEntries.length) },
-            ].map(({ label, value }) => (
-              <div
-                key={label}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  paddingTop: '12px',
-                  paddingBottom: '12px',
-                  borderBottom: '1px solid var(--line)',
-                }}
-              >
-                <span
-                  style={{ fontSize: '13px', color: 'var(--ink)', fontFamily: 'var(--font-body)' }}
-                >
-                  {label}
-                </span>
-                <span
+            <h2
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '18px',
+                color: 'var(--ink)',
+                margin: '0 0 4px 0',
+                fontWeight: 400,
+              }}
+            >
+              Seal the Leak
+            </h2>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              7-Day Reset Progress
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {[
+                { label: 'Current day', value: `Day ${Math.min(dayNumber, 7)} of 7` },
+                { label: 'Sessions done', value: `${Math.min(dayNumber, 7)}` },
+                { label: 'Journal entries', value: String(journalEntries.length) },
+                { label: 'Status', value: dayNumber >= 7 ? '✓ Complete' : 'In progress' },
+              ].map(({ label, value }) => (
+                <div
+                  key={label}
                   style={{
-                    fontSize: '13px',
-                    color: 'var(--ink)',
-                    fontFamily: 'var(--font-body)',
-                    fontWeight: 500,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    paddingTop: '12px',
+                    paddingBottom: '12px',
+                    borderBottom: '1px solid var(--gold-line)',
                   }}
                 >
-                  {value}
+                  <span style={{ fontSize: '13px', color: 'var(--ink)', fontFamily: 'var(--font-body)' }}>
+                    {label}
+                  </span>
+                  <span style={{ fontSize: '13px', color: 'var(--ink)', fontFamily: 'var(--font-body)', fontWeight: 500 }}>
+                    {value}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {/* Progress bar */}
+            <div style={{ marginTop: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>Overall completion</span>
+                <span style={{ fontSize: '11px', color: 'var(--gold)', fontFamily: 'var(--font-body)', fontWeight: 500 }}>
+                  {Math.round((Math.min(dayNumber, 7) / 7) * 100)}%
                 </span>
               </div>
-            ))}
+              <div style={{ height: '4px', background: 'var(--gold-line)', borderRadius: '2px' }}>
+                <div style={{
+                  height: '100%',
+                  width: `${Math.round((Math.min(dayNumber, 7) / 7) * 100)}%`,
+                  background: 'var(--gold)',
+                  borderRadius: '2px',
+                  transition: 'width 0.3s ease',
+                }} />
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div
+            style={{
+              border: '1px solid var(--line)',
+              borderRadius: '12px',
+              padding: '24px',
+              backgroundColor: '#ffffff',
+            }}
+          >
+            <h2
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '18px',
+                color: 'var(--ink)',
+                margin: '0 0 16px 0',
+                fontWeight: 400,
+              }}
+            >
+              Journey Stats
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {[
+                { label: 'Days active', value: String(dayNumber) },
+                { label: 'Cards unlocked', value: String(Math.min(dayNumber, cards.length)) },
+                { label: 'Journal entries', value: String(journalEntries.length) },
+              ].map(({ label, value }) => (
+                <div
+                  key={label}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    paddingTop: '12px',
+                    paddingBottom: '12px',
+                    borderBottom: '1px solid var(--line)',
+                  }}
+                >
+                  <span style={{ fontSize: '13px', color: 'var(--ink)', fontFamily: 'var(--font-body)' }}>
+                    {label}
+                  </span>
+                  <span style={{ fontSize: '13px', color: 'var(--ink)', fontFamily: 'var(--font-body)', fontWeight: 500 }}>
+                    {value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Weekly Reflection Summary */}
