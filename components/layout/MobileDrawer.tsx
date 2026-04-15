@@ -1,57 +1,130 @@
 'use client'
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 
+const GREEN  = '#1A5230'
+const GREEN_PALE = 'rgba(26,82,48,0.07)'
+const GREEN_DIM  = 'rgba(26,82,48,0.55)'
+const PURPLE = '#3D3080'
+const PURPLE_PALE = 'rgba(61,48,128,0.07)'
+const PURPLE_DIM  = 'rgba(61,48,128,0.55)'
+
+// ── Icons (same as sidebars) ──────────────────────────────────────────────────
+
+function HomeIcon() {
+  return <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 6.5L8 2l6 4.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V6.5z"/><path d="M6 15V9h4v6"/></svg>
+}
+function CardsIcon() {
+  return <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="12" height="9" rx="1.5"/><path d="M4 5V4a2 2 0 012-2h4a2 2 0 012 2v1"/></svg>
+}
+function PastIcon() {
+  return <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+}
+function JournalIcon() {
+  return <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2h8a1 1 0 011 1v10a1 1 0 01-1 1H3"/><path d="M3 2a1 1 0 00-1 1v10a1 1 0 001 1"/><path d="M6 6h4M6 9h4M6 12h2"/></svg>
+}
+function WinsIcon() {
+  return <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2l1.5 3.1L13 5.6l-2.5 2.4.6 3.4L8 9.8l-3.1 1.6.6-3.4L3 5.6l3.5-.5L8 2z"/></svg>
+}
+function ProfileIcon() {
+  return <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="5.5" r="2.5"/><path d="M2.5 14c0-3.038 2.462-5.5 5.5-5.5s5.5 2.462 5.5 5.5"/></svg>
+}
+function OverviewIcon() {
+  return <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+}
+function FlameIcon() {
+  return <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 14s-5-3.5-5-7.5C3 4 5 2 8 2c1 2 0 3.5-1 4.5C9 6 11 4.5 10 2c2 1.5 3 3.5 3 4.5 0 4-5 7.5-5 7.5z"/></svg>
+}
+function ProgressIcon() {
+  return <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+}
+function GearIcon() {
+  return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>
+}
 function CloseIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <path d="M4 4l12 12M16 4L4 16" />
-    </svg>
-  )
+  return <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 4l10 10M14 4L4 14"/></svg>
 }
 
-function LockIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="7" width="10" height="8" rx="1.5" />
-      <path d="M5 7V5a3 3 0 016 0v2" />
-    </svg>
-  )
+// ── Nav item types ────────────────────────────────────────────────────────────
+
+interface NavItem {
+  href: string
+  icon: React.ComponentType
+  label: string
+  subtitle: string
+  exact?: boolean
 }
 
-const navItems = [
-  { href: '/dashboard', label: 'The Entry', subtitle: 'Start where you are' },
-  { href: '/card', label: 'Daily Alignment', subtitle: 'Meet yourself today' },
-  { href: '/past', label: 'The Becoming', subtitle: 'See your evolution' },
-  { href: '/journal', label: 'Reflection', subtitle: 'Tell the truth' },
-  { href: '/wins', label: 'My Wins', subtitle: 'Victories logged here' },
-  { href: '/profile', label: 'Self', subtitle: 'This is who you are becoming' },
+const cardsNavItems: NavItem[] = [
+  { href: '/dashboard', icon: HomeIcon,    label: 'The Entry',       subtitle: 'Start where you are',          exact: true },
+  { href: '/card',      icon: CardsIcon,   label: 'Daily Alignment', subtitle: 'Meet yourself today',          exact: true },
+  { href: '/past',      icon: PastIcon,    label: 'The Becoming',    subtitle: 'See your evolution',           exact: true },
+  { href: '/journal',   icon: JournalIcon, label: 'Reflection',      subtitle: 'Tell the truth'                            },
+  { href: '/wins',      icon: WinsIcon,    label: 'My Wins',         subtitle: 'Victories logged here',        exact: true },
+  { href: '/profile',   icon: ProfileIcon, label: 'Self',            subtitle: 'This is who you are becoming', exact: true },
 ]
+
+const workNavItems: NavItem[] = [
+  { href: '/program',          icon: OverviewIcon, label: 'The Work',        subtitle: 'Program overview',           exact: true },
+  { href: '/program/today',    icon: FlameIcon,    label: "Today's Session", subtitle: 'Pick up where you left off', exact: true },
+  { href: '/journal',          icon: JournalIcon,  label: 'Reflection',      subtitle: 'Tell the truth'                            },
+  { href: '/program/progress', icon: ProgressIcon, label: 'My Progress',     subtitle: 'Your journey so far',        exact: true  },
+]
+
+function isActive(href: string, pathname: string, exact?: boolean) {
+  if (exact) return pathname === href
+  return pathname === href || pathname.startsWith(href + '/')
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 interface Props {
   open: boolean
   onClose: () => void
 }
 
-const PURPLE = '#3D3080'
-
 export default function MobileDrawer({ open, onClose }: Props) {
   const pathname = usePathname()
-  const router = useRouter()
+  const router   = useRouter()
   const { user, dayNumber, sidebarMode, setSidebarMode } = useApp()
 
-  const programUnlocked = user.selectedPath === 'A' && user.hasPaid
+  const isWork      = sidebarMode === 'work'
+  const accent      = isWork ? PURPLE : GREEN
+  const accentPale  = isWork ? PURPLE_PALE : GREEN_PALE
+  const accentDim   = isWork ? PURPLE_DIM  : GREEN_DIM
+  const bgColor     = isWork ? '#faf9fd' : '#f9fdfb'
   const vaultUnlocked = dayNumber >= 30
-  const isWork = sidebarMode === 'work'
 
-  if (!open) return null
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  // Slide in / out
+  useEffect(() => {
+    const el = panelRef.current
+    if (!el) return
+    if (open) {
+      el.style.transform = 'translateX(-100%)'
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          el.style.transition = 'transform 0.28s cubic-bezier(0.32,0,0.15,1)'
+          el.style.transform = 'translateX(0)'
+        })
+      })
+    } else {
+      el.style.transition = 'transform 0.22s cubic-bezier(0.32,0,0.15,1)'
+      el.style.transform = 'translateX(-100%)'
+    }
+  }, [open])
+
+  if (!open && panelRef.current?.style.transform === 'translateX(-100%)') return null
 
   function navigate(href: string) {
     onClose()
     router.push(href)
   }
+
+  const navItems = isWork ? workNavItems : cardsNavItems
 
   return (
     <>
@@ -59,205 +132,193 @@ export default function MobileDrawer({ open, onClose }: Props) {
       <div
         onClick={onClose}
         style={{
-          position: 'fixed',
-          inset: 0,
-          backgroundColor: 'rgba(12,12,10,0.55)',
+          position: 'fixed', inset: 0,
+          backgroundColor: open ? 'rgba(12,12,10,0.4)' : 'rgba(12,12,10,0)',
           zIndex: 200,
+          transition: 'background-color 0.25s ease',
+          pointerEvents: open ? 'auto' : 'none',
         }}
       />
 
-      {/* Drawer panel */}
+      {/* Drawer panel — matches sidebar */}
       <div
+        ref={panelRef}
         style={{
           position: 'fixed',
-          top: 0,
-          left: 0,
-          bottom: 0,
+          top: 0, left: 0, bottom: 0,
           width: '280px',
-          backgroundColor: 'var(--paper2)',
+          backgroundColor: bgColor,
           borderRight: '1px solid var(--line)',
           zIndex: 201,
           display: 'flex',
           flexDirection: 'column',
           overflowY: 'auto',
-          boxShadow: '4px 0 24px rgba(12,12,10,0.12)',
+          transform: 'translateX(-100%)',
+          willChange: 'transform',
         }}
       >
-        {/* Header */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '20px 20px 16px',
-          borderBottom: '1px solid var(--line)',
-        }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: 500, color: 'var(--ink)' }}>
-            <span style={{ color: isWork ? PURPLE : 'var(--gold)' }}>✦</span>{' '}
-            {isWork ? 'Seal the Leak' : '365 Days'}
+        {/* Wordmark — matches sidebar */}
+        <div style={{ padding: '24px 20px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: 500, color: 'var(--ink)' }}>
+                <span style={{ color: accent }}>✦</span>{' '}
+                {isWork ? 'Seal the Leak' : '365 Days'}
+              </div>
+              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '4px 0 0' }}>
+                {isWork ? '7-Day Reset' : 'Daily Alignment'}
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: 'var(--text-soft)', display: 'flex', alignItems: 'center', borderRadius: '6px' }}
+            >
+              <CloseIcon />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '4px',
-              color: 'var(--text-soft)',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <CloseIcon />
-          </button>
+          <div style={{ borderTop: '1px solid var(--line)', marginTop: '16px', marginBottom: '8px' }} />
         </div>
 
-        {/* Nav items */}
-        <nav style={{ flex: 1, padding: '12px 0' }}>
-          {isWork ? (
-            /* ── Seal the Leak nav ── */
-            <>
-              {[
-                { href: '/program',          label: 'The Work',         subtitle: 'Program overview',           exact: true  },
-                { href: '/program/today',    label: "Today's Session",  subtitle: 'Pick up where you left off', exact: true  },
-                { href: '/journal',          label: 'Reflection',       subtitle: 'Tell the truth',             exact: false },
-                { href: '/program/progress', label: 'My Progress',      subtitle: 'Your journey so far',        exact: true  },
-              ].map((item) => {
-                const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href)
-                return (
-                  <button
-                    key={item.href}
-                    onClick={() => navigate(item.href)}
-                    style={{
-                      width: '100%',
-                      display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px',
-                      padding: '12px 20px',
-                      background: isActive ? 'rgba(61,48,128,0.06)' : 'transparent',
-                      border: 'none', cursor: 'pointer', textAlign: 'left',
-                      borderLeft: isActive ? `3px solid ${PURPLE}` : '3px solid transparent',
-                    }}
-                  >
-                    <span style={{ fontSize: '14px', fontWeight: 500, fontFamily: 'var(--font-body)', color: isActive ? PURPLE : 'var(--ink)' }}>
+        {/* Main nav */}
+        <nav style={{ flex: 1 }}>
+          {navItems.map((item) => {
+            const active = isActive(item.href, pathname, item.exact)
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onClose}
+                style={{ textDecoration: 'none', display: 'block' }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    margin: '1px 8px',
+                    backgroundColor: active ? accentPale : 'transparent',
+                    color: active ? accent : 'var(--text-soft)',
+                    transition: 'background-color 0.15s ease, color 0.15s ease',
+                  }}
+                >
+                  <span style={{ flexShrink: 0 }}><Icon /></span>
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: active ? 600 : 500, fontFamily: 'var(--font-body)', lineHeight: 1.2 }}>
                       {item.label}
-                    </span>
-                    <span style={{ fontSize: '11px', fontFamily: 'var(--font-body)', color: 'var(--text-muted)' }}>
+                    </div>
+                    <div style={{ fontSize: '10px', color: active ? accentDim : 'var(--text-muted)', fontFamily: 'var(--font-body)', lineHeight: 1.3, marginTop: '2px' }}>
                       {item.subtitle}
-                    </span>
-                  </button>
-                )
-              })}
-              <div style={{ margin: '12px 20px', borderTop: '1px solid var(--line)' }} />
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            )
+          })}
+
+          {/* Mode switch button */}
+          <div style={{ padding: '0 8px', marginTop: '16px' }}>
+            <div style={{ borderTop: '1px solid var(--line)', marginBottom: '12px' }} />
+            {isWork ? (
               <button
                 onClick={() => { setSidebarMode('cards'); navigate('/dashboard') }}
                 style={{
-                  width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '12px 20px', background: 'transparent', border: 'none', cursor: 'pointer',
+                  width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
+                  padding: '10px 12px', borderRadius: '8px',
+                  background: GREEN_PALE, border: '1px solid rgba(26,82,48,0.15)',
+                  cursor: 'pointer', textAlign: 'left',
                 }}
               >
-                <span style={{ fontSize: '13px', fontFamily: 'var(--font-body)', color: 'var(--text-soft)' }}>← Switch to 365 Days</span>
+                <span style={{ color: GREEN, flexShrink: 0 }}>
+                  <CardsIcon />
+                </span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', color: 'var(--ink)', lineHeight: 1.2 }}>365 Days</div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', lineHeight: 1.3, marginTop: '2px' }}>← Switch to Daily Cards</div>
+                </div>
               </button>
-            </>
-          ) : (
-            /* ── 365 Days nav ── */
-            <>
-              {navItems.map((item) => {
-                const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
-                return (
-                  <button
-                    key={item.href}
-                    onClick={() => navigate(item.href)}
-                    style={{
-                      width: '100%',
-                      display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px',
-                      padding: '12px 20px',
-                      background: isActive ? 'var(--green-pale)' : 'transparent',
-                      border: 'none', cursor: 'pointer', textAlign: 'left',
-                      borderLeft: isActive ? '3px solid var(--green)' : '3px solid transparent',
-                    }}
-                  >
-                    <span style={{ fontSize: '14px', fontWeight: 500, fontFamily: 'var(--font-body)', color: isActive ? 'var(--green)' : 'var(--ink)' }}>
-                      {item.label}
-                    </span>
-                    <span style={{ fontSize: '11px', fontFamily: 'var(--font-body)', color: isActive ? 'var(--green-dim)' : 'var(--text-muted)' }}>
-                      {item.subtitle}
-                    </span>
-                  </button>
-                )
-              })}
-
-              <div style={{ margin: '12px 20px', borderTop: '1px solid var(--line)' }} />
-              <div style={{ padding: '0 20px 8px', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.18em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
-                Unlockable
-              </div>
-
-              {programUnlocked ? (
-                <button
-                  onClick={() => { setSidebarMode('work'); navigate('/program') }}
-                  style={{
-                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '12px 20px',
-                    background: pathname.startsWith('/program') ? 'rgba(61,48,128,0.06)' : 'transparent',
-                    border: 'none', cursor: 'pointer',
-                    borderLeft: pathname.startsWith('/program') ? `3px solid ${PURPLE}` : '3px solid transparent',
-                  }}
-                >
-                  <span style={{ fontSize: '14px', fontWeight: 500, fontFamily: 'var(--font-body)', color: 'var(--ink)' }}>Seal the Leak</span>
-                  <span style={{ fontSize: '9px', textTransform: 'uppercase', color: PURPLE, fontFamily: 'var(--font-body)', letterSpacing: '0.08em' }}>→ The Work</span>
-                </button>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', opacity: 0.6, cursor: 'not-allowed' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ color: 'var(--gold)' }}><LockIcon /></span>
-                    <span style={{ fontSize: '14px', fontWeight: 500, fontFamily: 'var(--font-body)', color: 'var(--ink)' }}>Seal the Leak</span>
-                  </div>
-                  <span style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--gold)', fontFamily: 'var(--font-body)', letterSpacing: '0.08em' }}>Path A</span>
+            ) : (
+              <button
+                onClick={() => { setSidebarMode('work'); navigate('/program') }}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
+                  padding: '10px 12px', borderRadius: '8px',
+                  background: PURPLE_PALE, border: '1px solid rgba(61,48,128,0.15)',
+                  cursor: 'pointer', textAlign: 'left',
+                }}
+              >
+                <span style={{ color: PURPLE, flexShrink: 0 }}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 2a6 6 0 016 6v2l1 2H1l1-2V8a6 6 0 016-6z"/><path d="M6.5 14a1.5 1.5 0 003 0"/>
+                  </svg>
+                </span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', color: 'var(--ink)', lineHeight: 1.2 }}>Seal the Leak</div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', lineHeight: 1.3, marginTop: '2px' }}>→ Switch to The Work</div>
                 </div>
-              )}
-
-              {vaultUnlocked ? (
-                <button
-                  onClick={() => navigate('/vault')}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', padding: '12px 20px', background: 'transparent', border: 'none', cursor: 'pointer', borderLeft: '3px solid transparent' }}
-                >
-                  <span style={{ fontSize: '14px', fontWeight: 500, fontFamily: 'var(--font-body)', color: 'var(--ink)' }}>The Vault</span>
-                </button>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', opacity: 0.5, cursor: 'not-allowed' }}>
-                  <span style={{ fontSize: '14px', fontFamily: 'var(--font-body)', color: 'var(--text-muted)' }}>🔒 The Vault</span>
-                  <span style={{ fontSize: '10px', fontFamily: 'var(--font-body)', color: 'var(--text-muted)' }}>Day 30</span>
-                </div>
-              )}
-            </>
-          )}
+              </button>
+            )}
+          </div>
         </nav>
 
-        {/* Bottom actions */}
-        <div style={{ padding: '16px 20px', borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <button
-            onClick={() => navigate('/journal/new')}
-            style={{
-              width: '100%',
-              backgroundColor: isWork ? PURPLE : 'var(--green)',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '10px 16px',
-              fontSize: '13px',
-              fontWeight: 500,
-              fontFamily: 'var(--font-body)',
-              cursor: 'pointer',
-            }}
+        {/* Bottom — New Journal Entry + Settings + Sign Out */}
+        <div style={{ padding: '0 20px 32px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {/* Vault (cards mode only) */}
+          {!isWork && (
+            vaultUnlocked ? (
+              <Link
+                href="/vault"
+                onClick={onClose}
+                style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 4px', fontSize: '12px', fontFamily: 'var(--font-body)', color: 'var(--text-soft)' }}
+              >
+                The Vault →
+              </Link>
+            ) : (
+              <div style={{ padding: '4px', fontSize: '12px', fontFamily: 'var(--font-body)', color: 'var(--text-muted)', opacity: 0.6 }}>
+                🔒 The Vault <span style={{ fontSize: '10px' }}>(Day 30)</span>
+              </div>
+            )
+          )}
+
+          {/* New Journal Entry */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => navigate('/journal/new')}
+              style={{
+                width: '100%',
+                backgroundColor: accent,
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '10px 16px',
+                fontSize: '13px',
+                fontWeight: 500,
+                fontFamily: 'var(--font-body)',
+                cursor: 'pointer',
+                textAlign: 'center',
+              }}
+            >
+              New Journal Entry
+            </button>
+            <div style={{ position: 'absolute', top: '-3px', right: '-3px', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--red)', border: `1.5px solid ${bgColor}`, pointerEvents: 'none' }} />
+          </div>
+
+          {/* Settings */}
+          <Link
+            href="/settings"
+            onClick={onClose}
+            style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 4px', fontSize: '12px', fontFamily: 'var(--font-body)', color: 'var(--text-soft)' }}
           >
-            New Journal Entry
-          </button>
-          <button
-            onClick={() => navigate('/settings')}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', fontFamily: 'var(--font-body)', color: 'var(--text-soft)', textAlign: 'left', padding: 0 }}
-          >
+            <GearIcon />
             Settings
-          </button>
+          </Link>
+
+          {/* Sign Out */}
           <button
             onClick={() => { onClose(); router.push('/') }}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', fontFamily: 'var(--font-body)', color: 'var(--red)', textAlign: 'left', padding: 0 }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', padding: '0', textAlign: 'left' }}
           >
             Sign Out
           </button>

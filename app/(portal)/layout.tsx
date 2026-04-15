@@ -5,6 +5,7 @@ import SidebarWork from '@/components/layout/SidebarWork'
 import Topbar from '@/components/layout/Topbar'
 import MobileNav from '@/components/layout/MobileNav'
 import MobileDrawer from '@/components/layout/MobileDrawer'
+import PageTransition from '@/components/layout/PageTransition'
 import { useApp } from '@/context/AppContext'
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
@@ -26,9 +27,9 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
             width: '100%',
           }}
         >
-          <div className="fade-in">
+          <PageTransition>
             {children}
-          </div>
+          </PageTransition>
         </main>
       </div>
       <MobileNav />
