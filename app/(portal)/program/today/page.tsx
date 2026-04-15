@@ -217,16 +217,10 @@ export default function TodaysSessionPage() {
   return (
     <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
 
-      {/* ── Top strip: breadcrumb left, day dots right ── */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '16px',
-        marginBottom: '20px',
-        flexWrap: 'wrap',
-      }}>
-        {/* Breadcrumb */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+      {/* ── Top strip: breadcrumb + day dots ── */}
+      <div style={{ marginBottom: '20px' }}>
+        {/* Row 1: breadcrumb */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
           <Link
             href="/program"
             style={{ fontSize: '12px', color: 'var(--text-muted)', textDecoration: 'none', fontFamily: 'var(--font-body)' }}
@@ -241,11 +235,9 @@ export default function TodaysSessionPage() {
           </span>
         </div>
 
-        {/* Spacer */}
-        <div style={{ flex: 1 }} />
-
-        {/* Day dots */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        {/* Row 2: day dots — scrollable on mobile */}
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 'max-content' }}>
           {route.days.map((d) => {
             const isAvailable = isAdminMode || d.day <= currentDay
             const isActive    = viewingDay === d.day
@@ -284,6 +276,7 @@ export default function TodaysSessionPage() {
             ) : null}
           </div>
         </div>
+        </div>{/* end scroll wrapper */}
       </div>
 
       {/* ── Day title row ── */}
@@ -303,7 +296,7 @@ export default function TodaysSessionPage() {
       </div>
 
       {/* ── Two-column main layout ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '20px', alignItems: 'start' }}>
+      <div className="two-col-grid" style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '20px', alignItems: 'start' }}>
 
         {/* LEFT: context column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -366,7 +359,7 @@ export default function TodaysSessionPage() {
               <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 8px' }}>
                 What you&apos;ve proven
               </p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div className="two-col-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 {day.proofs.map((proof) => (
                   <div key={proof.label} style={{ background: 'white', border: '1px solid var(--line)', borderRadius: '8px', padding: '10px 12px' }}>
                     <p style={{ fontSize: '10px', fontWeight: 500, color: route.color, margin: '0 0 4px', fontFamily: 'var(--font-body)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{proof.label}</p>

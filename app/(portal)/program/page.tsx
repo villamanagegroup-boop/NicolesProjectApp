@@ -27,7 +27,7 @@ export default function ProgramOverviewPage() {
     <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
 
       {/* Two-column grid */}
-      <div style={{
+      <div className="two-col-grid" style={{
         display: 'grid',
         gridTemplateColumns: '340px 1fr',
         gap: '24px',

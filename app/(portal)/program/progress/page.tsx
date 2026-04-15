@@ -146,7 +146,7 @@ function DayCard({ dayData, color, isCompleted }: { dayData: ProgramDay; color: 
         </div>
 
         {/* Prompt + Action */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+        <div className="two-col-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
           <div style={{ background: 'var(--paper2)', borderRadius: '8px', padding: '14px' }}>
             <p style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 6px', fontFamily: 'var(--font-body)' }}>
               Today&apos;s prompt
@@ -270,7 +270,7 @@ export default function MyProgressPage() {
     <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
 
       {/* Two-column grid */}
-      <div style={{
+      <div className="two-col-grid" style={{
         display: 'grid',
         gridTemplateColumns: '340px 1fr',
         gap: '24px',
