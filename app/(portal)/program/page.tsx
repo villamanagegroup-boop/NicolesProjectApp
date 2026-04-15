@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react'
+import React from 'react'
 import Link from 'next/link'
 import { useApp } from '@/context/AppContext'
 import { programRoutes, archetypeToRoute } from '@/data/sealTheLeakProgram'
@@ -11,21 +11,17 @@ const PHASE_COLOR: Record<string, string> = {
   Identity:     'var(--ink)',
 }
 
-const ROUTE_ORDER = ['door', 'throne', 'engine', 'push'] as const
-
 export default function ProgramOverviewPage() {
-  const { user, dayNumber } = useApp()
+  const { user, dayNumber, adminProgramDay, adminArchetype } = useApp()
 
-  const userRouteId = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
-  const [adminRouteId, setAdminRouteId] = useState<string | null>(null)
-  const [adminOpen, setAdminOpen] = useState(false)
-
-  const routeId     = adminRouteId ?? userRouteId
+  const routeId     = adminArchetype ?? (archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door')
   const route       = programRoutes[routeId]
-  const currentDay  = Math.min(dayNumber, 7)
-  const completedDays = currentDay - 1
-  const isFirstDay  = currentDay === 1
-  const completedData = route.days.filter(d => d.day < currentDay)
+  // In admin mode all 7 days are fully unlocked
+  const isAdminMode   = adminProgramDay !== null || adminArchetype !== null
+  const currentDay    = isAdminMode ? 7 : Math.min(dayNumber, 7)
+  const completedDays = isAdminMode ? 7 : currentDay - 1
+  const isFirstDay    = !isAdminMode && currentDay === 1
+  const completedData = isAdminMode ? route.days : route.days.filter(d => d.day < currentDay)
 
   return (
     <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
@@ -106,111 +102,6 @@ export default function ProgramOverviewPage() {
             </div>
             <span style={{ fontSize: '20px' }}>→</span>
           </Link>
-
-          {/* Admin route switcher */}
-          <div>
-            <button
-              onClick={() => setAdminOpen(o => !o)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontSize: '11px',
-                fontWeight: 500,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                color: adminOpen ? 'var(--ink)' : 'var(--text-muted)',
-                background: adminOpen ? 'var(--paper2)' : 'transparent',
-                border: '1px solid var(--line)',
-                borderRadius: '6px',
-                padding: '6px 12px',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-body)',
-                transition: 'all 0.15s',
-                width: '100%',
-              }}
-            >
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="8" cy="8" r="3" />
-                <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" />
-              </svg>
-              Admin — Preview routes
-              {adminRouteId && adminRouteId !== userRouteId && (
-                <span style={{
-                  marginLeft: '4px',
-                  width: '8px', height: '8px',
-                  borderRadius: '50%',
-                  background: programRoutes[adminRouteId].color,
-                  display: 'inline-block',
-                  flexShrink: 0,
-                }} />
-              )}
-            </button>
-
-            {adminOpen && (
-              <div style={{
-                marginTop: '8px',
-                padding: '14px',
-                background: 'var(--paper2)',
-                border: '1px solid var(--line)',
-                borderRadius: '10px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-              }}>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                  Viewing as archetype
-                </p>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  <button
-                    onClick={() => setAdminRouteId(null)}
-                    style={{
-                      padding: '5px 10px',
-                      borderRadius: '6px',
-                      border: adminRouteId === null ? '2px solid var(--ink)' : '1px solid var(--line-md)',
-                      background: adminRouteId === null ? 'var(--ink)' : 'white',
-                      color: adminRouteId === null ? 'white' : 'var(--text-soft)',
-                      fontSize: '11px',
-                      fontWeight: 500,
-                      fontFamily: 'var(--font-body)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Your route
-                  </button>
-                  {ROUTE_ORDER.map((id) => {
-                    const r = programRoutes[id]
-                    const isActive = adminRouteId === id
-                    const isUser   = id === userRouteId
-                    return (
-                      <button
-                        key={id}
-                        onClick={() => setAdminRouteId(id)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          padding: '5px 10px',
-                          borderRadius: '6px',
-                          border: isActive ? `2px solid ${r.color}` : '1px solid var(--line-md)',
-                          background: isActive ? `${r.color}12` : 'white',
-                          color: isActive ? r.color : 'var(--text-soft)',
-                          fontSize: '11px',
-                          fontWeight: isActive ? 600 : 500,
-                          fontFamily: 'var(--font-body)',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: r.color, flexShrink: 0 }} />
-                        {r.name}
-                        {isUser && <span style={{ fontSize: '9px', color: r.color, opacity: 0.7 }}>← yours</span>}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
 
           {/* Route identity card */}
           <div style={{

@@ -76,6 +76,11 @@ interface AppContextValue {
   // Sidebar mode
   sidebarMode: 'cards' | 'work'
   setSidebarMode: (mode: 'cards' | 'work') => void
+  // Admin program overrides
+  adminProgramDay: number | null
+  setAdminProgramDay: (day: number | null) => void
+  adminArchetype: string | null
+  setAdminArchetype: (archetype: string | null) => void
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -93,6 +98,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [dailyReminders, setDailyReminders] = useState(true)
   const [sidebarMode, setSidebarMode] = useState<'cards' | 'work'>('cards')
+  const [adminProgramDay, setAdminProgramDay] = useState<number | null>(null)
+  const [adminArchetype, setAdminArchetype] = useState<string | null>(null)
 
   // On mount, read today's check-in from localStorage
   useEffect(() => {
@@ -184,6 +191,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setDailyReminders,
     sidebarMode,
     setSidebarMode,
+    adminProgramDay,
+    setAdminProgramDay,
+    adminArchetype,
+    setAdminArchetype,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

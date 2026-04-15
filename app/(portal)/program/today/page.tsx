@@ -162,24 +162,35 @@ function PromptItems({
 }
 
 export default function TodaysSessionPage() {
-  const { user, dayNumber } = useApp()
+  const { user, dayNumber, adminProgramDay, adminArchetype } = useApp()
   const searchParams = useSearchParams()
 
-  const routeId = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
+  const baseRouteId = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
+  const routeId = adminArchetype ?? baseRouteId
   const route   = programRoutes[routeId]
-  const currentDay = Math.min(dayNumber, 7)
 
-  const paramDay = searchParams ? Number(searchParams.get('day')) : 0
-  const initialDay = paramDay >= 1 && paramDay <= currentDay ? paramDay : currentDay
+  // In admin mode (any override active) all 7 days are unlocked
+  const isAdminMode = adminProgramDay !== null || adminArchetype !== null
+  const currentDay  = isAdminMode ? 7 : Math.min(dayNumber, 7)
+
+  const paramDay   = searchParams ? Number(searchParams.get('day')) : 0
+  const initialDay = isAdminMode && adminProgramDay
+    ? adminProgramDay
+    : paramDay >= 1 && paramDay <= currentDay ? paramDay : currentDay
 
   const [viewingDay, setViewingDay] = useState(initialDay)
   const [sealedDays, setSealedDays] = useState<Set<number>>(new Set())
+
+  // Sync viewingDay when admin picks a specific day
+  useEffect(() => {
+    if (adminProgramDay !== null) setViewingDay(adminProgramDay)
+  }, [adminProgramDay])
 
   const day = route.days[viewingDay - 1]
   if (!day) return null
 
   const isDay7     = day.day === 7
-  const isToday    = viewingDay === currentDay
+  const isToday    = !isAdminMode && viewingDay === currentDay
   const isPast     = viewingDay < currentDay
   const isSealed   = sealedDays.has(viewingDay)
 
@@ -236,7 +247,7 @@ export default function TodaysSessionPage() {
         {/* Day dots */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           {route.days.map((d) => {
-            const isAvailable = d.day <= currentDay
+            const isAvailable = isAdminMode || d.day <= currentDay
             const isActive    = viewingDay === d.day
             const isDone      = d.day < currentDay
             return (

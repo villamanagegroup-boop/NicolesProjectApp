@@ -3,6 +3,7 @@ import React from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
+import { programRoutes } from '@/data/sealTheLeakProgram'
 
 // Deep purple accent — stays consistent throughout this sidebar
 const PURPLE = '#3D3080'
@@ -81,7 +82,10 @@ function isItemActive(href: string, pathname: string, exact?: boolean): boolean 
 export default function SidebarWork() {
   const pathname = usePathname()
   const router   = useRouter()
-  const { setSidebarMode } = useApp()
+  const { setSidebarMode, adminProgramDay, setAdminProgramDay, adminArchetype, setAdminArchetype } = useApp()
+  const [adminOpen, setAdminOpen] = React.useState(false)
+
+  const ROUTE_ORDER = ['door', 'throne', 'engine', 'push'] as const
 
   return (
     <aside
@@ -217,8 +221,183 @@ export default function SidebarWork() {
         </div>
       </nav>
 
+      {/* Admin panel */}
+      <div style={{ padding: '0 8px', marginTop: '8px' }}>
+        <div style={{ borderTop: '1px solid var(--line)', marginBottom: '8px' }} />
+        <button
+          onClick={() => setAdminOpen(o => !o)}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 12px',
+            borderRadius: '8px',
+            background: adminOpen ? 'rgba(61,48,128,0.06)' : 'transparent',
+            border: '1px solid ' + (adminOpen ? 'rgba(61,48,128,0.2)' : 'var(--line)'),
+            cursor: 'pointer',
+            fontFamily: 'var(--font-body)',
+            transition: 'all 0.15s',
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke={adminOpen ? PURPLE : 'var(--text-muted)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="8" cy="8" r="3" />
+            <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" />
+          </svg>
+          <span style={{ fontSize: '11px', fontWeight: 500, color: adminOpen ? PURPLE : 'var(--text-muted)', letterSpacing: '0.07em', textTransform: 'uppercase', flex: 1, textAlign: 'left' }}>
+            Admin Preview
+          </span>
+          {(adminProgramDay !== null || adminArchetype !== null) && (
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: PURPLE, flexShrink: 0 }} />
+          )}
+          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{adminOpen ? '▲' : '▼'}</span>
+        </button>
+
+        {adminOpen && (
+          <div style={{
+            marginTop: '8px',
+            padding: '14px',
+            background: 'rgba(61,48,128,0.04)',
+            border: '1px solid rgba(61,48,128,0.15)',
+            borderRadius: '10px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px',
+          }}>
+
+            {/* Archetype / Route selector */}
+            <div>
+              <p style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 8px', fontFamily: 'var(--font-body)' }}>
+                Archetype / Route
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <button
+                  onClick={() => setAdminArchetype(null)}
+                  style={{
+                    padding: '6px 10px',
+                    borderRadius: '6px',
+                    border: adminArchetype === null ? `1.5px solid ${PURPLE}` : '1px solid var(--line)',
+                    background: adminArchetype === null ? `${PURPLE}10` : 'white',
+                    color: adminArchetype === null ? PURPLE : 'var(--text-soft)',
+                    fontSize: '11px',
+                    fontWeight: adminArchetype === null ? 600 : 400,
+                    fontFamily: 'var(--font-body)',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                >
+                  Default (user&apos;s route)
+                </button>
+                {ROUTE_ORDER.map((id) => {
+                  const r = programRoutes[id]
+                  const active = adminArchetype === id
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => setAdminArchetype(id)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '6px 10px',
+                        borderRadius: '6px',
+                        border: active ? `1.5px solid ${r.color}` : '1px solid var(--line)',
+                        background: active ? `${r.color}10` : 'white',
+                        color: active ? r.color : 'var(--text-soft)',
+                        fontSize: '11px',
+                        fontWeight: active ? 600 : 400,
+                        fontFamily: 'var(--font-body)',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: r.color, flexShrink: 0 }} />
+                      {r.name}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Day selector */}
+            <div>
+              <p style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 4px', fontFamily: 'var(--font-body)' }}>
+                View Day (all unlocked in admin)
+              </p>
+              <p style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 8px', lineHeight: 1.4 }}>
+                Pick which day&apos;s content to display
+              </p>
+              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => setAdminProgramDay(null)}
+                  style={{
+                    padding: '5px 8px',
+                    borderRadius: '5px',
+                    border: adminProgramDay === null ? `1.5px solid ${PURPLE}` : '1px solid var(--line)',
+                    background: adminProgramDay === null ? `${PURPLE}10` : 'white',
+                    color: adminProgramDay === null ? PURPLE : 'var(--text-soft)',
+                    fontSize: '10px',
+                    fontWeight: adminProgramDay === null ? 600 : 400,
+                    fontFamily: 'var(--font-body)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Current
+                </button>
+                {[1,2,3,4,5,6,7].map((d) => {
+                  const active = adminProgramDay === d
+                  return (
+                    <button
+                      key={d}
+                      onClick={() => setAdminProgramDay(d)}
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: '50%',
+                        border: active ? `1.5px solid ${PURPLE}` : '1px solid var(--line)',
+                        background: active ? PURPLE : 'white',
+                        color: active ? 'white' : 'var(--text-soft)',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        fontFamily: 'var(--font-body)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      {d}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Reset */}
+            {(adminProgramDay !== null || adminArchetype !== null) && (
+              <button
+                onClick={() => { setAdminProgramDay(null); setAdminArchetype(null) }}
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--line)',
+                  background: 'white',
+                  color: 'var(--text-muted)',
+                  fontSize: '11px',
+                  fontFamily: 'var(--font-body)',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                }}
+              >
+                ✕ Reset to live defaults
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Bottom — shared */}
-      <div style={{ padding: '0 20px 24px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div style={{ padding: '12px 20px 24px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {/* New Journal Entry */}
         <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
           <button
