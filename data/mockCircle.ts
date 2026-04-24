@@ -10,7 +10,7 @@
 //   • Full teaching content for weeks 1-2 (from circleStarterContent),
 //     skeleton titles for weeks 3-12
 
-import type { CircleMember, WeeklyContent, LiveCall } from '@/lib/circle'
+import type { CircleMember, CirclePost, WeeklyContent, LiveCall } from '@/lib/circle'
 import { CIRCLE_STARTER_CONTENT } from '@/data/circleStarterContent'
 
 const DAY = 86400000
@@ -181,6 +181,188 @@ export function getMockWeekContent(
     personal:  mkRow(personalSeed,  archetype),
   }
 }
+
+// ─── COHORT MEMBER ROSTER (for Community feed authorship) ───────────────────
+
+export const MOCK_COHORT_AUTHORS: Record<string, { name: string; archetype: string }> = {
+  'mock-user-1':        { name: 'You',        archetype: 'door'   }, // viewer
+  'mock-author-jordan': { name: 'Jordan P.',  archetype: 'engine' },
+  'mock-author-maya':   { name: 'Maya T.',    archetype: 'engine' },
+  'mock-author-renee':  { name: 'Renée J.',   archetype: 'push'   },
+  'mock-author-simone': { name: 'Simone K.',  archetype: 'throne' },
+  'mock-author-alicia': { name: 'Alicia W.',  archetype: 'door'   },
+  'mock-author-tamara': { name: 'Tamara B.',  archetype: 'throne' },
+  'mock-author-nicole': { name: 'Nicole',     archetype: 'door'   }, // coach
+}
+
+// ─── COMMUNITY POSTS ────────────────────────────────────────────────────────
+
+function hoursAgo(h: number): string { return new Date(now - h * 3600_000).toISOString() }
+function daysAgo(d: number): string  { return new Date(now - d * DAY).toISOString() }
+
+export const MOCK_POSTS: CirclePost[] = [
+  {
+    id: 'mock-post-1',
+    cohort_id: MOCK_COHORT.id,
+    author_id: 'mock-author-nicole',
+    post_type: 'coach_note',
+    week_number: 3,
+    body:
+      "Week 3, Circle. This is the week a lot of you will want to start skipping the Monday voice note. Don't. The practice isn't the content — it's the showing up. Keep it short. Keep it honest.",
+    audio_url: null,
+    created_at: hoursAgo(2),
+    author: { name: 'Nicole', avatar_url: null },
+    reactions: [
+      { emoji: '❤️', count: 5, user_reacted: true },
+      { emoji: '🔥', count: 2, user_reacted: false },
+      { emoji: '💪', count: 3, user_reacted: false },
+    ],
+  },
+  {
+    id: 'mock-post-2',
+    cohort_id: MOCK_COHORT.id,
+    author_id: 'mock-author-renee',
+    post_type: 'wins',
+    week_number: 2,
+    body:
+      "Friday win: said no to a client call that would've run into my kid's pickup. No apology, no long explanation. Just 'I can't do 4pm — how about Tuesday?' Felt weird. Felt right.",
+    audio_url: null,
+    created_at: hoursAgo(18),
+    author: { name: 'Renée J.', avatar_url: null },
+    reactions: [
+      { emoji: '🔥', count: 4, user_reacted: true },
+      { emoji: '👏', count: 3, user_reacted: false },
+    ],
+  },
+  {
+    id: 'mock-post-3',
+    cohort_id: MOCK_COHORT.id,
+    author_id: 'mock-author-simone',
+    post_type: 'monday_prompt',
+    week_number: 3,
+    body:
+      "Monday voice note theme (text version, I couldn't bring myself to record): the pattern I keep spinning on is saying I'll 'decide tomorrow' about things I've already decided. I'm not indecisive — I'm avoiding the part where I tell someone no.",
+    audio_url: null,
+    created_at: daysAgo(1),
+    author: { name: 'Simone K.', avatar_url: null },
+    reactions: [
+      { emoji: '✨', count: 2, user_reacted: false },
+      { emoji: '❤️', count: 1, user_reacted: false },
+    ],
+  },
+  {
+    id: 'mock-post-4',
+    cohort_id: MOCK_COHORT.id,
+    author_id: 'mock-author-maya',
+    post_type: 'general',
+    week_number: 3,
+    body:
+      "Is anyone else finding that naming the pattern out loud actually makes it harder to keep doing? Like — I literally caught myself mid-override this morning and just… stopped. I've never been able to do that before.",
+    audio_url: null,
+    created_at: daysAgo(1),
+    author: { name: 'Maya T.', avatar_url: null },
+    reactions: [
+      { emoji: '❤️', count: 6, user_reacted: true },
+      { emoji: '✨', count: 4, user_reacted: false },
+    ],
+  },
+  {
+    id: 'mock-post-5',
+    cohort_id: MOCK_COHORT.id,
+    author_id: 'mock-author-alicia',
+    post_type: 'wins',
+    week_number: 2,
+    body:
+      "My Friday win: I let my partner handle dinner and the kids' bath without stepping in to 'fix' his version of it. The kids are fine. The kitchen is messier than I'd like. I'm sitting on the couch writing this instead of cleaning.",
+    audio_url: null,
+    created_at: daysAgo(2),
+    author: { name: 'Alicia W.', avatar_url: null },
+    reactions: [
+      { emoji: '👏', count: 7, user_reacted: false },
+      { emoji: '🔥', count: 2, user_reacted: false },
+      { emoji: '💪', count: 1, user_reacted: true },
+    ],
+  },
+  {
+    id: 'mock-post-6',
+    cohort_id: MOCK_COHORT.id,
+    author_id: 'mock-author-tamara',
+    post_type: 'general',
+    week_number: 2,
+    body:
+      "The 'write it, then underline the one sentence that's most true' exercise from week 1 is living in my head rent-free. I keep going back and re-underlining different sentences. I think that's the point.",
+    audio_url: null,
+    created_at: daysAgo(2),
+    author: { name: 'Tamara B.', avatar_url: null },
+    reactions: [
+      { emoji: '✨', count: 3, user_reacted: false },
+    ],
+  },
+  {
+    id: 'mock-post-7',
+    cohort_id: MOCK_COHORT.id,
+    author_id: 'mock-author-jordan',
+    post_type: 'partner_checkin',
+    week_number: 2,
+    body:
+      "Partner check-in going well so far — we agreed to a weekly Wednesday voice exchange instead of daily texts. Already way less overwhelming for both of us.",
+    audio_url: null,
+    created_at: daysAgo(3),
+    author: { name: 'Jordan P.', avatar_url: null },
+    reactions: [
+      { emoji: '❤️', count: 2, user_reacted: true },
+    ],
+  },
+  {
+    id: 'mock-post-8',
+    cohort_id: MOCK_COHORT.id,
+    author_id: 'mock-author-nicole',
+    post_type: 'coach_note',
+    week_number: 1,
+    body:
+      "Reminder: this is a 90-day container, not a sprint. If you miss a check-in or a prompt, don't drop out. Just show up the next day. The pattern you're breaking is the all-or-nothing one too.",
+    audio_url: null,
+    created_at: daysAgo(7),
+    author: { name: 'Nicole', avatar_url: null },
+    reactions: [
+      { emoji: '❤️', count: 8, user_reacted: true },
+      { emoji: '👏', count: 4, user_reacted: false },
+    ],
+  },
+  {
+    id: 'mock-post-9',
+    cohort_id: MOCK_COHORT.id,
+    author_id: 'mock-author-maya',
+    post_type: 'wins',
+    week_number: 1,
+    body:
+      "Small win: I did the 5-minute floor. That's it. Felt silly, like 'this doesn't count.' But I did it four days in a row and that's more consistency than I've had in months.",
+    audio_url: null,
+    created_at: daysAgo(8),
+    author: { name: 'Maya T.', avatar_url: null },
+    reactions: [
+      { emoji: '🔥', count: 5, user_reacted: true },
+      { emoji: '💪', count: 3, user_reacted: false },
+      { emoji: '❤️', count: 2, user_reacted: false },
+    ],
+  },
+  {
+    id: 'mock-post-10',
+    cohort_id: MOCK_COHORT.id,
+    author_id: 'mock-author-simone',
+    post_type: 'general',
+    week_number: 1,
+    body:
+      "Hi everyone — Simone, throne archetype, enneagram 5. I'm here because I've been 'about to start' my business for four years. My 90-day focus is: make decisions without spiraling for days.",
+    audio_url: null,
+    created_at: daysAgo(11),
+    author: { name: 'Simone K.', avatar_url: null },
+    reactions: [
+      { emoji: '❤️', count: 6, user_reacted: false },
+      { emoji: '✨', count: 3, user_reacted: false },
+    ],
+  },
+]
 
 export const MOCK_CALLS: LiveCall[] = [
   {

@@ -1,12 +1,7 @@
-// app/circle/community/page.tsx
-// ─────────────────────────────────────────────────────────────
-// Community feed — wins posts, Monday prompts, general posts.
-// URL: /circle/community
-// ─────────────────────────────────────────────────────────────
 'use client'
-
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabaseClient } from '@/lib/supabase/client'
+import { useApp } from '@/context/AppContext'
 import {
   getMyCircleMember,
   getCommunityPosts,
@@ -16,246 +11,435 @@ import {
   type CirclePost,
   type PostType,
 } from '@/lib/circle'
+import {
+  MOCK_COHORT,
+  MOCK_MEMBER,
+  MOCK_POSTS,
+  MOCK_COHORT_AUTHORS,
+} from '@/data/mockCircle'
 
-const POST_TYPE_LABELS: Record<PostType, string> = {
-  wins:            '🏆 Win',
-  monday_prompt:   '🌅 Monday',
-  partner_checkin: '🤝 Partner',
-  general:         '💬 General',
-  coach_note:      '📣 Coach',
-}
+const ORANGE      = '#C97D3A'
+const ORANGE_PALE = '#fdf6f2'
 
-const POST_TYPE_COLORS: Record<PostType, string> = {
-  wins:            'bg-green-50 text-green-700 border-green-100',
-  monday_prompt:   'bg-amber-50 text-amber-700 border-amber-100',
-  partner_checkin: 'bg-purple-50 text-purple-700 border-purple-100',
-  general:         'bg-gray-50 text-gray-600 border-gray-100',
-  coach_note:      'bg-[#1B4332] text-white border-[#1B4332]',
+const POST_TYPES: { id: PostType; label: string; dot: string }[] = [
+  { id: 'wins',            label: 'Wins',    dot: 'var(--green)'   },
+  { id: 'monday_prompt',   label: 'Monday',  dot: ORANGE           },
+  { id: 'partner_checkin', label: 'Partner', dot: '#7a5cc4'        },
+  { id: 'general',         label: 'General', dot: 'var(--text-muted)' },
+  { id: 'coach_note',      label: 'Coach',   dot: 'var(--ink)'     },
+]
+
+const POST_TYPE_LABEL: Record<PostType, string> = {
+  wins: 'Win', monday_prompt: 'Monday', partner_checkin: 'Partner', general: 'General', coach_note: 'Coach',
 }
 
 const EMOJIS = ['❤️', '🔥', '✨', '👏', '💪']
 
 export default function CommunityPage() {
+  const { loading, isAuthed, effectiveIsAdmin, user } = useApp()
+
   const [posts, setPosts]           = useState<CirclePost[]>([])
   const [cohortId, setCohortId]     = useState<string>('')
   const [weekNumber, setWeekNumber] = useState<number>(1)
-  const [loading, setLoading]       = useState(true)
+  const [hydrating, setHydrating]   = useState(true)
   const [filter, setFilter]         = useState<PostType | 'all'>('all')
+
   const [newBody, setNewBody]       = useState('')
   const [newType, setNewType]       = useState<PostType>('wins')
   const [posting, setPosting]       = useState(false)
   const [showCompose, setShowCompose] = useState(false)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Mock/live split — mock covers unauthed AND admin preview.
+  const useMock = !loading && (!isAuthed || effectiveIsAdmin)
 
   useEffect(() => {
-    async function load() {
-      const member = await getMyCircleMember()
-      if (!member) return
+    if (loading) return
 
+    if (useMock) {
+      setPosts(MOCK_POSTS)
+      setCohortId(MOCK_COHORT.id)
+      const wn = getCurrentWeekNumber(MOCK_COHORT.starts_at)
+      if (wn) setWeekNumber(wn)
+      setHydrating(false)
+      return
+    }
+
+    (async () => {
+      const member = await getMyCircleMember()
+      if (!member) { setHydrating(false); return }
       setCohortId(member.cohort_id)
 
-      // Compute current week for tagging new posts
       const { data: cohort } = await supabaseClient
-        .from('circle_cohorts')
-        .select('starts_at')
-        .eq('id', member.cohort_id)
-        .single()
-
+        .from('circle_cohorts').select('starts_at').eq('id', member.cohort_id).maybeSingle()
       if (cohort) {
         const wn = getCurrentWeekNumber(cohort.starts_at)
         if (wn) setWeekNumber(wn)
       }
+      const data = await getCommunityPosts(member.cohort_id)
+      setPosts(data)
+      setHydrating(false)
+    })()
+  }, [loading, useMock])
 
-      await loadPosts(member.cohort_id)
-      setLoading(false)
-    }
-    load()
-  }, [])
-
-  async function loadPosts(cId?: string) {
-    const id = cId ?? cohortId
-    if (!id) return
-    const data = await getCommunityPosts(
-      id,
-      filter === 'all' ? undefined : filter
-    )
-    setPosts(data)
-  }
-
+  // Re-fetch on filter change (live mode only — mock filters client-side below).
   useEffect(() => {
-    if (cohortId) loadPosts()
-  }, [filter])
+    if (!cohortId || useMock) return
+    (async () => {
+      const data = await getCommunityPosts(cohortId, filter === 'all' ? undefined : filter)
+      setPosts(data)
+    })()
+  }, [filter, cohortId, useMock])
+
+  const visiblePosts = useMemo(() => {
+    if (filter === 'all') return posts
+    return posts.filter(p => p.post_type === filter)
+  }, [posts, filter])
 
   async function handlePost() {
-    if (!newBody.trim() || !cohortId) return
+    if (!newBody.trim()) return
     setPosting(true)
+    if (useMock) {
+      // Optimistic local insert — no persistence.
+      const authorName = user.name || 'You'
+      const local: CirclePost = {
+        id: `local-${Date.now()}`,
+        cohort_id: cohortId || MOCK_COHORT.id,
+        author_id: MOCK_MEMBER.user_id,
+        post_type: newType,
+        week_number: weekNumber,
+        body: newBody.trim(),
+        audio_url: null,
+        created_at: new Date().toISOString(),
+        author: { name: authorName, avatar_url: null },
+        reactions: [],
+      }
+      setPosts(prev => [local, ...prev])
+      setNewBody(''); setShowCompose(false); setPosting(false)
+      return
+    }
+
+    if (!cohortId) { setPosting(false); return }
     const ok = await createPost(cohortId, newType, newBody.trim(), weekNumber)
     if (ok) {
       setNewBody('')
       setShowCompose(false)
-      await loadPosts()
+      const data = await getCommunityPosts(cohortId, filter === 'all' ? undefined : filter)
+      setPosts(data)
     }
     setPosting(false)
   }
 
   async function handleReaction(postId: string, emoji: string) {
+    if (useMock) {
+      // Toggle locally.
+      setPosts(prev => prev.map(p => {
+        if (p.id !== postId) return p
+        const reactions = [...(p.reactions ?? [])]
+        const i = reactions.findIndex(r => r.emoji === emoji)
+        if (i >= 0) {
+          const r = reactions[i]
+          const nextCount = r.user_reacted ? Math.max(0, r.count - 1) : r.count + 1
+          if (nextCount === 0) reactions.splice(i, 1)
+          else reactions[i] = { ...r, count: nextCount, user_reacted: !r.user_reacted }
+        } else {
+          reactions.push({ emoji, count: 1, user_reacted: true })
+        }
+        return { ...p, reactions }
+      }))
+      return
+    }
     await toggleReaction(postId, emoji)
-    await loadPosts()
+    if (cohortId) {
+      const data = await getCommunityPosts(cohortId, filter === 'all' ? undefined : filter)
+      setPosts(data)
+    }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-sm text-gray-400">Loading community...</p>
-      </div>
-    )
+  if (loading || hydrating) {
+    return <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading community…</p>
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-5">
+    <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
-          <p className="text-xs font-bold tracking-widest uppercase text-[#C9A84C]">The Circle</p>
-          <h1 className="text-xl font-bold">Community</h1>
+          <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: ORANGE, margin: '0 0 4px' }}>
+            The Circle
+          </p>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', margin: 0 }}>
+            Community
+          </h1>
         </div>
-        <button
-          onClick={() => setShowCompose(v => !v)}
-          className="bg-[#1B4332] text-white text-xs font-bold px-4 py-2 rounded-xl hover:opacity-90"
-        >
-          + Post
-        </button>
+        {!showCompose && (
+          <button onClick={() => setShowCompose(true)} style={primaryBtn}>+ Post</button>
+        )}
       </div>
 
       {/* Compose */}
       {showCompose && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-3">
-          <div className="flex gap-2 flex-wrap">
-            {(Object.keys(POST_TYPE_LABELS) as PostType[])
-              .filter(t => t !== 'coach_note')
-              .map(t => (
-              <button
-                key={t}
-                onClick={() => setNewType(t)}
-                className={`text-xs font-semibold px-3 py-1 rounded-full border transition-colors ${
-                  newType === t
-                    ? POST_TYPE_COLORS[t]
-                    : 'border-gray-200 text-gray-400'
-                }`}
-              >
-                {POST_TYPE_LABELS[t]}
-              </button>
-            ))}
+        <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 14, padding: 18, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div>
+            <p style={eyebrow}>Post type</p>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {POST_TYPES.filter(t => t.id !== 'coach_note').map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setNewType(t.id)}
+                  style={{
+                    fontSize: 11, fontWeight: 600, padding: '6px 12px',
+                    borderRadius: 999, border: `1px solid ${newType === t.id ? ORANGE : 'var(--line-md)'}`,
+                    background: newType === t.id ? ORANGE_PALE : '#fff',
+                    color: newType === t.id ? ORANGE : 'var(--text-soft)',
+                    cursor: 'pointer', fontFamily: 'inherit',
+                    display: 'flex', alignItems: 'center', gap: 6,
+                  }}
+                >
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: t.dot }} />
+                  {t.label}
+                </button>
+              ))}
+            </div>
           </div>
           <textarea
-            ref={textareaRef}
             value={newBody}
             onChange={e => setNewBody(e.target.value)}
-            placeholder={
-              newType === 'wins'
-                ? "Share your win this week — any size counts..."
-                : newType === 'monday_prompt'
-                ? "Respond to this week's Monday prompt..."
-                : "What's on your mind..."
-            }
+            placeholder={placeholderFor(newType)}
             rows={4}
-            className="w-full border border-gray-100 rounded-xl p-3 text-sm resize-none focus:outline-none focus:border-gray-300 bg-gray-50"
+            style={{
+              width: '100%', padding: '12px 14px',
+              border: '1px solid var(--line-md)', borderRadius: 10,
+              fontSize: 14, lineHeight: 1.6, fontFamily: 'inherit',
+              resize: 'vertical', background: '#fff', color: 'var(--ink)',
+              boxSizing: 'border-box', outline: 'none',
+            }}
+            onFocus={e => { e.currentTarget.style.borderColor = ORANGE }}
+            onBlur={e => { e.currentTarget.style.borderColor = 'var(--line-md)' }}
           />
-          <div className="flex justify-end gap-2">
-            <button
-              onClick={() => setShowCompose(false)}
-              className="text-xs text-gray-400 px-4 py-2"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handlePost}
-              disabled={posting || !newBody.trim()}
-              className="bg-[#1B4332] text-white text-xs font-bold px-5 py-2 rounded-xl disabled:opacity-40"
-            >
-              {posting ? 'Posting...' : 'Post'}
-            </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Tagged to Week {weekNumber}</span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => { setShowCompose(false); setNewBody('') }} style={ghostBtn}>Cancel</button>
+              <button onClick={handlePost} disabled={posting || !newBody.trim()} style={{
+                ...primaryBtn,
+                background: posting || !newBody.trim() ? 'var(--paper3)' : ORANGE,
+                cursor: posting || !newBody.trim() ? 'not-allowed' : 'pointer',
+              }}>
+                {posting ? 'Posting…' : 'Post'}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Filter tabs */}
-      <div className="flex gap-2 flex-wrap">
-        {(['all', ...Object.keys(POST_TYPE_LABELS)] as const).map(f => (
-          <button
-            key={f}
-            onClick={() => setFilter(f as any)}
-            className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors capitalize ${
-              filter === f
-                ? 'bg-gray-900 text-white border-gray-900'
-                : 'border-gray-200 text-gray-400 hover:border-gray-400'
-            }`}
-          >
-            {f === 'all' ? 'All' : POST_TYPE_LABELS[f as PostType]}
-          </button>
+      {/* Filters */}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>All</FilterChip>
+        {POST_TYPES.map(t => (
+          <FilterChip key={t.id} dot={t.dot} active={filter === t.id} onClick={() => setFilter(t.id)}>
+            {t.label}
+          </FilterChip>
         ))}
       </div>
 
       {/* Feed */}
-      <div className="space-y-3">
-        {posts.length === 0 && (
-          <div className="text-center py-12 text-gray-400 text-sm">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {visiblePosts.length === 0 ? (
+          <div style={{
+            textAlign: 'center', padding: '40px 20px',
+            background: '#fff', border: '1px solid var(--line)', borderRadius: 14,
+            color: 'var(--text-muted)', fontSize: 13,
+          }}>
             No posts yet. Be the first to share.
           </div>
-        )}
-        {posts.map(post => (
-          <div key={post.id} className="bg-white border border-gray-200 rounded-2xl p-5">
-            {/* Post header */}
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 rounded-full bg-[#C9A84C] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                {(post.author?.name ?? 'M').charAt(0)}
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold leading-none">
-                  {post.author?.name ?? 'Member'}
-                </p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {new Date(post.created_at).toLocaleDateString('en-US', {
-                    month: 'short', day: 'numeric',
-                  })}
-                </p>
-              </div>
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${POST_TYPE_COLORS[post.post_type]}`}>
-                {POST_TYPE_LABELS[post.post_type]}
-              </span>
-            </div>
-
-            {/* Body */}
-            <p className="text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">
-              {post.body}
-            </p>
-
-            {/* Reactions */}
-            <div className="flex gap-2 flex-wrap mt-3 pt-3 border-t border-gray-50">
-              {EMOJIS.map(emoji => {
-                const r = post.reactions?.find(rx => rx.emoji === emoji)
-                return (
-                  <button
-                    key={emoji}
-                    onClick={() => handleReaction(post.id, emoji)}
-                    className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                      r?.user_reacted
-                        ? 'bg-amber-50 border-amber-200 text-amber-700'
-                        : 'border-gray-100 text-gray-400 hover:border-gray-200'
-                    }`}
-                  >
-                    {emoji}
-                    {r && r.count > 0 && (
-                      <span className="font-semibold">{r.count}</span>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+        ) : visiblePosts.map(post => (
+          <PostCard
+            key={post.id}
+            post={post}
+            onReact={emoji => handleReaction(post.id, emoji)}
+          />
         ))}
       </div>
     </div>
   )
+}
+
+// ─── Sub-components ─────────────────────────────────────────────────────────
+
+function PostCard({ post, onReact }: { post: CirclePost; onReact: (emoji: string) => void }) {
+  const typeMeta = POST_TYPES.find(t => t.id === post.post_type)
+  const isCoach = post.post_type === 'coach_note'
+  const authorName = post.author?.name ?? 'Member'
+  const archetype = MOCK_COHORT_AUTHORS[post.author_id]?.archetype
+
+  return (
+    <div style={{
+      background: isCoach ? ORANGE_PALE : '#fff',
+      border: `1px solid ${isCoach ? ORANGE : 'var(--line)'}`,
+      borderRadius: 14, padding: 20,
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+        <div style={{
+          width: 32, height: 32, borderRadius: '50%',
+          background: isCoach ? ORANGE : avatarColorFor(authorName),
+          color: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 13, fontWeight: 700, flexShrink: 0,
+        }}>
+          {authorName.charAt(0).toUpperCase()}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', margin: 0 }}>
+            {authorName}
+            {isCoach && (
+              <span style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+                color: ORANGE, marginLeft: 8,
+              }}>Coach</span>
+            )}
+          </p>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
+            {relativeTime(post.created_at)}
+            {post.week_number ? ` · Week ${post.week_number}` : ''}
+            {archetype && !isCoach ? ` · ${archetypeShort(archetype)}` : ''}
+          </p>
+        </div>
+        {typeMeta && (
+          <span style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+            padding: '3px 10px', borderRadius: 999,
+            border: '1px solid var(--line-md)',
+            color: typeMeta.dot,
+            display: 'flex', alignItems: 'center', gap: 5,
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: typeMeta.dot }} />
+            {typeMeta.label}
+          </span>
+        )}
+      </div>
+
+      {/* Body */}
+      <p style={{
+        fontSize: 14, lineHeight: 1.7, color: 'var(--text-soft)',
+        whiteSpace: 'pre-wrap', margin: 0,
+      }}>
+        {post.body}
+      </p>
+
+      {/* Reactions */}
+      <div style={{
+        display: 'flex', gap: 6, flexWrap: 'wrap',
+        marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--line)',
+      }}>
+        {EMOJIS.map(emoji => {
+          const r = post.reactions?.find(rx => rx.emoji === emoji)
+          const active = r?.user_reacted ?? false
+          return (
+            <button
+              key={emoji}
+              onClick={() => onReact(emoji)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4,
+                fontSize: 13, padding: '4px 10px', borderRadius: 999,
+                border: `1px solid ${active ? ORANGE : 'var(--line-md)'}`,
+                background: active ? ORANGE_PALE : 'transparent',
+                color: active ? ORANGE : 'var(--text-muted)',
+                cursor: 'pointer', fontFamily: 'inherit',
+                transition: 'all .15s',
+              }}
+            >
+              <span>{emoji}</span>
+              {r && r.count > 0 && <span style={{ fontSize: 11, fontWeight: 600 }}>{r.count}</span>}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function FilterChip({
+  children, active, dot, onClick,
+}: { children: React.ReactNode; active: boolean; dot?: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        fontSize: 11, fontWeight: 600,
+        padding: '6px 12px', borderRadius: 999,
+        border: `1px solid ${active ? ORANGE : 'var(--line-md)'}`,
+        background: active ? ORANGE : '#fff',
+        color: active ? '#fff' : 'var(--text-soft)',
+        cursor: 'pointer', fontFamily: 'inherit',
+        display: 'flex', alignItems: 'center', gap: 5,
+        transition: 'all .15s',
+      }}
+    >
+      {dot && !active && (
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: dot }} />
+      )}
+      {children}
+    </button>
+  )
+}
+
+// ─── Helpers / styles ───────────────────────────────────────────────────────
+
+function placeholderFor(t: PostType): string {
+  switch (t) {
+    case 'wins':            return 'Share your win this week — any size counts…'
+    case 'monday_prompt':   return "Respond to this week's Monday prompt…"
+    case 'partner_checkin': return 'A note from your partner check-in worth sharing…'
+    case 'general':         return "What's on your mind…"
+    case 'coach_note':      return 'A note to the cohort…'
+  }
+}
+
+function archetypeShort(a: string): string {
+  return ({ door: 'Open Door', throne: 'Throne', engine: 'Engine', push: 'Pushthrough' } as Record<string, string>)[a] ?? a
+}
+
+function avatarColorFor(name: string): string {
+  const palette = ['#1B4332', '#7a4800', '#3c2a8a', '#7B1D1D', '#3d2c0e', '#1a1a2e', ORANGE, '#2d7a52']
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0
+  return palette[Math.abs(hash) % palette.length]
+}
+
+function relativeTime(iso: string): string {
+  const then = new Date(iso).getTime()
+  const diff = Date.now() - then
+  const m = Math.floor(diff / 60_000)
+  const h = Math.floor(diff / 3_600_000)
+  const d = Math.floor(diff / 86_400_000)
+  if (m < 1) return 'just now'
+  if (m < 60) return `${m}m ago`
+  if (h < 24) return `${h}h ago`
+  if (d < 7)  return `${d}d ago`
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+const eyebrow: React.CSSProperties = {
+  fontSize: 10, fontWeight: 700,
+  letterSpacing: '0.12em', textTransform: 'uppercase',
+  color: 'var(--text-muted)',
+  margin: '0 0 8px',
+}
+
+const primaryBtn: React.CSSProperties = {
+  background: ORANGE, color: '#fff',
+  padding: '8px 16px', borderRadius: 10,
+  fontSize: 12, fontWeight: 600,
+  border: 'none', cursor: 'pointer',
+  fontFamily: 'inherit',
+}
+
+const ghostBtn: React.CSSProperties = {
+  background: '#fff', border: '1px solid var(--line-md)',
+  color: 'var(--text-soft)',
+  padding: '8px 16px', borderRadius: 10,
+  fontSize: 12, fontWeight: 600,
+  cursor: 'pointer', fontFamily: 'inherit',
 }
