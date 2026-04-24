@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { useApp } from '@/context/AppContext'
 import {
   getMyCircleMember,
   getWeekContent,
@@ -8,6 +9,7 @@ import {
   markWeekComplete,
   type WeeklyContent,
 } from '@/lib/circle'
+import { MOCK_MEMBER, MOCK_PROGRESS, getMockWeekContent } from '@/data/mockCircle'
 
 const ORANGE      = '#C97D3A'
 const ORANGE_DEEP = '#a66128'
@@ -29,6 +31,7 @@ const ARCHETYPE_LABELS: Record<string, string> = {
 export default function WeekPage() {
   const params = useParams()
   const router = useRouter()
+  const { isAuthed } = useApp()
   const weekNum = parseInt(params.week as string, 10)
 
   const [universal, setUniversal]         = useState<WeeklyContent | null>(null)
@@ -46,6 +49,21 @@ export default function WeekPage() {
       router.push('/circle')
       return
     }
+
+    // Unauthed preview — render from mock data.
+    if (!isAuthed) {
+      setMemberId(MOCK_MEMBER.id)
+      setArchetype(MOCK_MEMBER.archetype)
+      const content = getMockWeekContent(weekNum, MOCK_MEMBER.archetype)
+      setUniversal(content.universal)
+      setPersonal(content.personal)
+      const weekProg = MOCK_PROGRESS.find(p => p.week_number === weekNum)
+      setProgress(weekProg ?? null)
+      if (weekProg?.journal_entry) setJournalText(weekProg.journal_entry)
+      setLoading(false)
+      return
+    }
+
     (async () => {
       const member = await getMyCircleMember()
       if (!member) { router.push('/circle'); return }
@@ -67,11 +85,17 @@ export default function WeekPage() {
 
       setLoading(false)
     })()
-  }, [weekNum, router])
+  }, [weekNum, router, isAuthed])
 
   async function handleMarkComplete(field: 'journal_completed' | 'action_completed') {
     if (!memberId) return
     setSaving(true)
+    // Unauthed preview — flip the flag locally only.
+    if (!isAuthed) {
+      setProgress((prev: any) => ({ ...(prev ?? {}), [field]: true, week_number: weekNum }))
+      setSaving(false)
+      return
+    }
     const ok = await markWeekComplete(
       memberId,
       weekNum,

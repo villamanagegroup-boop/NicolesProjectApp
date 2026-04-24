@@ -15,6 +15,14 @@ import {
   type WeeklyContent,
   type LiveCall,
 } from '@/lib/circle'
+import {
+  MOCK_COHORT,
+  MOCK_MEMBER,
+  MOCK_PARTNER,
+  MOCK_WEEKS_OVERVIEW,
+  MOCK_PROGRESS,
+  MOCK_CALLS,
+} from '@/data/mockCircle'
 
 const ORANGE      = '#C97D3A'
 const ORANGE_DEEP = '#a66128'
@@ -46,7 +54,18 @@ export default function CirclePage() {
 
   useEffect(() => {
     if (loading) return
-    if (!isAuthed) { setState({ kind: 'loading' }); return }
+
+    // Unauthed preview — render the full Circle experience from mock data.
+    if (!isAuthed) {
+      setState({ kind: 'ready', member: MOCK_MEMBER })
+      setPartner(MOCK_PARTNER)
+      setWeeks(MOCK_WEEKS_OVERVIEW)
+      setProgress(MOCK_PROGRESS)
+      setCalls(MOCK_CALLS)
+      setCurrentWeek(getCurrentWeekNumber(MOCK_COHORT.starts_at))
+      return
+    }
+
     if (!effectiveIsAdmin && effectivePath !== 'C') return // layout will redirect
 
     (async () => {

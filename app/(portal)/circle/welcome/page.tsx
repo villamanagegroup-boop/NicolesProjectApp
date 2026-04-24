@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabaseClient } from '@/lib/supabase/client'
 import { useApp } from '@/context/AppContext'
 import { getMyCircleMember, getLiveCalls, type CircleMember, type LiveCall } from '@/lib/circle'
+import { MOCK_COHORT, MOCK_MEMBER, MOCK_CALLS, MOCK_MEMBER_COUNT } from '@/data/mockCircle'
 
 const ORANGE      = '#C97D3A'
 const ORANGE_PALE = '#fdf6f2'
@@ -28,7 +29,18 @@ export default function CircleWelcomePage() {
   const [hydrating, setHydrating] = useState(true)
 
   useEffect(() => {
-    if (loading || !isAuthed) return
+    if (loading) return
+
+    // Unauthed preview — render from mock cohort.
+    if (!isAuthed) {
+      setMember(MOCK_MEMBER)
+      setCohort({ name: MOCK_COHORT.name, starts_at: MOCK_COHORT.starts_at, ends_at: MOCK_COHORT.ends_at })
+      setNextCall(MOCK_CALLS.find(c => new Date(c.scheduled_at) > new Date()) ?? null)
+      setMemberCount(MOCK_MEMBER_COUNT)
+      setHydrating(false)
+      return
+    }
+
     if (!effectiveIsAdmin && effectivePath !== 'C') { router.replace('/dashboard'); return }
 
     (async () => {
