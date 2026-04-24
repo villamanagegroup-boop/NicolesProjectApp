@@ -377,34 +377,6 @@ function SignupForm() {
             ← Pick a different journey
           </Link>
         </div>
-
-        {/* Admin shortcut */}
-        <div style={{
-          marginTop: '16px',
-          textAlign: 'center',
-        }}>
-          <Link
-            href="/onboarding"
-            style={{
-              fontSize: '11px',
-              color: 'var(--text-muted)',
-              fontFamily: 'var(--font-body)',
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 12px',
-              border: '1px dashed var(--line-md)',
-              borderRadius: '6px',
-              letterSpacing: '0.05em',
-              opacity: 0.6,
-            }}
-            onMouseOver={(e) => { (e.currentTarget as HTMLAnchorElement).style.opacity = '1' }}
-            onMouseOut={(e) => { (e.currentTarget as HTMLAnchorElement).style.opacity = '0.6' }}
-          >
-            ⚙ Admin: Preview Onboarding Assessment
-          </Link>
-        </div>
       </div>
 
       <style>{`

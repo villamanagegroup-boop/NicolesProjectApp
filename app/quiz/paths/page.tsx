@@ -103,35 +103,6 @@ export default function QuizPathsPage() {
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 40px' }}>
             🔒 Secure checkout via Stripe
           </p>
-
-          <a
-            href="/dashboard"
-            aria-label="Enter admin portal"
-            style={{
-              display: 'inline-block',
-              fontSize: '11px',
-              letterSpacing: '1px',
-              textTransform: 'uppercase',
-              color: 'var(--text-muted)',
-              textDecoration: 'none',
-              border: '1px solid var(--line-md)',
-              borderRadius: '4px',
-              padding: '8px 16px',
-              fontFamily: 'var(--font-body)',
-              fontWeight: 500,
-              transition: 'color 0.15s, border-color 0.15s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.color = 'var(--ink)'
-              e.currentTarget.style.borderColor = 'rgba(12,12,10,0.3)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.color = 'var(--text-muted)'
-              e.currentTarget.style.borderColor = 'var(--line-md)'
-            }}
-          >
-            Admin →
-          </a>
         </div>
       </div>
 

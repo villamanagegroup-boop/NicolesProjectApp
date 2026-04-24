@@ -245,8 +245,19 @@ export default function AdminCirclePage() {
   if (!isAuthed || !user.isAdmin) {
     return (
       <PageShell>
-        <p style={{ color: 'var(--text-muted)' }}>This page is admin-only.</p>
-        <Link href="/dashboard" style={{ fontSize: 13, color: 'var(--green)' }}>← Back to portal</Link>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, margin: '0 0 12px' }}>
+          Admin-only
+        </h1>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 8 }}>
+          {isAuthed
+            ? <>You&apos;re signed in as <strong>{user.email || user.id}</strong> but your <code>is_admin</code> flag is <strong>false</strong>.</>
+            : <>You&apos;re not signed in. The mock fallback user is being used.</>}
+        </p>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 16 }}>
+          To promote yourself, run this in the Supabase SQL editor, then hard-refresh this page:
+        </p>
+        <pre style={{ fontSize: 11, background: '#f5f3ee', padding: '10px 12px', borderRadius: 6, border: '1px solid var(--line)', overflowX: 'auto', fontFamily: 'monospace' }}>{`update public.users set is_admin = true where email = '${user.email || 'your-email@example.com'}';`}</pre>
+        <Link href="/dashboard" style={{ fontSize: 13, color: 'var(--green)', display: 'inline-block', marginTop: 16 }}>← Back to portal</Link>
       </PageShell>
     )
   }

@@ -105,11 +105,9 @@ function isItemActive(href: string, pathname: string, exact?: boolean): boolean 
 export default function Sidebar() {
   const pathname = usePathname()
   const router   = useRouter()
-  const { user, dayNumber, realDayNumber, adminCardDay, setAdminCardDay, setSidebarMode } = useApp()
-  const [adminOpen, setAdminOpen] = React.useState(false)
+  const { user, dayNumber, setSidebarMode } = useApp()
 
   const vaultUnlocked = dayNumber >= 30
-  const quickPicks = [1, 7, 14, 30, 40]
 
   return (
     <aside
@@ -243,8 +241,8 @@ export default function Sidebar() {
             </div>
           </button>
 
-          {/* Path C only — The Circle */}
-          {user.selectedPath === 'C' && (
+          {/* Circle: Path C members + admins */}
+          {(user.selectedPath === 'C' || user.isAdmin) && (
             <button
               onClick={() => { setSidebarMode('circle'); router.push('/circle') }}
               style={{
@@ -279,156 +277,6 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      {/* Admin panel — cards side */}
-      {user.isAdmin && (
-        <div style={{ padding: '0 8px', marginTop: '8px' }}>
-          <div style={{ borderTop: '1px solid var(--line)', marginBottom: '8px' }} />
-          <button
-            onClick={() => setAdminOpen(o => !o)}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 12px',
-              borderRadius: '8px',
-              background: adminOpen ? 'rgba(26,82,48,0.06)' : 'transparent',
-              border: '1px solid ' + (adminOpen ? 'rgba(26,82,48,0.2)' : 'var(--line)'),
-              cursor: 'pointer',
-              fontFamily: 'var(--font-body)',
-              transition: 'all 0.15s',
-            }}
-          >
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke={adminOpen ? GREEN : 'var(--text-muted)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="8" cy="8" r="3" />
-              <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" />
-            </svg>
-            <span style={{ fontSize: '11px', fontWeight: 500, color: adminOpen ? GREEN : 'var(--text-muted)', letterSpacing: '0.07em', textTransform: 'uppercase', flex: 1, textAlign: 'left' }}>
-              Admin Preview
-            </span>
-            {adminCardDay !== null && (
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: GREEN, flexShrink: 0 }} />
-            )}
-            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{adminOpen ? '▲' : '▼'}</span>
-          </button>
-
-          {adminOpen && (
-            <div style={{
-              marginTop: '8px',
-              padding: '14px',
-              background: 'rgba(26,82,48,0.04)',
-              border: '1px solid rgba(26,82,48,0.15)',
-              borderRadius: '10px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px',
-            }}>
-              <div>
-                <p style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 4px', fontFamily: 'var(--font-body)' }}>
-                  View Day
-                </p>
-                <p style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 8px', lineHeight: 1.4 }}>
-                  Real day: {realDayNumber}. Override unlocks cards + vault.
-                </p>
-                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '8px' }}>
-                  <button
-                    onClick={() => setAdminCardDay(null)}
-                    style={{
-                      padding: '5px 10px',
-                      borderRadius: '5px',
-                      border: adminCardDay === null ? `1.5px solid ${GREEN}` : '1px solid var(--line)',
-                      background: adminCardDay === null ? `${GREEN}10` : 'white',
-                      color: adminCardDay === null ? GREEN : 'var(--text-soft)',
-                      fontSize: '10px',
-                      fontWeight: adminCardDay === null ? 600 : 400,
-                      fontFamily: 'var(--font-body)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Live
-                  </button>
-                  {quickPicks.map((d) => {
-                    const active = adminCardDay === d
-                    return (
-                      <button
-                        key={d}
-                        onClick={() => setAdminCardDay(d)}
-                        style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: '50%',
-                          border: active ? `1.5px solid ${GREEN}` : '1px solid var(--line)',
-                          background: active ? GREEN : 'white',
-                          color: active ? 'white' : 'var(--text-soft)',
-                          fontSize: '11px',
-                          fontWeight: 600,
-                          fontFamily: 'var(--font-body)',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        {d}
-                      </button>
-                    )
-                  })}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
-                    Any day:
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={365}
-                    value={adminCardDay ?? ''}
-                    placeholder="1–365"
-                    onChange={(e) => {
-                      const raw = e.target.value
-                      if (raw === '') { setAdminCardDay(null); return }
-                      const n = parseInt(raw, 10)
-                      if (Number.isNaN(n)) return
-                      setAdminCardDay(Math.max(1, Math.min(365, n)))
-                    }}
-                    style={{
-                      flex: 1,
-                      padding: '5px 8px',
-                      borderRadius: '5px',
-                      border: '1px solid var(--line-md)',
-                      fontSize: '11px',
-                      fontFamily: 'var(--font-body)',
-                      color: 'var(--ink)',
-                      outline: 'none',
-                      width: '100%',
-                      minWidth: 0,
-                    }}
-                  />
-                </div>
-              </div>
-
-              {adminCardDay !== null && (
-                <button
-                  onClick={() => setAdminCardDay(null)}
-                  style={{
-                    padding: '6px 10px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--line)',
-                    background: 'white',
-                    color: 'var(--text-muted)',
-                    fontSize: '11px',
-                    fontFamily: 'var(--font-body)',
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                  }}
-                >
-                  ✕ Reset to live day
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Bottom section */}
       <div style={{ padding: '0 20px 24px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>

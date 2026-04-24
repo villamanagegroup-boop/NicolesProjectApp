@@ -17,13 +17,13 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   const pathname = usePathname()
 
   // Flow guard: signed-in users who haven't finished setup get bounced back.
-  // Unauthenticated viewers fall through so the /login admin bypass keeps working.
+  // Admins skip the guard entirely and can access any portal page.
   useEffect(() => {
-    if (loading || !isAuthed) return
-    if (!user.quizResult)        { router.replace('/quiz'); return }
-    if (!user.selectedPath)      { router.replace('/quiz/paths'); return }
+    if (loading || !isAuthed || user.isAdmin) return
+    if (!user.quizResult)         { router.replace('/quiz'); return }
+    if (!user.selectedPath)       { router.replace('/quiz/paths'); return }
     if (!user.onboardingComplete) { router.replace('/onboarding'); return }
-  }, [loading, isAuthed, user.quizResult, user.selectedPath, user.onboardingComplete, router])
+  }, [loading, isAuthed, user.isAdmin, user.quizResult, user.selectedPath, user.onboardingComplete, router])
 
   // Auto-switch sidebar mode based on the route the user is on.
   useEffect(() => {
