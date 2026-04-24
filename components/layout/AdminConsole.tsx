@@ -1,5 +1,6 @@
 'use client'
 import React, { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
@@ -71,7 +72,13 @@ export default function AdminConsole({ open, onClose }: Props) {
     return () => { document.body.style.overflow = prev }
   }, [open])
 
+  // Guard against SSR — createPortal needs document. Also defer the first
+  // portal render so the "open" transition animates in instead of popping.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+
   if (!user.isAdmin) return null
+  if (!mounted) return null
 
   async function createCohort() {
     if (!cohortName.trim() || !cohortStart || !cohortEnd) {
@@ -113,7 +120,7 @@ export default function AdminConsole({ open, onClose }: Props) {
                     || adminProgramDay !== null
                     || adminArchetype !== null
 
-  return (
+  return createPortal(
     <>
       {/* Backdrop */}
       <div
@@ -121,7 +128,7 @@ export default function AdminConsole({ open, onClose }: Props) {
         style={{
           position: 'fixed', inset: 0,
           background: open ? 'rgba(12,12,10,0.4)' : 'transparent',
-          zIndex: 200,
+          zIndex: 9000,
           pointerEvents: open ? 'auto' : 'none',
           transition: 'background 0.2s ease',
         }}
@@ -133,7 +140,7 @@ export default function AdminConsole({ open, onClose }: Props) {
         width: 'min(420px, 92vw)',
         background: '#fff',
         borderLeft: '1px solid var(--line-md)',
-        zIndex: 201,
+        zIndex: 9001,
         transform: open ? 'translateX(0)' : 'translateX(100%)',
         transition: 'transform 0.28s cubic-bezier(0.32,0,0.15,1)',
         display: 'flex', flexDirection: 'column',
@@ -312,7 +319,8 @@ export default function AdminConsole({ open, onClose }: Props) {
 
         </div>
       </aside>
-    </>
+    </>,
+    document.body,
   )
 }
 
