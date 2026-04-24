@@ -64,6 +64,38 @@ export default function AdminConsole({ open, onClose }: Props) {
   const [creating, setCreating] = useState(false)
   const [cohortMsg, setCohortMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
 
+  // Ephemeral toast ("Saved — View set to Path A") that auto-dismisses 2s
+  // after any override change. Gives the admin a clear signal that their
+  // choice is already live in the app.
+  const [toast, setToast] = useState<string | null>(null)
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(null), 2200)
+    return () => clearTimeout(t)
+  }, [toast])
+
+  // Wrapped setters — update state AND announce what just changed.
+  function applyViewAs(next: PathId | null) {
+    setViewAsPath(next)
+    setToast(next === null ? 'Back to admin view' : `Viewing as Path ${next}`)
+  }
+  function applyCardDay(next: number | null) {
+    setAdminCardDay(next)
+    setToast(next === null ? 'Card day override cleared' : `Card day set to ${next}`)
+  }
+  function applyProgramDay(next: number | null) {
+    setAdminProgramDay(next)
+    setToast(next === null ? 'Program day override cleared' : `Program day set to ${next}`)
+  }
+  function applyArchetype(next: string | null) {
+    setAdminArchetype(next)
+    if (next === null) setToast('Archetype back to default')
+    else {
+      const label = ARCHETYPES.find(a => a.id === next)?.label ?? next
+      setToast(`Archetype set to ${label}`)
+    }
+  }
+
   // Lock body scroll while drawer is open.
   useEffect(() => {
     if (!open) return
@@ -108,6 +140,7 @@ export default function AdminConsole({ open, onClose }: Props) {
     setAdminCardDay(null)
     setAdminProgramDay(null)
     setAdminArchetype(null)
+    setToast('All overrides cleared')
   }
 
   function jumpTo(href: string) {
@@ -164,32 +197,82 @@ export default function AdminConsole({ open, onClose }: Props) {
           <button onClick={onClose} style={closeBtn} aria-label="Close admin console">✕</button>
         </div>
 
-        {/* Body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-          {/* Active overrides summary */}
-          {hasOverrides && (
-            <div style={{
-              padding: '10px 14px',
-              background: 'rgba(201,125,58,0.08)',
-              border: '1px solid rgba(201,125,58,0.25)',
-              borderRadius: 10,
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              gap: 10,
-            }}>
-              <span style={{ fontSize: 11, color: '#7A5800', fontWeight: 600 }}>
-                Overrides active
-              </span>
+        {/* Sticky status strip — always shows the current applied state */}
+        <div style={{
+          position: 'sticky', top: 0, zIndex: 1,
+          padding: '12px 22px',
+          background: hasOverrides ? 'rgba(184,146,42,0.08)' : 'var(--paper)',
+          borderBottom: `1px solid ${hasOverrides ? 'rgba(184,146,42,0.3)' : 'var(--line)'}`,
+        }}>
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+            gap: 10,
+          }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{
+                fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
+                color: hasOverrides ? 'var(--gold)' : 'var(--text-muted)',
+                margin: '0 0 4px',
+              }}>
+                {hasOverrides ? 'Applied to your app' : 'Current view'}
+              </p>
+              {hasOverrides ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  {viewAsPath !== null && <StatusChip label={`View: Path ${viewAsPath}`} />}
+                  {adminCardDay !== null && <StatusChip label={`Card day: ${adminCardDay}`} />}
+                  {adminProgramDay !== null && <StatusChip label={`Program day: ${adminProgramDay}`} />}
+                  {adminArchetype !== null && <StatusChip label={`Archetype: ${ARCHETYPES.find(a => a.id === adminArchetype)?.label ?? adminArchetype}`} />}
+                </div>
+              ) : (
+                <p style={{ fontSize: 12, color: 'var(--text-soft)', margin: 0 }}>
+                  Admin view · no overrides active
+                </p>
+              )}
+            </div>
+            {hasOverrides && (
               <button onClick={resetAll} style={smallBtn}>Reset all</button>
+            )}
+          </div>
+        </div>
+
+        {/* Toast — slides down from under the header, auto-dismisses */}
+        <div
+          aria-live="polite"
+          style={{
+            position: 'absolute',
+            top: 70, left: '50%',
+            transform: `translate(-50%, ${toast ? '0' : '-20px'})`,
+            opacity: toast ? 1 : 0,
+            transition: 'opacity .2s ease, transform .2s ease',
+            zIndex: 2,
+            pointerEvents: 'none',
+          }}
+        >
+          {toast && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '8px 14px', borderRadius: 999,
+              background: 'var(--green)', color: '#fff',
+              fontSize: 12, fontWeight: 600,
+              boxShadow: '0 4px 12px rgba(12,12,10,0.15)',
+              fontFamily: 'var(--font-body)',
+              whiteSpace: 'nowrap',
+            }}>
+              <span>✓</span>
+              {toast}
             </div>
           )}
+        </div>
+
+        {/* Body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
           {/* View as */}
           <Section title="View as" sub="Preview the app as a user on any path.">
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
               <ChoiceBtn
                 active={viewAsPath === null}
-                onClick={() => setViewAsPath(null)}
+                onClick={() => applyViewAs(null)}
                 label="Admin view"
                 sub="Full access"
               />
@@ -197,7 +280,7 @@ export default function AdminConsole({ open, onClose }: Props) {
                 <ChoiceBtn
                   key={id}
                   active={viewAsPath === id}
-                  onClick={() => setViewAsPath(id)}
+                  onClick={() => applyViewAs(id)}
                   label={`${PATHS[id].icon} Path ${id}`}
                   sub={PATHS[id].shortTitle}
                 />
@@ -211,7 +294,7 @@ export default function AdminConsole({ open, onClose }: Props) {
               value={adminCardDay}
               max={365}
               realValue={realDayNumber}
-              onChange={setAdminCardDay}
+              onChange={applyCardDay}
               quick={[1, 6, 7, 30, 90, 180, 365]}
             />
           </Section>
@@ -222,7 +305,7 @@ export default function AdminConsole({ open, onClose }: Props) {
               value={adminProgramDay}
               max={7}
               realValue={null}
-              onChange={setAdminProgramDay}
+              onChange={applyProgramDay}
               quick={[1, 2, 3, 4, 5, 6, 7]}
             />
           </Section>
@@ -232,7 +315,7 @@ export default function AdminConsole({ open, onClose }: Props) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <ChoiceBtn
                 active={adminArchetype === null}
-                onClick={() => setAdminArchetype(null)}
+                onClick={() => applyArchetype(null)}
                 label="Default"
                 sub="Derived from quiz result"
               />
@@ -240,7 +323,7 @@ export default function AdminConsole({ open, onClose }: Props) {
                 <ChoiceBtn
                   key={a.id}
                   active={adminArchetype === a.id}
-                  onClick={() => setAdminArchetype(a.id)}
+                  onClick={() => applyArchetype(a.id)}
                   label={a.label}
                   sub={`Preview ${a.id} route`}
                   accent={a.tint}
@@ -325,6 +408,22 @@ export default function AdminConsole({ open, onClose }: Props) {
 }
 
 // ─── Sub-components ─────────────────────────────────────────────────────────
+
+function StatusChip({ label }: { label: string }) {
+  return (
+    <span style={{
+      fontSize: 10, fontWeight: 600,
+      padding: '3px 9px', borderRadius: 999,
+      background: '#fff',
+      border: '1px solid rgba(184,146,42,0.35)',
+      color: 'var(--ink)',
+      fontFamily: 'var(--font-body)',
+      whiteSpace: 'nowrap',
+    }}>
+      {label}
+    </span>
+  )
+}
 
 function Section({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) {
   return (
