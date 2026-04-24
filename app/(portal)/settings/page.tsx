@@ -21,7 +21,7 @@ type SectionId = typeof SECTIONS[number]['id']
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { user, updateUser, avatarUrl, setAvatarUrl, dailyReminders, setDailyReminders, setSkipPathChooser } = useApp()
+  const { user, updateUser, avatarUrl, setAvatarUrl, dailyReminders, setDailyReminders, setSkipPathChooser, enableCardsAddOn } = useApp()
 
   // ── Profile autosave ─────────────────────────────────────────────────────
   const [name, setName] = useState(user.name)
@@ -631,6 +631,104 @@ export default function SettingsPage() {
                   )}
                 </div>
               </div>
+
+              {/* Daily Cards add-on — Path A only, before they've added it */}
+              {user.selectedPath === 'A' && !user.cardsAddOnAt && (
+                <>
+                  <div style={{
+                    fontSize: 10,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.12em',
+                    color: 'var(--text-muted)',
+                    fontFamily: 'var(--font-body)',
+                    margin: '4px 0 12px',
+                  }}>
+                    Add to your plan
+                  </div>
+                  <div style={{
+                    border: `1px solid ${PATHS.B.accent}30`,
+                    borderRadius: 10,
+                    padding: '16px 20px',
+                    background: PATHS.B.accentPale,
+                    display: 'flex',
+                    gap: 16,
+                    alignItems: 'flex-start',
+                    flexWrap: 'wrap',
+                    marginBottom: 20,
+                  }}>
+                    <div style={{ flex: 1, minWidth: 220 }}>
+                      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', marginBottom: 4 }}>
+                        Add-on
+                      </div>
+                      <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--ink)', fontFamily: 'var(--font-body)', marginBottom: 6 }}>
+                        {PATHS.B.icon} Daily Cards — 365 Days of Alignment
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--text-soft)', fontFamily: 'var(--font-body)', lineHeight: 1.6, marginBottom: 6 }}>
+                        Layer the daily card practice on top of Seal the Leak. The day you add it becomes your Cards Day 1 — the normal Day-6 gate doesn&apos;t apply to you.
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)', fontStyle: 'italic' }}>
+                        👉 Best if you want the daily rhythm alongside your 7-day reset.
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400, color: 'var(--ink)', lineHeight: 1 }}>
+                          {PATHS.B.price}
+                        </div>
+                        <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-body)', marginTop: 3 }}>
+                          {PATHS.B.priceNote}
+                        </div>
+                      </div>
+                      <button
+                        style={{
+                          padding: '8px 16px',
+                          borderRadius: 6,
+                          background: PATHS.B.accent,
+                          color: 'white',
+                          border: 'none',
+                          fontSize: 12,
+                          fontWeight: 500,
+                          fontFamily: 'var(--font-body)',
+                          cursor: 'pointer',
+                        }}
+                        onClick={async () => {
+                          // TODO: send through Stripe checkout before writing the add-on row.
+                          if (!confirm('Add Daily Cards to your plan? Today becomes your Cards Day 1.')) return
+                          await enableCardsAddOn()
+                          alert('Daily Cards added — head to the Daily Alignment sidebar.')
+                        }}
+                      >
+                        Add Daily Cards →
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Daily Cards already added — show as confirmed */}
+              {user.selectedPath === 'A' && user.cardsAddOnAt && (
+                <div style={{
+                  background: PATHS.B.accentPale,
+                  border: `1px solid ${PATHS.B.accent}30`,
+                  borderLeft: `3px solid ${PATHS.B.accent}`,
+                  borderRadius: 10,
+                  padding: '14px 20px',
+                  marginBottom: 20,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  flexWrap: 'wrap',
+                }}>
+                  <div style={{ flex: 1, minWidth: 220 }}>
+                    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHS.B.accent, fontWeight: 600, marginBottom: 3 }}>
+                      Add-on active
+                    </div>
+                    <div style={{ fontSize: 13, color: 'var(--ink)', fontFamily: 'var(--font-body)' }}>
+                      🌿 Daily Cards added {new Date(user.cardsAddOnAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Upgrade options — tiers above current */}
               {upgradePaths.length > 0 && (

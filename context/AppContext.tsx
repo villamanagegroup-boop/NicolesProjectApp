@@ -22,6 +22,7 @@ const mockUser: User = {
   isAdmin: true,
   onboardingComplete: true,
   skipPathChooser: true,
+  cardsAddOnAt: null,
 }
 
 const mockWins: Win[] = [
@@ -63,6 +64,7 @@ interface UserRow {
   avatar_url: string | null
   onboarding_complete: boolean | null
   skip_path_chooser: boolean | null
+  cards_addon_started_at: string | null
 }
 
 function userFromRow(row: UserRow, fallbackEmail: string): User {
@@ -78,6 +80,7 @@ function userFromRow(row: UserRow, fallbackEmail: string): User {
     isAdmin: row.is_admin ?? false,
     onboardingComplete: row.onboarding_complete ?? false,
     skipPathChooser:    row.skip_path_chooser ?? false,
+    cardsAddOnAt:       row.cards_addon_started_at ? new Date(row.cards_addon_started_at) : null,
   }
 }
 
@@ -166,6 +169,7 @@ interface AppContextValue {
   refreshUser: () => Promise<void>
   updateUser: (updates: { name?: string; email?: string }) => Promise<void>
   setSkipPathChooser: (skip: boolean) => Promise<void>
+  enableCardsAddOn: () => Promise<void>
   cards: DailyCard[]
   dayNumber: number
   todayCard: DailyCard | null
@@ -330,9 +334,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Effective path for gating respects the admin "View as" preview.
   const effectivePathForGate = viewAsPath ?? user.selectedPath
   const effectiveIsAdminForGate = user.isAdmin && viewAsPath === null
+  // When does the user's cards plan start? Path B — their signup_date.
+  // Path A with the add-on — when they enabled it. Otherwise null.
+  const cardsPlanStart = useMemo<Date | null>(() => {
+    if (effectivePathForGate === 'B') return user.signupDate
+    if (effectivePathForGate === 'A' && user.cardsAddOnAt) return user.cardsAddOnAt
+    return null
+  }, [effectivePathForGate, user.signupDate, user.cardsAddOnAt])
+
   const cardsAccess = useMemo(
-    () => computeCardsAccess(effectivePathForGate, effectiveIsAdminForGate, dayNumber),
-    [effectivePathForGate, effectiveIsAdminForGate, dayNumber],
+    () => computeCardsAccess(effectivePathForGate, effectiveIsAdminForGate, dayNumber, cardsPlanStart),
+    [effectivePathForGate, effectiveIsAdminForGate, dayNumber, cardsPlanStart],
   )
   // Clamp the visible card day to what the user has access to. When locked
   // entirely (maxDay = 0) todayCard becomes null and past/vault become empty.
@@ -371,6 +383,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       await supabaseClient.from('users').update({ skip_path_chooser: skip }).eq('id', authUser.id)
       setUserRow(prev => prev ? { ...prev, skip_path_chooser: skip } : prev)
     }
+  }, [authUser])
+
+  const enableCardsAddOn = useCallback(async () => {
+    if (!authUser) return
+    const ts = new Date().toISOString()
+    await supabaseClient.from('users').update({ cards_addon_started_at: ts }).eq('id', authUser.id)
+    setUserRow(prev => prev ? { ...prev, cards_addon_started_at: ts } : prev)
   }, [authUser])
 
   const addJournalEntry = useCallback(async (entry: Omit<JournalEntry, 'id' | 'createdAt'>) => {
@@ -467,6 +486,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     refreshUser,
     updateUser,
     setSkipPathChooser,
+    enableCardsAddOn,
     cards,
     dayNumber,
     todayCard,

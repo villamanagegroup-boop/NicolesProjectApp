@@ -13,6 +13,9 @@ export interface User {
   isAdmin: boolean
   onboardingComplete: boolean
   skipPathChooser: boolean
+  // Path A only: when they bought Daily Cards as an add-on. Null = no add-on yet.
+  // This date becomes Cards Day 1 for Path A add-on users.
+  cardsAddOnAt: Date | null
 }
 
 export interface DailyCard {
