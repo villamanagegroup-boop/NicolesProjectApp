@@ -52,8 +52,12 @@ const PROGRAMS: Record<Mode, Program> = {
 
 export default function ProgramSwitcher() {
   const router = useRouter()
-  const { sidebarMode, setSidebarMode, hasCardsAccess, hasWorkAccess, hasCircleAccess } = useApp()
+  const { loading, sidebarMode, setSidebarMode, hasCardsAccess, hasWorkAccess, hasCircleAccess } = useApp()
   const [open, setOpen] = useState(false)
+
+  // Don't render during load — mockUser grants all access and then
+  // collapses when the real user row arrives, causing a flash.
+  if (loading) return null
 
   const access: Record<Mode, boolean> = {
     cards:  hasCardsAccess,

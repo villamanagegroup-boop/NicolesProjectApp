@@ -9,7 +9,11 @@ interface TopbarProps {
 }
 
 function AdminButton({ onOpen }: { onOpen: () => void }) {
-  const { user, viewAsPath, adminCardDay, adminProgramDay, adminArchetype } = useApp()
+  const { user, loading, viewAsPath, adminCardDay, adminProgramDay, adminArchetype } = useApp()
+  // Wait until the real user row has loaded before deciding admin status —
+  // otherwise the mockUser fallback (isAdmin: true) flashes the button in,
+  // then the signed-in user's actual row flips it back out.
+  if (loading) return null
   if (!user.isAdmin) return null
 
   const hasOverrides = viewAsPath !== null
