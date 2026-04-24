@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useApp } from '@/context/AppContext'
 import { supabaseClient } from '@/lib/supabase/client'
 import { autoMatchCohort, setPartner, unsetPartner } from '@/lib/circle'
+import { CIRCLE_STARTER_CONTENT } from '@/data/circleStarterContent'
 
 type Cohort = {
   id: string
@@ -454,9 +455,16 @@ export default function AdminCirclePage() {
               rows={10}
               style={{ ...inputStyle, width: '100%', fontFamily: 'monospace', fontSize: 12 }}
             />
-            <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+            <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button onClick={bulkUpsertContent} disabled={busy || !jsonBlob.trim()} style={primaryBtn}>
                 {busy ? 'Upserting…' : 'Upsert rows'}
+              </button>
+              <button
+                onClick={() => setJsonBlob(JSON.stringify(CIRCLE_STARTER_CONTENT, null, 2))}
+                style={secondaryBtn}
+                title="Paste Weeks 1-2 starter content for all 5 tracks into the editor. Nothing is saved until you click Upsert."
+              >
+                Load starter (Weeks 1–2)
               </button>
               <button onClick={() => setJsonBlob('')} style={secondaryBtn}>Clear</button>
             </div>

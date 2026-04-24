@@ -1,20 +1,9 @@
-// app/circle/page.tsx
-// ─────────────────────────────────────────────────────────────
-// Main Circle dashboard — the first page a member lands on.
-// Add a link to this page in your existing sidebar nav
-// alongside "Daily Alignment", "The Becoming", etc.
-//
-// WHERE TO ADD THE SIDEBAR LINK:
-// Open your existing sidebar/nav component (likely in
-// components/Sidebar.tsx or app/layout.tsx) and add:
-//   <Link href="/circle">The Circle</Link>
-// in the same pattern as your other nav items.
-// ─────────────────────────────────────────────────────────────
 'use client'
-
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { supabaseClient } from '@/lib/supabase/client'
+import { useApp } from '@/context/AppContext'
 import {
   getMyCircleMember,
   getMyPartner,
@@ -27,12 +16,9 @@ import {
   type LiveCall,
 } from '@/lib/circle'
 
-// ─── Month label helper ──────────────────────────────────────
-const MONTH_COLORS: Record<string, string> = {
-  root:    'bg-[#1B4332] text-white',
-  rebuild: 'bg-[#7a4800] text-white',
-  rise:    'bg-[#3c2a8a] text-white',
-}
+const ORANGE      = '#C97D3A'
+const ORANGE_DEEP = '#a66128'
+const ORANGE_PALE = '#fdf6f2'
 
 const ARCHETYPE_LABELS: Record<string, string> = {
   door:   'The Open Door',
@@ -41,214 +27,333 @@ const ARCHETYPE_LABELS: Record<string, string> = {
   push:   'The Pushthrough',
 }
 
+type LoadState =
+  | { kind: 'loading' }
+  | { kind: 'no-cohort' }                  // path C but no active cohort exists
+  | { kind: 'needs-intake' }               // member row missing required fields, or no member row
+  | { kind: 'ready'; member: CircleMember } // fully enrolled
+
 export default function CirclePage() {
-  const [member, setMember]       = useState<CircleMember | null>(null)
+  const router = useRouter()
+  const { authUser, loading, isAuthed, effectiveIsAdmin, effectivePath, user } = useApp()
+
+  const [state, setState]         = useState<LoadState>({ kind: 'loading' })
   const [partner, setPartner]     = useState<any>(null)
   const [weeks, setWeeks]         = useState<WeeklyContent[]>([])
   const [progress, setProgress]   = useState<any[]>([])
   const [calls, setCalls]         = useState<LiveCall[]>([])
-  const [loading, setLoading]     = useState(true)
   const [currentWeek, setCurrentWeek] = useState<number | null>(null)
 
   useEffect(() => {
-    async function load() {
-      const m = await getMyCircleMember()
-      if (!m) { setLoading(false); return }
-      setMember(m)
+    if (loading) return
+    if (!isAuthed) { setState({ kind: 'loading' }); return }
+    if (!effectiveIsAdmin && effectivePath !== 'C') return // layout will redirect
 
-      const [partnerData, weeksData, progressData, callsData] = await Promise.all([
-        m.partner_id ? getMyPartner(m.partner_id) : Promise.resolve(null),
-        getAllWeeksOverview(m.cohort_id),
-        getMyProgress(m.id),
-        getLiveCalls(m.cohort_id),
+    (async () => {
+      let member = await getMyCircleMember()
+
+      // No member row — try to auto-enroll using onboarding data.
+      if (!member && authUser) {
+        const { data: cohort } = await supabaseClient
+          .from('circle_cohorts')
+          .select('id')
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle()
+
+        if (!cohort) { setState({ kind: 'no-cohort' }); return }
+
+        const { data: assessment } = await supabaseClient
+          .from('onboarding_assessments')
+          .select('archetype, ennea, attach, feedback, goal')
+          .eq('user_id', authUser.id)
+          .maybeSingle()
+
+        if (assessment?.archetype) {
+          // Upsert — may create a row with partial data; intake page can fill gaps later.
+          await supabaseClient.from('circle_members').upsert({
+            user_id:          authUser.id,
+            cohort_id:        cohort.id,
+            archetype:        assessment.archetype,
+            enneagram_type:   assessment.ennea ?? null,
+            attachment_style: assessment.attach ?? null,
+            feedback_pref:    assessment.feedback ?? null,
+            goal_90day:       assessment.goal ?? null,
+          }, { onConflict: 'user_id,cohort_id' })
+          member = await getMyCircleMember()
+        }
+      }
+
+      // Still no member? Admin previewing with no enrollment, or a data edge case.
+      if (!member) {
+        if (effectiveIsAdmin) { setState({ kind: 'no-cohort' }); return }
+        setState({ kind: 'needs-intake' }); return
+      }
+
+      // Gate: any required field missing → route to intake.
+      const missing = !member.enneagram_type || !member.attachment_style
+                   || !member.feedback_pref  || !member.goal_90day
+      if (missing && !effectiveIsAdmin) {
+        router.replace('/circle/intake')
+        return
+      }
+
+      setState({ kind: 'ready', member })
+
+      const [partnerData, weeksData, progressData, callsData, cohortRow] = await Promise.all([
+        member.partner_id ? getMyPartner(member.partner_id) : Promise.resolve(null),
+        getAllWeeksOverview(member.cohort_id),
+        getMyProgress(member.id),
+        getLiveCalls(member.cohort_id),
+        supabaseClient.from('circle_cohorts').select('starts_at').eq('id', member.cohort_id).maybeSingle(),
       ])
-
       setPartner(partnerData)
       setWeeks(weeksData)
       setProgress(progressData)
       setCalls(callsData)
-      setLoading(false)
-    }
-    load()
-  }, [])
+      if (cohortRow.data) setCurrentWeek(getCurrentWeekNumber(cohortRow.data.starts_at))
+    })()
+  }, [loading, isAuthed, authUser, effectivePath, effectiveIsAdmin, router])
 
-  // Need cohort start date to compute current week — fetch it once member is loaded
-  useEffect(() => {
-    if (!member) return
-    async function loadCohortDate() {
-      const { data } = await supabaseClient
-        .from('circle_cohorts')
-        .select('starts_at')
-        .eq('id', member!.cohort_id)
-        .single()
-      if (data) setCurrentWeek(getCurrentWeekNumber(data.starts_at))
-    }
-    loadCohortDate()
-  }, [member])
+  if (state.kind === 'loading') {
+    return <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading your Circle…</p>
+  }
 
-  if (loading) {
+  if (state.kind === 'no-cohort') {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-sm text-gray-500">Loading your Circle...</p>
-      </div>
+      <EmptyState
+        title="The next cohort hasn't opened yet"
+        body="You're on the list — we'll enroll you the moment the next cohort activates."
+      />
     )
   }
 
-  // Not enrolled
-  if (!member) {
+  if (state.kind === 'needs-intake') {
     return (
-      <div className="max-w-lg mx-auto p-8 text-center">
-        <h1 className="text-2xl font-semibold mb-3">The Circle</h1>
-        <p className="text-gray-500 mb-6">
-          You haven't joined a cohort yet. When enrollment opens you'll receive an invitation here.
-        </p>
-      </div>
+      <EmptyState
+        title="Finish your Circle profile"
+        body="A few quick questions about your Enneagram, attachment style, and 90-day focus."
+        cta={{ href: '/circle/intake', label: 'Start intake →' }}
+      />
     )
   }
 
+  const member = state.member
   const completedWeeks = progress.filter(p => p.journal_completed && p.action_completed).length
   const nextCall = calls.find(c => new Date(c.scheduled_at) > new Date())
+  const firstName = user.name?.split(' ')[0] ?? ''
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-6">
+    <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div>
-        <p className="text-xs font-bold tracking-widest uppercase text-[#C9A84C] mb-1">
-          The Circle
-        </p>
-        <h1 className="text-2xl font-bold">
+        {firstName && (
+          <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: ORANGE, margin: '0 0 6px' }}>
+            Welcome back, {firstName}
+          </p>
+        )}
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300, color: 'var(--ink)', margin: '0 0 4px' }}>
           {ARCHETYPE_LABELS[member.archetype]}
         </h1>
         {member.goal_90day && (
-          <p className="text-sm text-gray-500 mt-1 italic">
+          <p style={{ fontSize: 13, color: 'var(--text-soft)', fontStyle: 'italic', lineHeight: 1.6, margin: 0 }}>
             90-day focus: {member.goal_90day}
           </p>
         )}
       </div>
 
-      {/* ── Progress strip ── */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-5">
-        <div className="flex justify-between items-center mb-3">
-          <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
-            Your progress
-          </span>
-          <span className="text-xs text-gray-500">{completedWeeks} / 12 weeks complete</span>
+      {/* Progress strip */}
+      <Panel>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+          <Eyebrow>Your progress</Eyebrow>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{completedWeeks} / 12 weeks complete</span>
         </div>
-        <div className="flex gap-1 flex-wrap">
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {Array.from({ length: 12 }, (_, i) => {
             const wn = i + 1
             const done = progress.find(p => p.week_number === wn && p.journal_completed && p.action_completed)
             const current = wn === currentWeek
+            const bg = done ? ORANGE : current ? '#fff' : 'var(--paper2)'
+            const color = done ? '#fff' : current ? ORANGE : 'var(--text-muted)'
+            const border = current && !done ? `2px solid ${ORANGE}` : '2px solid transparent'
             return (
-              <Link key={wn} href={`/circle/week/${wn}`}>
-                <div className={`
-                  w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
-                  transition-all cursor-pointer
-                  ${done    ? 'bg-[#1B4332] text-white'            : ''}
-                  ${current && !done ? 'bg-[#C9A84C] text-white ring-2 ring-[#C9A84C] ring-offset-1' : ''}
-                  ${!done && !current ? 'bg-gray-100 text-gray-400' : ''}
-                `}>
+              <Link key={wn} href={`/circle/week/${wn}`} style={{ textDecoration: 'none' }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 12, fontWeight: 600,
+                  background: bg, color, border,
+                  transition: 'all .15s',
+                  cursor: 'pointer',
+                }}>
                   {wn}
                 </div>
               </Link>
             )
           })}
         </div>
-      </div>
+      </Panel>
 
-      {/* ── This week ── */}
+      {/* This week */}
       {currentWeek && (
-        <Link href={`/circle/week/${currentWeek}`}>
-          <div className="bg-[#1B4332] text-white rounded-2xl p-5 cursor-pointer hover:opacity-95 transition-opacity">
-            <p className="text-xs font-bold tracking-widest uppercase text-[#C9A84C] mb-1">
-              This week — Week {currentWeek}
+        <Link href={`/circle/week/${currentWeek}`} style={{ textDecoration: 'none' }}>
+          <div style={{
+            background: ORANGE, color: '#fff',
+            borderRadius: 14, padding: 22,
+            cursor: 'pointer', transition: 'background .15s',
+          }}
+            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = ORANGE_DEEP }}
+            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = ORANGE }}
+          >
+            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.75)', margin: '0 0 4px' }}>
+              This week · Week {currentWeek}
             </p>
-            <h2 className="text-lg font-bold">
-              {weeks.find(w => w.week_number === currentWeek)?.week_title ?? 'Loading...'}
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400, margin: '0 0 8px' }}>
+              {weeks.find(w => w.week_number === currentWeek)?.week_title ?? 'Loading…'}
             </h2>
-            <p className="text-sm text-green-200 mt-2">Tap to open this week's content →</p>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', margin: 0 }}>Tap to open this week&apos;s content →</p>
           </div>
         </Link>
       )}
 
-      {/* ── Accountability partner ── */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-5">
-        <p className="text-xs font-bold tracking-widest uppercase text-gray-400 mb-3">
-          Accountability partner
-        </p>
+      {/* Accountability partner */}
+      <Panel>
+        <Eyebrow>Accountability partner</Eyebrow>
         {partner ? (
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#C9A84C] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 14, fontWeight: 700,
+              background: ORANGE, color: '#fff',
+              flexShrink: 0,
+            }}>
               {(partner.users?.name ?? 'P').charAt(0)}
             </div>
-            <div className="flex-1">
-              <p className="font-semibold text-sm">{partner.users?.name}</p>
-              <p className="text-xs text-gray-400">{ARCHETYPE_LABELS[partner.archetype]}</p>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', margin: 0 }}>{partner.users?.name}</p>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>{ARCHETYPE_LABELS[partner.archetype]}</p>
             </div>
-            <Link href={`/circle/partner`}>
-              <button className="text-xs font-semibold text-[#1B4332] border border-[#1B4332] rounded-lg px-3 py-1.5 hover:bg-[#1B4332] hover:text-white transition-colors">
-                Message
-              </button>
+            <Link href="/circle/partner" style={{ textDecoration: 'none' }}>
+              <button style={ghostBtn}>Message</button>
             </Link>
           </div>
         ) : (
-          <p className="text-sm text-gray-400">Partner pairing coming soon.</p>
-        )}
-      </div>
-
-      {/* ── Next live call ── */}
-      {nextCall && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-5">
-          <p className="text-xs font-bold tracking-widest uppercase text-gray-400 mb-2">
-            Next live call
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 8, marginBottom: 0 }}>
+            Partner pairing happens after the cohort fills up — you&apos;ll be notified.
           </p>
-          <p className="font-semibold text-sm">{nextCall.title}</p>
-          <p className="text-xs text-gray-400 mt-1">
+        )}
+      </Panel>
+
+      {/* Next live call */}
+      {nextCall && (
+        <Panel>
+          <Eyebrow>Next live call</Eyebrow>
+          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', margin: '8px 0 2px' }}>{nextCall.title}</p>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
             {new Date(nextCall.scheduled_at).toLocaleDateString('en-US', {
               weekday: 'long', month: 'long', day: 'numeric',
               hour: 'numeric', minute: '2-digit',
             })}
           </p>
-          {nextCall.zoom_url && (
-            <a
-              href={nextCall.zoom_url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-block mt-3 text-xs font-semibold bg-[#1B4332] text-white px-4 py-2 rounded-lg hover:opacity-90"
-            >
-              Join call →
-            </a>
-          )}
-          {nextCall.recording_url && (
-            <a
-              href={nextCall.recording_url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-block mt-2 ml-2 text-xs font-semibold text-[#1B4332] border border-[#1B4332] px-4 py-2 rounded-lg hover:bg-[#1B4332] hover:text-white transition-colors"
-            >
-              Watch replay
-            </a>
-          )}
-        </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+            {nextCall.zoom_url && (
+              <a href={nextCall.zoom_url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+                <button style={primaryBtn}>Join call →</button>
+              </a>
+            )}
+            {nextCall.recording_url && (
+              <a href={nextCall.recording_url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+                <button style={ghostBtn}>Watch replay</button>
+              </a>
+            )}
+          </div>
+        </Panel>
       )}
 
-      {/* ── Quick links ── */}
-      <div className="grid grid-cols-2 gap-3">
-        <Link href="/circle/community">
-          <div className="bg-white border border-gray-200 rounded-2xl p-4 cursor-pointer hover:border-[#C9A84C] transition-colors">
-            <p className="text-sm font-semibold">Community</p>
-            <p className="text-xs text-gray-400 mt-1">Wins, prompts, posts</p>
-          </div>
-        </Link>
-        <Link href="/circle/calls">
-          <div className="bg-white border border-gray-200 rounded-2xl p-4 cursor-pointer hover:border-[#C9A84C] transition-colors">
-            <p className="text-sm font-semibold">All calls</p>
-            <p className="text-xs text-gray-400 mt-1">Schedule + replays</p>
-          </div>
-        </Link>
+      {/* Quick links */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <QuickLink href="/circle/community" title="Community" sub="Wins, prompts, posts" />
+        <QuickLink href="/circle/calls"     title="All calls"  sub="Schedule + replays"  />
       </div>
 
     </div>
   )
+}
+
+// ── Sub-components ───────────────────────────────────────────────────────────
+
+function Panel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 14, padding: 20 }}>
+      {children}
+    </div>
+  )
+}
+
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+      {children}
+    </span>
+  )
+}
+
+function QuickLink({ href, title, sub }: { href: string; title: string; sub: string }) {
+  return (
+    <Link href={href} style={{ textDecoration: 'none' }}>
+      <div style={{
+        background: '#fff', border: '1px solid var(--line)', borderRadius: 12,
+        padding: 16, cursor: 'pointer', transition: 'border-color .15s',
+      }}
+        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = ORANGE }}
+        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--line)' }}
+      >
+        <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', margin: '0 0 2px' }}>{title}</p>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>{sub}</p>
+      </div>
+    </Link>
+  )
+}
+
+function EmptyState({ title, body, cta }: { title: string; body: string; cta?: { href: string; label: string } }) {
+  return (
+    <div style={{
+      maxWidth: 520, margin: '40px auto', textAlign: 'center',
+      background: '#fff', border: '1px solid var(--line)', borderRadius: 14, padding: 40,
+    }}>
+      <div style={{
+        width: 56, height: 56, borderRadius: '50%',
+        background: ORANGE_PALE, color: ORANGE,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        margin: '0 auto 18px', fontSize: 22,
+      }}>✦</div>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 300, color: 'var(--ink)', margin: '0 0 8px' }}>
+        {title}
+      </h2>
+      <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.6, margin: '0 0 20px' }}>{body}</p>
+      {cta && (
+        <Link href={cta.href} style={{ textDecoration: 'none' }}>
+          <button style={primaryBtn}>{cta.label}</button>
+        </Link>
+      )}
+    </div>
+  )
+}
+
+const primaryBtn: React.CSSProperties = {
+  background: ORANGE, color: '#fff',
+  padding: '10px 20px', borderRadius: 10,
+  fontSize: 13, fontWeight: 600,
+  border: 'none', cursor: 'pointer',
+  fontFamily: 'inherit',
+}
+
+const ghostBtn: React.CSSProperties = {
+  background: '#fff', border: `1px solid ${ORANGE}`,
+  color: ORANGE,
+  padding: '8px 16px', borderRadius: 10,
+  fontSize: 12, fontWeight: 600,
+  cursor: 'pointer', fontFamily: 'inherit',
 }
