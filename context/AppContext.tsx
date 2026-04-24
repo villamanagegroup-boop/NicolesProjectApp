@@ -25,27 +25,63 @@ const mockUser: User = {
   cardsAddOnAt: null,
 }
 
+const DAY = 86400000
+
 const mockWins: Win[] = [
   {
-    id: 'win-1',
+    id: 'mock-win-1',
     category: 'boundary',
     title: 'Said no without explaining myself',
     description: "Declined a request that didn't align with my energy this week.",
-    createdAt: new Date(Date.now() - 2 * 86400000),
+    createdAt: new Date(Date.now() - 2 * DAY),
   },
   {
-    id: 'win-2',
+    id: 'mock-win-2',
     category: 'choice',
     title: 'Chose rest over productivity',
     description: 'Let myself recover instead of pushing through exhaustion.',
-    createdAt: new Date(Date.now() - 86400000),
+    createdAt: new Date(Date.now() - DAY),
   },
   {
-    id: 'win-3',
+    id: 'mock-win-3',
     category: 'moment',
     title: 'Spoke my truth in a hard conversation',
     description: 'Said what I actually felt, even though it was uncomfortable.',
     createdAt: new Date(),
+  },
+  {
+    id: 'mock-win-4',
+    category: 'growth',
+    title: 'Noticed I was about to override myself — and stopped',
+    description: "Caught it in the chest-tightness moment. Didn't say yes this time.",
+    createdAt: new Date(Date.now() - 4 * DAY),
+  },
+]
+
+const mockJournalEntries: JournalEntry[] = [
+  {
+    id: 'mock-journal-1',
+    userId: 'mock-admin',
+    cardId: '',
+    dayNumber: 3,
+    content: "Today's card about boundaries hit. I've been saying yes to my sister's requests for years without checking with myself first — I said yes to picking up my niece Friday before I even looked at my calendar. This week I'm trying to leave a 60-second pause between the ask and my answer.",
+    createdAt: new Date(Date.now() - DAY),
+  },
+  {
+    id: 'mock-journal-2',
+    userId: 'mock-admin',
+    cardId: '',
+    dayNumber: 2,
+    content: "Rest isn't the reward for finishing the list. It's what lets me finish the list. Still trying to let that land.",
+    createdAt: new Date(Date.now() - 2 * DAY),
+  },
+  {
+    id: 'mock-journal-3',
+    userId: 'mock-admin',
+    cardId: '',
+    dayNumber: 1,
+    content: "Day one. I wrote down three things I've been carrying for other people that aren't mine. It's uncomfortable to see them on paper.",
+    createdAt: new Date(Date.now() - 3 * DAY),
   },
 ]
 
@@ -296,12 +332,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (uRes.data) setUserRow(uRes.data as UserRow)
       if (uRes.data?.avatar_url) setAvatarUrlState(uRes.data.avatar_url)
 
+      // Admins see populated mock data wherever their real data is empty,
+      // so a walkthrough of the app doesn't bottom out on blank states.
+      const isAdmin = (uRes.data as UserRow | null)?.is_admin === true
+
       if (cRes.data && cRes.data.length > 0) {
         setCards((cRes.data as CardRow[]).map(cardFromRow))
       }
-      if (jRes.data) setJournalEntries((jRes.data as JournalRow[]).map(journalFromRow))
-      if (wRes.data) setWins((wRes.data as WinRow[]).map(winFromRow))
-      if (ciRes.data) setCheckInState((ciRes.data as { mood: string }).mood)
+
+      const realJournal = jRes.data ? (jRes.data as JournalRow[]).map(journalFromRow) : []
+      setJournalEntries(realJournal.length === 0 && isAdmin ? mockJournalEntries : realJournal)
+
+      const realWins = wRes.data ? (wRes.data as WinRow[]).map(winFromRow) : []
+      setWins(realWins.length === 0 && isAdmin ? mockWins : realWins)
+
+      if (ciRes.data) {
+        setCheckInState((ciRes.data as { mood: string }).mood)
+      } else if (isAdmin) {
+        setCheckInState('grounded')
+      }
 
       // Streak: count consecutive days backward from today (or yesterday if today missing)
       if (streakRes.data) {
@@ -314,7 +363,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           streak += 1
           cursor.setDate(cursor.getDate() - 1)
         }
+        // Admin with no check-in history → seed a 5-day streak for preview
+        if (streak === 0 && isAdmin) streak = 5
         setStreakCount(streak)
+      } else if (isAdmin) {
+        setStreakCount(5)
       }
 
       setLoading(false)
