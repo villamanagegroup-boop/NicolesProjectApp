@@ -12,6 +12,9 @@ const GREEN_DIM  = 'rgba(26,82,48,0.55)'
 const PURPLE = '#3D3080'
 const PURPLE_PALE = 'rgba(61,48,128,0.07)'
 const PURPLE_DIM  = 'rgba(61,48,128,0.55)'
+const ORANGE = '#C97D3A'
+const ORANGE_PALE = 'rgba(201,125,58,0.08)'
+const ORANGE_DIM  = 'rgba(201,125,58,0.55)'
 
 // ── Icons (same as sidebars) ──────────────────────────────────────────────────
 
@@ -75,6 +78,26 @@ const workNavItems: NavItem[] = [
   { href: '/program/progress', icon: ProgressIcon, label: 'My Progress',     subtitle: 'Your journey so far',        exact: true  },
 ]
 
+function CircleIcon() {
+  return <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2"/></svg>
+}
+function PartnerMsgIcon() {
+  return <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12V6a2 2 0 012-2h8a2 2 0 012 2v6a2 2 0 01-2 2H6l-4 2z"/></svg>
+}
+function CallsIcon() {
+  return <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3h10v7H8l-3 3v-3H3V3z"/></svg>
+}
+function CommunityIcon() {
+  return <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="11" cy="6" r="2"/><path d="M2 14c0-2 1.5-3 3-3s3 1 3 3"/><path d="M8 14c0-2 1.5-3 3-3s3 1 3 3"/></svg>
+}
+
+const circleNavItems: NavItem[] = [
+  { href: '/circle',           icon: CircleIcon,     label: 'Your Circle',   subtitle: 'Week + progress',       exact: true },
+  { href: '/circle/community', icon: CommunityIcon,  label: 'Community',     subtitle: 'Wins + conversations',  exact: true },
+  { href: '/circle/partner',   icon: PartnerMsgIcon, label: 'Partner',       subtitle: 'Accountability thread', exact: true },
+  { href: '/circle/calls',     icon: CallsIcon,      label: 'Live Calls',    subtitle: 'Zoom + recordings',     exact: true },
+]
+
 function isActive(href: string, pathname: string, exact?: boolean) {
   if (exact) return pathname === href
   return pathname === href || pathname.startsWith(href + '/')
@@ -100,10 +123,11 @@ export default function MobileDrawer({ open, onClose }: Props) {
   const [adminOpen, setAdminOpen] = React.useState(false)
 
   const isWork      = sidebarMode === 'work'
-  const accent      = isWork ? PURPLE : GREEN
-  const accentPale  = isWork ? PURPLE_PALE : GREEN_PALE
-  const accentDim   = isWork ? PURPLE_DIM  : GREEN_DIM
-  const bgColor     = isWork ? '#faf9fd' : '#f9fdfb'
+  const isCircle    = sidebarMode === 'circle'
+  const accent      = isCircle ? ORANGE : isWork ? PURPLE : GREEN
+  const accentPale  = isCircle ? ORANGE_PALE : isWork ? PURPLE_PALE : GREEN_PALE
+  const accentDim   = isCircle ? ORANGE_DIM  : isWork ? PURPLE_DIM  : GREEN_DIM
+  const bgColor     = isCircle ? '#fdf6f2' : isWork ? '#faf9fd' : '#f9fdfb'
   const vaultUnlocked = dayNumber >= 30
   const quickPicks = [1, 7, 14, 30, 40]
   const ROUTE_ORDER = ['door', 'throne', 'engine', 'push'] as const
@@ -138,7 +162,7 @@ export default function MobileDrawer({ open, onClose }: Props) {
     router.push(href)
   }
 
-  const navItems = isWork ? workNavItems : cardsNavItems
+  const navItems = isCircle ? circleNavItems : isWork ? workNavItems : cardsNavItems
 
   return (
     <>
@@ -177,10 +201,10 @@ export default function MobileDrawer({ open, onClose }: Props) {
             <div>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: 500, color: 'var(--ink)' }}>
                 <span style={{ color: accent }}>✦</span>{' '}
-                {isWork ? 'Seal the Leak' : '365 Days'}
+                {isCircle ? 'The Circle' : isWork ? 'Seal the Leak' : '365 Days'}
               </div>
               <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '4px 0 0' }}>
-                {isWork ? '7-Day Reset' : 'Daily Alignment'}
+                {isCircle ? '90-Day Cohort' : isWork ? '7-Day Reset' : 'Daily Alignment'}
               </p>
             </div>
             <button
@@ -232,10 +256,10 @@ export default function MobileDrawer({ open, onClose }: Props) {
             )
           })}
 
-          {/* Mode switch button */}
-          <div style={{ padding: '0 8px', marginTop: '16px' }}>
-            <div style={{ borderTop: '1px solid var(--line)', marginBottom: '12px' }} />
-            {isWork ? (
+          {/* Mode switch buttons — show every mode except the current one */}
+          <div style={{ padding: '0 8px', marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ borderTop: '1px solid var(--line)', marginBottom: '6px' }} />
+            {sidebarMode !== 'cards' && (
               <button
                 onClick={() => { setSidebarMode('cards'); navigate('/dashboard') }}
                 style={{
@@ -245,15 +269,14 @@ export default function MobileDrawer({ open, onClose }: Props) {
                   cursor: 'pointer', textAlign: 'left',
                 }}
               >
-                <span style={{ color: GREEN, flexShrink: 0 }}>
-                  <CardsIcon />
-                </span>
+                <span style={{ color: GREEN, flexShrink: 0 }}><CardsIcon /></span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', color: 'var(--ink)', lineHeight: 1.2 }}>365 Days</div>
                   <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', lineHeight: 1.3, marginTop: '2px' }}>← Switch to Daily Cards</div>
                 </div>
               </button>
-            ) : (
+            )}
+            {sidebarMode !== 'work' && (
               <button
                 onClick={() => { setSidebarMode('work'); navigate('/program') }}
                 style={{
@@ -270,7 +293,28 @@ export default function MobileDrawer({ open, onClose }: Props) {
                 </span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', color: 'var(--ink)', lineHeight: 1.2 }}>Seal the Leak</div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', lineHeight: 1.3, marginTop: '2px' }}>→ Switch to The Work</div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', lineHeight: 1.3, marginTop: '2px' }}>{isCircle ? '←' : '→'} Switch to The Work</div>
+                </div>
+              </button>
+            )}
+            {sidebarMode !== 'circle' && user.selectedPath === 'C' && (
+              <button
+                onClick={() => { setSidebarMode('circle'); navigate('/circle') }}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
+                  padding: '10px 12px', borderRadius: '8px',
+                  background: ORANGE_PALE, border: '1px solid rgba(201,125,58,0.2)',
+                  cursor: 'pointer', textAlign: 'left',
+                }}
+              >
+                <span style={{ color: ORANGE, flexShrink: 0 }}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2"/>
+                  </svg>
+                </span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', color: 'var(--ink)', lineHeight: 1.2 }}>The Circle</div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', lineHeight: 1.3, marginTop: '2px' }}>→ Switch to your cohort</div>
                 </div>
               </button>
             )}

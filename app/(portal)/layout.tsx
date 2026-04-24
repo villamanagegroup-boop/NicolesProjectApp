@@ -1,8 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import Sidebar from '@/components/layout/Sidebar'
 import SidebarWork from '@/components/layout/SidebarWork'
+import SidebarCircle from '@/components/layout/SidebarCircle'
 import Topbar from '@/components/layout/Topbar'
 import MobileNav from '@/components/layout/MobileNav'
 import MobileDrawer from '@/components/layout/MobileDrawer'
@@ -11,8 +12,9 @@ import { useApp } from '@/context/AppContext'
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const { sidebarMode, loading, isAuthed, user } = useApp()
+  const { sidebarMode, setSidebarMode, loading, isAuthed, user } = useApp()
   const router = useRouter()
+  const pathname = usePathname()
 
   // Flow guard: signed-in users who haven't finished setup get bounced back.
   // Unauthenticated viewers fall through so the /login admin bypass keeps working.
@@ -23,10 +25,30 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     if (!user.onboardingComplete) { router.replace('/onboarding'); return }
   }, [loading, isAuthed, user.quizResult, user.selectedPath, user.onboardingComplete, router])
 
+  // Auto-switch sidebar mode based on the route the user is on.
+  useEffect(() => {
+    if (!pathname) return
+    if (pathname.startsWith('/circle')) {
+      if (sidebarMode !== 'circle') setSidebarMode('circle')
+    } else if (pathname.startsWith('/program')) {
+      if (sidebarMode !== 'work') setSidebarMode('work')
+    } else {
+      // cards-side routes: dashboard, card, past, journal, wins, profile, vault, settings
+      if (sidebarMode !== 'cards') setSidebarMode('cards')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
+
+  function renderSidebar() {
+    if (sidebarMode === 'work')   return <SidebarWork />
+    if (sidebarMode === 'circle') return <SidebarCircle />
+    return <Sidebar />
+  }
+
   return (
     <div className="portal-shell" style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#ffffff' }}>
       <div className="sidebar">
-        {sidebarMode === 'work' ? <SidebarWork /> : <Sidebar />}
+        {renderSidebar()}
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <Topbar onMenuOpen={() => setDrawerOpen(true)} />

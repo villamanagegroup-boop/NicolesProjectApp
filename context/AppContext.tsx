@@ -182,8 +182,8 @@ interface AppContextValue {
   setAvatarUrl: (url: string | null) => void
   dailyReminders: boolean
   setDailyReminders: (on: boolean) => void
-  sidebarMode: 'cards' | 'work'
-  setSidebarMode: (mode: 'cards' | 'work') => void
+  sidebarMode: 'cards' | 'work' | 'circle'
+  setSidebarMode: (mode: 'cards' | 'work' | 'circle') => void
   adminProgramDay: number | null
   setAdminProgramDay: (day: number | null) => void
   adminArchetype: string | null
@@ -218,7 +218,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // UI / session-only state (unchanged)
   const [avatarUrl, setAvatarUrlState] = useState<string | null>(null)
   const [dailyReminders, setDailyReminders] = useState(true)
-  const [sidebarMode, setSidebarMode] = useState<'cards' | 'work'>('cards')
+  const [sidebarMode, setSidebarMode] = useState<'cards' | 'work' | 'circle'>('cards')
   const [adminProgramDay, setAdminProgramDay] = useState<number | null>(null)
   const [adminArchetype, setAdminArchetype] = useState<string | null>(null)
   const [adminCardDay, setAdminCardDay] = useState<number | null>(null)

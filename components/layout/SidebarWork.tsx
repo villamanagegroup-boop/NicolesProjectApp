@@ -82,7 +82,7 @@ function isItemActive(href: string, pathname: string, exact?: boolean): boolean 
 export default function SidebarWork() {
   const pathname = usePathname()
   const router   = useRouter()
-  const { setSidebarMode, adminProgramDay, setAdminProgramDay, adminArchetype, setAdminArchetype } = useApp()
+  const { user, setSidebarMode, adminProgramDay, setAdminProgramDay, adminArchetype, setAdminArchetype } = useApp()
   const [adminOpen, setAdminOpen] = React.useState(false)
 
   const ROUTE_ORDER = ['door', 'throne', 'engine', 'push'] as const
@@ -186,8 +186,8 @@ export default function SidebarWork() {
         })}
 
         {/* Swap to Daily Cards */}
-        <div style={{ padding: '0 8px', marginTop: '16px' }}>
-          <div style={{ borderTop: '1px solid var(--line)', marginBottom: '12px' }} />
+        <div style={{ padding: '0 8px', marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ borderTop: '1px solid var(--line)', marginBottom: '6px' }} />
           <button
             onClick={() => { setSidebarMode('cards'); router.push('/dashboard') }}
             style={{
@@ -218,6 +218,40 @@ export default function SidebarWork() {
               </div>
             </div>
           </button>
+
+          {/* Path C only — The Circle */}
+          {user.selectedPath === 'C' && (
+            <button
+              onClick={() => { setSidebarMode('circle'); router.push('/circle') }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                background: 'rgba(201,125,58,0.08)',
+                border: '1px solid rgba(201,125,58,0.2)',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              <span style={{ color: '#C97D3A', flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="8" cy="8" r="6" />
+                  <circle cx="8" cy="8" r="2" />
+                </svg>
+              </span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', color: 'var(--ink)', lineHeight: 1.2 }}>
+                  The Circle
+                </div>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', lineHeight: 1.3, marginTop: '2px' }}>
+                  → Switch to your cohort
+                </div>
+              </div>
+            </button>
+          )}
         </div>
       </nav>
 

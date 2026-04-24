@@ -13,6 +13,9 @@ const GREEN_DIM  = 'rgba(26,82,48,0.55)'
 // Purple for the Seal the Leak swap button
 const PURPLE = '#3D3080'
 
+// Pale orange for the Circle swap button (Path C only)
+const ORANGE = '#C97D3A'
+
 // SVG Icons
 function HomeIcon() {
   return (
@@ -207,8 +210,8 @@ export default function Sidebar() {
         })}
 
         {/* Swap to The Work */}
-        <div style={{ padding: '0 8px', marginTop: '16px' }}>
-          <div style={{ borderTop: '1px solid var(--line)', marginBottom: '12px' }} />
+        <div style={{ padding: '0 8px', marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ borderTop: '1px solid var(--line)', marginBottom: '6px' }} />
           <button
             onClick={() => { setSidebarMode('work'); router.push('/program') }}
             style={{
@@ -239,6 +242,40 @@ export default function Sidebar() {
               </div>
             </div>
           </button>
+
+          {/* Path C only — The Circle */}
+          {user.selectedPath === 'C' && (
+            <button
+              onClick={() => { setSidebarMode('circle'); router.push('/circle') }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                background: 'rgba(201,125,58,0.08)',
+                border: '1px solid rgba(201,125,58,0.2)',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              <span style={{ color: ORANGE, flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="8" cy="8" r="6" />
+                  <circle cx="8" cy="8" r="2" />
+                </svg>
+              </span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', color: 'var(--ink)', lineHeight: 1.2 }}>
+                  The Circle
+                </div>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', lineHeight: 1.3, marginTop: '2px' }}>
+                  → Switch to your cohort
+                </div>
+              </div>
+            </button>
+          )}
         </div>
       </nav>
 

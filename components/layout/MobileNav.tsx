@@ -106,14 +106,69 @@ const workNavItems: { href: string; label: string; exact?: boolean; icon: (activ
   },
 ]
 
+const circleNavItems: { href: string; label: string; exact?: boolean; icon: (active: boolean) => React.ReactElement }[] = [
+  {
+    href: '/circle',
+    label: 'Circle',
+    exact: true,
+    icon: (active: boolean) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#C97D3A' : 'var(--text-muted)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="3" />
+      </svg>
+    )
+  },
+  {
+    href: '/circle/community',
+    label: 'Community',
+    exact: true,
+    icon: (active: boolean) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#C97D3A' : 'var(--text-muted)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M3 20c0-3 2.5-5 5-5s5 2 5 5"/><path d="M11 20c0-3 2.5-5 5-5s5 2 5 5"/>
+      </svg>
+    )
+  },
+  {
+    href: '/circle/partner',
+    label: 'Partner',
+    exact: true,
+    icon: (active: boolean) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#C97D3A' : 'var(--text-muted)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 18V8a3 3 0 013-3h12a3 3 0 013 3v10a3 3 0 01-3 3H9l-6 3z"/>
+      </svg>
+    )
+  },
+  {
+    href: '/circle/calls',
+    label: 'Calls',
+    exact: true,
+    icon: (active: boolean) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#C97D3A' : 'var(--text-muted)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="5" width="13" height="14" rx="2"/><path d="M16 10l5-3v10l-5-3z"/>
+      </svg>
+    )
+  },
+  {
+    href: '/profile',
+    label: 'Self',
+    exact: true,
+    icon: (active: boolean) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#C97D3A' : 'var(--text-muted)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+      </svg>
+    )
+  },
+]
+
 export default function MobileNav() {
   const pathname = usePathname()
   const { sidebarMode } = useApp()
 
   const PURPLE = '#3D3080'
+  const ORANGE = '#C97D3A'
   const isWork = sidebarMode === 'work'
-  const items  = isWork ? workNavItems : cardsNavItems
-  const dotColor = isWork ? PURPLE : 'var(--green)'
+  const isCircle = sidebarMode === 'circle'
+  const items  = isCircle ? circleNavItems : isWork ? workNavItems : cardsNavItems
+  const dotColor = isCircle ? ORANGE : isWork ? PURPLE : 'var(--green)'
 
   return (
     <nav
