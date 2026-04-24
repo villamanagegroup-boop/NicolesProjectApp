@@ -69,12 +69,14 @@ export default function CircleWelcomePage() {
   const endsAt   = cohort ? new Date(cohort.ends_at)   : null
 
   return (
-    <div style={{
-      background: ORANGE_PALE,
-      margin: '-32px -40px',
-      padding: '48px 32px',
-      minHeight: 'calc(100vh - 60px)',
-    }}>
+    <div
+      className="portal-full-bleed"
+      style={{
+        background: ORANGE_PALE,
+        padding: '48px 24px',
+        minHeight: 'calc(100vh - 60px)',
+      }}
+    >
       <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
         {/* Hero */}

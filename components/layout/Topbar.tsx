@@ -42,7 +42,7 @@ function AdminButton({ onOpen }: { onOpen: () => void }) {
       <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M8 1l5 2v5c0 3-2.5 5.5-5 7-2.5-1.5-5-4-5-7V3l5-2z" />
       </svg>
-      {label}
+      <span className="hide-mobile">{label}</span>
       {hasOverrides && (
         <span style={{
           width: 6, height: 6, borderRadius: '50%',

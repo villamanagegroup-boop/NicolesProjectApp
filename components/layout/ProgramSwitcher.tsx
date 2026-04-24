@@ -78,6 +78,7 @@ export default function ProgramSwitcher() {
     <div style={{ position: 'relative' }}>
       <button
         onClick={() => setOpen(o => !o)}
+        title={`Current program: ${current.title}`}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -95,7 +96,7 @@ export default function ProgramSwitcher() {
         }}
       >
         <CurrentIcon />
-        {current.title}
+        <span className="hide-mobile">{current.title}</span>
         <span style={{ fontSize: 9, opacity: 0.7 }}>{open ? '▲' : '▼'}</span>
       </button>
 

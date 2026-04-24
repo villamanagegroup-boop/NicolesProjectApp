@@ -56,6 +56,35 @@ html, body {
 /* ===== RESPONSIVE ===== */
 
 /* Portal layout */
+/* Partner-thread height — fill remaining viewport.
+   Uses 100dvh so iOS Safari shrinks with the URL bar. Leaves room for
+   topbar (56) + portal padding, plus the mobile nav on small screens. */
+.partner-shell {
+  height: calc(100dvh - 140px);
+}
+@media (max-width: 768px) {
+  .partner-shell {
+    height: calc(100dvh - 180px);
+  }
+}
+
+/* Full-bleed inside .portal-main — cancels out the padding so a page
+   can paint edge-to-edge (used by the orange Circle surfaces).
+   Desktop: -32px/-40px. Mobile: -20px/-16px. Wide: -32px/-48px. */
+.portal-full-bleed {
+  margin: -32px -40px !important;
+}
+@media (max-width: 768px) {
+  .portal-full-bleed {
+    margin: -20px -16px 0 !important;
+  }
+}
+@media (min-width: 1200px) {
+  .portal-full-bleed {
+    margin: -32px -48px !important;
+  }
+}
+
 @media (max-width: 768px) {
   .portal-shell {
     flex-direction: column !important;
@@ -79,6 +108,9 @@ html, body {
   }
   .three-col-grid {
     grid-template-columns: 1fr 1fr !important;
+  }
+  .paths-grid {
+    grid-template-columns: 1fr !important;
   }
   .four-col-grid {
     grid-template-columns: 1fr 1fr !important;

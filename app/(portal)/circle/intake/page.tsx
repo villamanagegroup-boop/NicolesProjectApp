@@ -286,7 +286,10 @@ export default function CircleIntakePage() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ background: ORANGE_PALE, minHeight: 'calc(100vh - 60px)', margin: '-32px -40px', padding: '40px 32px' }}>
+    <div
+      className="portal-full-bleed"
+      style={{ background: ORANGE_PALE, minHeight: 'calc(100vh - 60px)', padding: '40px 24px' }}
+    >
       <div style={{ maxWidth: 640, margin: '0 auto' }}>{children}</div>
     </div>
   )

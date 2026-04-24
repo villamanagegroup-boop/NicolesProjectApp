@@ -187,11 +187,14 @@ export default function PartnerPage() {
   }
 
   return (
-    <div style={{
-      maxWidth: 720, margin: '0 auto',
-      display: 'flex', flexDirection: 'column',
-      height: 'calc(100vh - 120px)', minHeight: 500,
-    }}>
+    <div
+      className="partner-shell"
+      style={{
+        maxWidth: 720, margin: '0 auto',
+        display: 'flex', flexDirection: 'column',
+        minHeight: 500,
+      }}
+    >
 
       {/* Header */}
       <div style={{
