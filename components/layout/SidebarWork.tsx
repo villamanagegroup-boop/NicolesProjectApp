@@ -257,42 +257,6 @@ export default function SidebarWork() {
 
       {/* Bottom — shared */}
       <div style={{ padding: '12px 20px 24px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {/* New Journal Entry */}
-        <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
-          <button
-            onClick={() => router.push('/journal/new')}
-            style={{
-              width: '100%',
-              backgroundColor: PURPLE,
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '9px 16px',
-              fontSize: '13px',
-              fontWeight: 500,
-              fontFamily: 'var(--font-body)',
-              cursor: 'pointer',
-              textAlign: 'center',
-              transition: 'opacity 0.15s ease',
-            }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.85' }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
-          >
-            New Journal Entry
-          </button>
-          <div style={{
-            position: 'absolute',
-            top: '-3px',
-            right: '-3px',
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            backgroundColor: 'var(--red)',
-            border: '1.5px solid #faf9fd',
-            pointerEvents: 'none',
-          }} />
-        </div>
-
         {/* Settings */}
         <Link
           href="/settings"

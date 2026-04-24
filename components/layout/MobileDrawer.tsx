@@ -309,7 +309,7 @@ export default function MobileDrawer({ open, onClose }: Props) {
 
         </nav>
 
-        {/* Bottom — New Journal Entry + Settings + Sign Out */}
+        {/* Bottom — Settings + Sign Out */}
         <div style={{ padding: '0 20px 32px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {/* Vault (cards mode only) */}
           {!isWork && (
@@ -327,29 +327,6 @@ export default function MobileDrawer({ open, onClose }: Props) {
               </div>
             )
           )}
-
-          {/* New Journal Entry */}
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={() => navigate('/journal/new')}
-              style={{
-                width: '100%',
-                backgroundColor: accent,
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '10px 16px',
-                fontSize: '13px',
-                fontWeight: 500,
-                fontFamily: 'var(--font-body)',
-                cursor: 'pointer',
-                textAlign: 'center',
-              }}
-            >
-              New Journal Entry
-            </button>
-            <div style={{ position: 'absolute', top: '-3px', right: '-3px', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--red)', border: `1.5px solid ${bgColor}`, pointerEvents: 'none' }} />
-          </div>
 
           {/* Settings */}
           <Link
