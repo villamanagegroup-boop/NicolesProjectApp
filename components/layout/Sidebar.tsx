@@ -105,7 +105,7 @@ function isItemActive(href: string, pathname: string, exact?: boolean): boolean 
 export default function Sidebar() {
   const pathname = usePathname()
   const router   = useRouter()
-  const { user, dayNumber, setSidebarMode } = useApp()
+  const { user, dayNumber, setSidebarMode, effectivePath, effectiveIsAdmin } = useApp()
 
   const vaultUnlocked = dayNumber >= 30
 
@@ -241,8 +241,8 @@ export default function Sidebar() {
             </div>
           </button>
 
-          {/* Circle: Path C members + admins */}
-          {(user.selectedPath === 'C' || user.isAdmin) && (
+          {/* Circle: Path C members + admins (hidden when admin is previewing as a non-C user) */}
+          {(effectivePath === 'C' || effectiveIsAdmin) && (
             <button
               onClick={() => { setSidebarMode('circle'); router.push('/circle') }}
               style={{

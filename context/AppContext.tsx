@@ -191,6 +191,12 @@ interface AppContextValue {
   adminCardDay: number | null
   setAdminCardDay: (day: number | null) => void
   realDayNumber: number
+  // Admin "view as user" preview — null means acting as admin; 'A'|'B'|'C'
+  // previews the app as if the admin had chosen that path (gates behave accordingly).
+  viewAsPath: Path | null
+  setViewAsPath: (p: Path | null) => void
+  effectivePath: Path | null
+  effectiveIsAdmin: boolean
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -222,6 +228,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [adminProgramDay, setAdminProgramDay] = useState<number | null>(null)
   const [adminArchetype, setAdminArchetype] = useState<string | null>(null)
   const [adminCardDay, setAdminCardDay] = useState<number | null>(null)
+  const [viewAsPath, setViewAsPath] = useState<Path | null>(null)
 
   // ── 1. Subscribe to auth state ─────────────────────────────────────────────
   useEffect(() => {
@@ -450,6 +457,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     adminCardDay,
     setAdminCardDay,
     realDayNumber,
+    viewAsPath,
+    setViewAsPath,
+    effectivePath: viewAsPath ?? user.selectedPath,
+    effectiveIsAdmin: user.isAdmin && viewAsPath === null,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

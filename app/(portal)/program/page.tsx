@@ -58,6 +58,19 @@ export default function ProgramOverviewPage() {
 
           {/* Header */}
           <div>
+            {user.name && (
+              <p style={{
+                fontSize: '11px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.12em',
+                color: route.color,
+                fontFamily: 'var(--font-body)',
+                fontWeight: 500,
+                margin: '0 0 6px',
+              }}>
+                Welcome back, {user.name.split(' ')[0]}
+              </p>
+            )}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
               <span style={{
                 fontSize: '11px',

@@ -12,18 +12,20 @@ import { useApp } from '@/context/AppContext'
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const { sidebarMode, setSidebarMode, loading, isAuthed, user } = useApp()
+  const { sidebarMode, setSidebarMode, loading, isAuthed, user, effectiveIsAdmin } = useApp()
   const router = useRouter()
   const pathname = usePathname()
 
   // Flow guard: signed-in users who haven't finished setup get bounced back.
-  // Admins skip the guard entirely and can access any portal page.
+  // Admins skip the guard (unless they're previewing as a user via the
+  // top-right dropdown — then effectiveIsAdmin goes false and the real
+  // flow applies so they see exactly what a user would).
   useEffect(() => {
-    if (loading || !isAuthed || user.isAdmin) return
+    if (loading || !isAuthed || effectiveIsAdmin) return
     if (!user.quizResult)         { router.replace('/quiz'); return }
     if (!user.selectedPath)       { router.replace('/quiz/paths'); return }
     if (!user.onboardingComplete) { router.replace('/onboarding'); return }
-  }, [loading, isAuthed, user.isAdmin, user.quizResult, user.selectedPath, user.onboardingComplete, router])
+  }, [loading, isAuthed, effectiveIsAdmin, user.quizResult, user.selectedPath, user.onboardingComplete, router])
 
   // Auto-switch sidebar mode based on the route the user is on.
   useEffect(() => {

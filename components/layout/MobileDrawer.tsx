@@ -73,8 +73,8 @@ const cardsNavItems: NavItem[] = [
 const workNavItems: NavItem[] = [
   { href: '/program',          icon: OverviewIcon, label: 'The Work',        subtitle: 'Program overview',           exact: true },
   { href: '/program/today',    icon: FlameIcon,    label: "Today's Session", subtitle: 'Pick up where you left off', exact: true },
-  { href: '/journal',          icon: JournalIcon,  label: 'Reflection',      subtitle: 'Tell the truth'                            },
-  { href: '/program/progress', icon: ProgressIcon, label: 'My Progress',     subtitle: 'Your journey so far',        exact: true  },
+  { href: '/program/reflections', icon: JournalIcon, label: 'Daily Journal', subtitle: 'Tell the truth',             exact: true },
+  { href: '/program/progress',    icon: ProgressIcon, label: 'My Progress',  subtitle: 'Your journey so far',        exact: true },
 ]
 
 function CircleIcon() {
@@ -112,7 +112,7 @@ interface Props {
 export default function MobileDrawer({ open, onClose }: Props) {
   const pathname = usePathname()
   const router   = useRouter()
-  const { user, dayNumber, sidebarMode, setSidebarMode } = useApp()
+  const { dayNumber, sidebarMode, setSidebarMode, effectivePath, effectiveIsAdmin } = useApp()
 
   const isWork      = sidebarMode === 'work'
   const isCircle    = sidebarMode === 'circle'
@@ -284,7 +284,7 @@ export default function MobileDrawer({ open, onClose }: Props) {
                 </div>
               </button>
             )}
-            {sidebarMode !== 'circle' && (user.selectedPath === 'C' || user.isAdmin) && (
+            {sidebarMode !== 'circle' && (effectivePath === 'C' || effectiveIsAdmin) && (
               <button
                 onClick={() => { setSidebarMode('circle'); navigate('/circle') }}
                 style={{

@@ -69,7 +69,7 @@ interface NavItem {
 const workNavItems: NavItem[] = [
   { href: '/program',          icon: OverviewIcon, label: 'The Work',         subtitle: 'Program overview',           exact: true },
   { href: '/program/today',    icon: FlameIcon,    label: "Today's Session",  subtitle: 'Pick up where you left off', exact: true },
-  { href: '/journal',          icon: JournalIcon,  label: 'Reflection',       subtitle: 'Tell the truth'                            },
+  { href: '/program/reflections', icon: JournalIcon, label: 'Daily Journal',   subtitle: 'Tell the truth',             exact: true },
   { href: '/program/progress', icon: ProgressIcon, label: 'My Progress',      subtitle: 'Your journey so far',        exact: true },
 ]
 
@@ -81,7 +81,7 @@ function isItemActive(href: string, pathname: string, exact?: boolean): boolean 
 export default function SidebarWork() {
   const pathname = usePathname()
   const router   = useRouter()
-  const { user, setSidebarMode } = useApp()
+  const { setSidebarMode, effectivePath, effectiveIsAdmin } = useApp()
 
   return (
     <aside
@@ -216,7 +216,7 @@ export default function SidebarWork() {
           </button>
 
           {/* Path C only — The Circle */}
-          {(user.selectedPath === 'C' || user.isAdmin) && (
+          {(effectivePath === 'C' || effectiveIsAdmin) && (
             <button
               onClick={() => { setSidebarMode('circle'); router.push('/circle') }}
               style={{
