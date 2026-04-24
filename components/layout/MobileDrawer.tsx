@@ -112,7 +112,7 @@ interface Props {
 export default function MobileDrawer({ open, onClose }: Props) {
   const pathname = usePathname()
   const router   = useRouter()
-  const { dayNumber, sidebarMode, setSidebarMode, effectivePath, effectiveIsAdmin } = useApp()
+  const { dayNumber, sidebarMode, setSidebarMode, hasCardsAccess, hasWorkAccess, hasCircleAccess } = useApp()
 
   const isWork      = sidebarMode === 'work'
   const isCircle    = sidebarMode === 'circle'
@@ -246,7 +246,7 @@ export default function MobileDrawer({ open, onClose }: Props) {
           {/* Mode switch buttons — show every mode except the current one */}
           <div style={{ padding: '0 8px', marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <div style={{ borderTop: '1px solid var(--line)', marginBottom: '6px' }} />
-            {sidebarMode !== 'cards' && (
+            {sidebarMode !== 'cards' && hasCardsAccess && (
               <button
                 onClick={() => { setSidebarMode('cards'); navigate('/dashboard') }}
                 style={{
@@ -263,7 +263,7 @@ export default function MobileDrawer({ open, onClose }: Props) {
                 </div>
               </button>
             )}
-            {sidebarMode !== 'work' && (
+            {sidebarMode !== 'work' && hasWorkAccess && (
               <button
                 onClick={() => { setSidebarMode('work'); navigate('/program') }}
                 style={{
@@ -284,7 +284,7 @@ export default function MobileDrawer({ open, onClose }: Props) {
                 </div>
               </button>
             )}
-            {sidebarMode !== 'circle' && (effectivePath === 'C' || effectiveIsAdmin) && (
+            {sidebarMode !== 'circle' && hasCircleAccess && (
               <button
                 onClick={() => { setSidebarMode('circle'); navigate('/circle') }}
                 style={{

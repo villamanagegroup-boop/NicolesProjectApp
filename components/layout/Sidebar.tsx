@@ -105,7 +105,7 @@ function isItemActive(href: string, pathname: string, exact?: boolean): boolean 
 export default function Sidebar() {
   const pathname = usePathname()
   const router   = useRouter()
-  const { user, dayNumber, setSidebarMode, effectivePath, effectiveIsAdmin } = useApp()
+  const { dayNumber, setSidebarMode, hasWorkAccess, hasCircleAccess } = useApp()
 
   const vaultUnlocked = dayNumber >= 30
 
@@ -207,42 +207,45 @@ export default function Sidebar() {
           )
         })}
 
-        {/* Swap to The Work */}
+        {/* Swap buttons — only show for modes the user can actually access */}
         <div style={{ padding: '0 8px', marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <div style={{ borderTop: '1px solid var(--line)', marginBottom: '6px' }} />
-          <button
-            onClick={() => { setSidebarMode('work'); router.push('/program') }}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '10px 12px',
-              borderRadius: '8px',
-              background: 'rgba(61,48,128,0.07)',
-              border: '1px solid rgba(61,48,128,0.15)',
-              cursor: 'pointer',
-              textAlign: 'left',
-            }}
-          >
-            <span style={{ color: PURPLE, flexShrink: 0 }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 2a6 6 0 016 6v2l1 2H1l1-2V8a6 6 0 016-6z" />
-                <path d="M6.5 14a1.5 1.5 0 003 0" />
-              </svg>
-            </span>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', color: 'var(--ink)', lineHeight: 1.2 }}>
-                Seal the Leak
+          {(hasWorkAccess || hasCircleAccess) && (
+            <div style={{ borderTop: '1px solid var(--line)', marginBottom: '6px' }} />
+          )}
+          {hasWorkAccess && (
+            <button
+              onClick={() => { setSidebarMode('work'); router.push('/program') }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                background: 'rgba(61,48,128,0.07)',
+                border: '1px solid rgba(61,48,128,0.15)',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              <span style={{ color: PURPLE, flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 2a6 6 0 016 6v2l1 2H1l1-2V8a6 6 0 016-6z" />
+                  <path d="M6.5 14a1.5 1.5 0 003 0" />
+                </svg>
+              </span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', color: 'var(--ink)', lineHeight: 1.2 }}>
+                  Seal the Leak
+                </div>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', lineHeight: 1.3, marginTop: '2px' }}>
+                  → Switch to The Work
+                </div>
               </div>
-              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', lineHeight: 1.3, marginTop: '2px' }}>
-                → Switch to The Work
-              </div>
-            </div>
-          </button>
+            </button>
+          )}
 
-          {/* Circle: Path C members + admins (hidden when admin is previewing as a non-C user) */}
-          {(effectivePath === 'C' || effectiveIsAdmin) && (
+          {hasCircleAccess && (
             <button
               onClick={() => { setSidebarMode('circle'); router.push('/circle') }}
               style={{

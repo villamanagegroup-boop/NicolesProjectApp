@@ -81,7 +81,7 @@ function isItemActive(href: string, pathname: string, exact?: boolean): boolean 
 export default function SidebarWork() {
   const pathname = usePathname()
   const router   = useRouter()
-  const { setSidebarMode, effectivePath, effectiveIsAdmin } = useApp()
+  const { setSidebarMode, hasCardsAccess, hasCircleAccess } = useApp()
 
   return (
     <aside
@@ -181,42 +181,45 @@ export default function SidebarWork() {
           )
         })}
 
-        {/* Swap to Daily Cards */}
+        {/* Swap buttons — only show for modes the user can actually access */}
         <div style={{ padding: '0 8px', marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <div style={{ borderTop: '1px solid var(--line)', marginBottom: '6px' }} />
-          <button
-            onClick={() => { setSidebarMode('cards'); router.push('/dashboard') }}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '10px 12px',
-              borderRadius: '8px',
-              background: 'var(--green-pale)',
-              border: '1px solid rgba(31,92,58,0.15)',
-              cursor: 'pointer',
-              textAlign: 'left',
-            }}
-          >
-            <span style={{ color: 'var(--green)', flexShrink: 0 }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="5" width="12" height="9" rx="1.5" />
-                <path d="M4 5V4a2 2 0 012-2h4a2 2 0 012 2v1" />
-              </svg>
-            </span>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', color: 'var(--ink)', lineHeight: 1.2 }}>
-                365 Days
+          {(hasCardsAccess || hasCircleAccess) && (
+            <div style={{ borderTop: '1px solid var(--line)', marginBottom: '6px' }} />
+          )}
+          {hasCardsAccess && (
+            <button
+              onClick={() => { setSidebarMode('cards'); router.push('/dashboard') }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                background: 'var(--green-pale)',
+                border: '1px solid rgba(31,92,58,0.15)',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              <span style={{ color: 'var(--green)', flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="5" width="12" height="9" rx="1.5" />
+                  <path d="M4 5V4a2 2 0 012-2h4a2 2 0 012 2v1" />
+                </svg>
+              </span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', color: 'var(--ink)', lineHeight: 1.2 }}>
+                  365 Days
+                </div>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', lineHeight: 1.3, marginTop: '2px' }}>
+                  ← Switch to Daily Cards
+                </div>
               </div>
-              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', lineHeight: 1.3, marginTop: '2px' }}>
-                ← Switch to Daily Cards
-              </div>
-            </div>
-          </button>
+            </button>
+          )}
 
-          {/* Path C only — The Circle */}
-          {(effectivePath === 'C' || effectiveIsAdmin) && (
+          {hasCircleAccess && (
             <button
               onClick={() => { setSidebarMode('circle'); router.push('/circle') }}
               style={{

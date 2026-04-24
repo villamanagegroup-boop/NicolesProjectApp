@@ -12,9 +12,25 @@ import { useApp } from '@/context/AppContext'
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const { sidebarMode, setSidebarMode, loading, isAuthed, user, effectiveIsAdmin } = useApp()
+  const { sidebarMode, setSidebarMode, loading, isAuthed, user, effectivePath, effectiveIsAdmin } = useApp()
   const router = useRouter()
   const pathname = usePathname()
+
+  // Route-level path isolation: each persona only sees their own content.
+  // A: /program + (when unlocked) /card·/dashboard·... — no /circle.
+  // B: cards routes only — no /program, no /circle.
+  // C: /circle only — no cards routes, no /program.
+  // Admins bypass.
+  useEffect(() => {
+    if (loading || !isAuthed || effectiveIsAdmin || !pathname) return
+    const CARDS_PREFIXES = ['/dashboard', '/card', '/past', '/vault', '/wins', '/journal']
+    const inCards  = CARDS_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))
+    const inWork   = pathname.startsWith('/program')
+    const inCircle = pathname.startsWith('/circle')
+    if (effectivePath === 'A' && inCircle)             { router.replace('/program'); return }
+    if (effectivePath === 'B' && (inWork || inCircle)) { router.replace('/dashboard'); return }
+    if (effectivePath === 'C' && (inWork || inCards))  { router.replace('/circle'); return }
+  }, [loading, isAuthed, effectiveIsAdmin, effectivePath, pathname, router])
 
   // Flow guard: signed-in users who haven't finished setup get bounced back.
   // Admins skip the guard (unless they're previewing as a user via the

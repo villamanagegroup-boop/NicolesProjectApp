@@ -203,6 +203,11 @@ interface AppContextValue {
   setViewAsPath: (p: Path | null) => void
   effectivePath: Path | null
   effectiveIsAdmin: boolean
+  // What the effective user is allowed to navigate into.
+  // Drives sidebar swap-button visibility + portal layout redirects.
+  hasWorkAccess: boolean
+  hasCardsAccess: boolean
+  hasCircleAccess: boolean
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -495,8 +500,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     realDayNumber,
     viewAsPath,
     setViewAsPath,
-    effectivePath: viewAsPath ?? user.selectedPath,
-    effectiveIsAdmin: user.isAdmin && viewAsPath === null,
+    effectivePath: effectivePathForGate,
+    effectiveIsAdmin: effectiveIsAdminForGate,
+    hasWorkAccess:   effectivePathForGate === 'A' || effectiveIsAdminForGate,
+    hasCardsAccess:  effectivePathForGate === 'B' || (effectivePathForGate === 'A' && cardsAccess.unlocked) || effectiveIsAdminForGate,
+    hasCircleAccess: effectivePathForGate === 'C' || effectiveIsAdminForGate,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
