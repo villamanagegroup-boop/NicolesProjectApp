@@ -11,6 +11,7 @@ export interface User {
   stripeCustomerId: string | null
   hasPaid: boolean
   isAdmin: boolean
+  onboardingComplete: boolean
 }
 
 export interface DailyCard {

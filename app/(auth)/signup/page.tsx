@@ -72,21 +72,16 @@ function SignupForm() {
       }).eq('id', data.user.id)
     }
 
-    // If no session (needs email confirmation) and no Stripe link → show a sign-in prompt
-    if (!data.session && (stripeLink === '#' || !stripeLink)) {
+    // If no session (needs email confirmation), ask them to confirm + sign in
+    if (!data.session) {
       setSubmitting(false)
       setError('Check your email to confirm your account, then sign in.')
       return
     }
 
-    // If Stripe is configured, go to checkout (matches existing flow)
-    if (stripeLink && stripeLink !== '#') {
-      window.location.href = stripeLink
-      return
-    }
-
-    // Fallback: straight to dashboard
-    window.location.href = '/dashboard'
+    // Signed in — proceed to onboarding. Stripe will slot in here later once
+    // the checkout success URL points back to /onboarding.
+    window.location.href = '/onboarding'
   }
 
   const inputStyle: React.CSSProperties = {

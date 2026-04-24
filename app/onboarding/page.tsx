@@ -1,6 +1,8 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { supabaseClient } from '@/lib/supabase/client'
 
 type Archetype = 'door' | 'throne' | 'engine' | 'push'
 type Ennea = '1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9'
@@ -178,6 +180,7 @@ function BtnRow({ children }: { children: React.ReactNode }) {
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export default function OnboardingPage() {
+  const router = useRouter()
   const [step, setStep] = useState(1)
   const [state, setState] = useState<AssessmentState>({
     archetype: null, ennea: null, attach: null, acctFeel: null, feedback: null, goal: '',
@@ -185,6 +188,49 @@ export default function OnboardingPage() {
   const [errors, setErrors] = useState<Record<string, boolean>>({})
   const [selectedMatch, setSelectedMatch] = useState<string | null>(null)
   const [matches, setMatches] = useState<(CohortMember & { compat: number; why: string[] })[]>([])
+  const [finishing, setFinishing] = useState(false)
+  const [finishError, setFinishError] = useState<string | null>(null)
+
+  async function finishOnboarding() {
+    setFinishing(true)
+    setFinishError(null)
+    const { data: { user } } = await supabaseClient.auth.getUser()
+    if (!user) {
+      // Not signed in — admin preview path. Just go to the dashboard.
+      router.push('/dashboard')
+      return
+    }
+    const { error: assessmentError } = await supabaseClient
+      .from('onboarding_assessments')
+      .upsert({
+        user_id:   user.id,
+        archetype: state.archetype,
+        ennea:     state.ennea,
+        attach:    state.attach,
+        acct_feel: state.acctFeel,
+        feedback:  state.feedback,
+        goal:      state.goal.trim() || null,
+      }, { onConflict: 'user_id' })
+
+    if (assessmentError) {
+      setFinishError(assessmentError.message)
+      setFinishing(false)
+      return
+    }
+
+    const { error: userError } = await supabaseClient
+      .from('users')
+      .update({ onboarding_complete: true })
+      .eq('id', user.id)
+
+    if (userError) {
+      setFinishError(userError.message)
+      setFinishing(false)
+      return
+    }
+
+    router.push('/dashboard')
+  }
 
   const stepLabels = ['','Your archetype','Enneagram type','Attachment style','Coaching preferences','Your matches']
   const progress = Math.min(step, 5)
@@ -557,9 +603,27 @@ export default function OnboardingPage() {
             </div>
 
             <div style={{ marginTop: '24px', textAlign: 'center' }}>
-              <Link href="/dashboard" style={{ display: 'inline-block', background: '#1B4332', color: '#fff', padding: '12px 32px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, textDecoration: 'none' }}>
-                Go to my portal →
-              </Link>
+              {finishError && (
+                <p style={{ fontSize: 12, color: '#c0392b', marginBottom: 12 }}>{finishError}</p>
+              )}
+              <button
+                type="button"
+                onClick={finishOnboarding}
+                disabled={finishing}
+                style={{
+                  display: 'inline-block',
+                  background: finishing ? '#8aa595' : '#1B4332',
+                  color: '#fff',
+                  padding: '12px 32px',
+                  borderRadius: '10px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  border: 'none',
+                  cursor: finishing ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {finishing ? 'Finishing…' : 'Go to my portal →'}
+              </button>
             </div>
           </>
         )}

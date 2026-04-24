@@ -19,6 +19,7 @@ const mockUser: User = {
   stripeCustomerId: null,
   hasPaid: false,
   isAdmin: true,
+  onboardingComplete: true,
 }
 
 const mockWins: Win[] = [
@@ -58,6 +59,7 @@ interface UserRow {
   has_paid: boolean | null
   is_admin: boolean | null
   avatar_url: string | null
+  onboarding_complete: boolean | null
 }
 
 function userFromRow(row: UserRow, fallbackEmail: string): User {
@@ -71,6 +73,7 @@ function userFromRow(row: UserRow, fallbackEmail: string): User {
     stripeCustomerId: row.stripe_customer_id,
     hasPaid: row.has_paid ?? false,
     isAdmin: row.is_admin ?? false,
+    onboardingComplete: row.onboarding_complete ?? false,
   }
 }
 
