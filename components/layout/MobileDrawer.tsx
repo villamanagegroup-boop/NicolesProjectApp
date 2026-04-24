@@ -112,7 +112,7 @@ interface Props {
 export default function MobileDrawer({ open, onClose }: Props) {
   const pathname = usePathname()
   const router   = useRouter()
-  const { dayNumber, sidebarMode, setSidebarMode, hasCardsAccess, hasWorkAccess, hasCircleAccess } = useApp()
+  const { dayNumber, sidebarMode } = useApp()
 
   const isWork      = sidebarMode === 'work'
   const isCircle    = sidebarMode === 'circle'
@@ -242,70 +242,6 @@ export default function MobileDrawer({ open, onClose }: Props) {
               </Link>
             )
           })}
-
-          {/* Mode switch buttons — show every mode except the current one */}
-          <div style={{ padding: '0 8px', marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div style={{ borderTop: '1px solid var(--line)', marginBottom: '6px' }} />
-            {sidebarMode !== 'cards' && hasCardsAccess && (
-              <button
-                onClick={() => { setSidebarMode('cards'); navigate('/dashboard') }}
-                style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
-                  padding: '10px 12px', borderRadius: '8px',
-                  background: GREEN_PALE, border: '1px solid rgba(26,82,48,0.15)',
-                  cursor: 'pointer', textAlign: 'left',
-                }}
-              >
-                <span style={{ color: GREEN, flexShrink: 0 }}><CardsIcon /></span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', color: 'var(--ink)', lineHeight: 1.2 }}>365 Days</div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', lineHeight: 1.3, marginTop: '2px' }}>← Switch to Daily Cards</div>
-                </div>
-              </button>
-            )}
-            {sidebarMode !== 'work' && hasWorkAccess && (
-              <button
-                onClick={() => { setSidebarMode('work'); navigate('/program') }}
-                style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
-                  padding: '10px 12px', borderRadius: '8px',
-                  background: PURPLE_PALE, border: '1px solid rgba(61,48,128,0.15)',
-                  cursor: 'pointer', textAlign: 'left',
-                }}
-              >
-                <span style={{ color: PURPLE, flexShrink: 0 }}>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M8 2a6 6 0 016 6v2l1 2H1l1-2V8a6 6 0 016-6z"/><path d="M6.5 14a1.5 1.5 0 003 0"/>
-                  </svg>
-                </span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', color: 'var(--ink)', lineHeight: 1.2 }}>Seal the Leak</div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', lineHeight: 1.3, marginTop: '2px' }}>{isCircle ? '←' : '→'} Switch to The Work</div>
-                </div>
-              </button>
-            )}
-            {sidebarMode !== 'circle' && hasCircleAccess && (
-              <button
-                onClick={() => { setSidebarMode('circle'); navigate('/circle') }}
-                style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
-                  padding: '10px 12px', borderRadius: '8px',
-                  background: ORANGE_PALE, border: '1px solid rgba(201,125,58,0.2)',
-                  cursor: 'pointer', textAlign: 'left',
-                }}
-              >
-                <span style={{ color: ORANGE, flexShrink: 0 }}>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2"/>
-                  </svg>
-                </span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', color: 'var(--ink)', lineHeight: 1.2 }}>The Circle</div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', lineHeight: 1.3, marginTop: '2px' }}>→ Switch to your cohort</div>
-                </div>
-              </button>
-            )}
-          </div>
 
         </nav>
 

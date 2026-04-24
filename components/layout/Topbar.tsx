@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import { useApp } from '@/context/AppContext'
 import { PATHS, type PathId } from '@/data/paths'
+import ProgramSwitcher from './ProgramSwitcher'
 
 interface TopbarProps {
   onMenuOpen?: () => void
@@ -190,6 +191,8 @@ export default function Topbar({ onMenuOpen }: TopbarProps) {
 
       {/* Right side */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Program switcher — shows for anyone with 2+ accessible programs */}
+        <ProgramSwitcher />
         {/* Admin: view-as dropdown (renders nothing for non-admins) */}
         <ViewAsDropdown />
         {/* Bell */}
