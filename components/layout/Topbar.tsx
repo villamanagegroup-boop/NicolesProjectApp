@@ -1,123 +1,54 @@
 'use client'
 import React, { useState } from 'react'
 import { useApp } from '@/context/AppContext'
-import { PATHS, type PathId } from '@/data/paths'
 import ProgramSwitcher from './ProgramSwitcher'
+import AdminConsole from './AdminConsole'
 
 interface TopbarProps {
   onMenuOpen?: () => void
 }
 
-function ViewAsDropdown() {
-  const { user, viewAsPath, setViewAsPath } = useApp()
-  const [open, setOpen] = useState(false)
+function AdminButton({ onOpen }: { onOpen: () => void }) {
+  const { user, viewAsPath, adminCardDay, adminProgramDay, adminArchetype } = useApp()
   if (!user.isAdmin) return null
 
-  const currentLabel = viewAsPath ? `Viewing as Path ${viewAsPath}` : 'Admin view'
-  const isPreviewing = viewAsPath !== null
+  const hasOverrides = viewAsPath !== null
+                    || adminCardDay !== null
+                    || adminProgramDay !== null
+                    || adminArchetype !== null
 
-  return (
-    <div style={{ position: 'relative' }}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        title="Admin — preview the app as a user of any path"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          padding: '5px 10px',
-          borderRadius: 6,
-          border: `1px solid ${isPreviewing ? '#C97D3A' : 'var(--line-md)'}`,
-          background: isPreviewing ? 'rgba(201,125,58,0.08)' : 'white',
-          color: isPreviewing ? '#7A5800' : 'var(--text-soft)',
-          fontSize: 11,
-          fontFamily: 'var(--font-body)',
-          cursor: 'pointer',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M1 8s3-5 7-5 7 5 7 5-3 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/>
-        </svg>
-        {currentLabel}
-        <span style={{ fontSize: 9, opacity: 0.6 }}>{open ? '▲' : '▼'}</span>
-      </button>
-      {open && (
-        <>
-          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
-          <div style={{
-            position: 'absolute',
-            top: 'calc(100% + 6px)',
-            right: 0,
-            minWidth: 220,
-            background: 'white',
-            border: '1px solid var(--line-md)',
-            borderRadius: 8,
-            boxShadow: '0 4px 16px rgba(12,12,10,0.08)',
-            zIndex: 50,
-            overflow: 'hidden',
-          }}>
-            <div style={{
-              padding: '8px 12px',
-              fontSize: 9,
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              color: 'var(--text-muted)',
-              fontFamily: 'var(--font-body)',
-              background: 'var(--paper)',
-              borderBottom: '1px solid var(--line)',
-            }}>
-              Preview app as
-            </div>
-            <DropdownItem
-              label="Admin view"
-              sub="Full access + no flow guard"
-              active={viewAsPath === null}
-              onClick={() => { setViewAsPath(null); setOpen(false) }}
-            />
-            {(['A','B','C'] as PathId[]).map(pathId => {
-              const p = PATHS[pathId]
-              return (
-                <DropdownItem
-                  key={pathId}
-                  label={`${p.icon} ${p.title}`}
-                  sub={`Tier ${p.tier} — Path ${pathId}`}
-                  active={viewAsPath === pathId}
-                  onClick={() => { setViewAsPath(pathId); setOpen(false) }}
-                />
-              )
-            })}
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
+  const label = viewAsPath ? `Viewing Path ${viewAsPath}` : 'Admin'
 
-function DropdownItem({ label, sub, active, onClick }: {
-  label: string; sub: string; active: boolean; onClick: () => void
-}) {
   return (
     <button
-      onClick={onClick}
+      onClick={onOpen}
+      title="Open admin console"
       style={{
-        display: 'block',
-        width: '100%',
-        textAlign: 'left',
-        padding: '10px 14px',
-        background: active ? 'rgba(201,125,58,0.08)' : 'white',
-        border: 'none',
-        borderBottom: '1px solid var(--line)',
-        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '5px 12px',
+        borderRadius: 6,
+        border: `1px solid ${hasOverrides ? 'var(--gold)' : 'var(--ink)'}`,
+        background: hasOverrides ? 'rgba(184,146,42,0.08)' : 'var(--ink)',
+        color: hasOverrides ? 'var(--gold)' : '#fff',
+        fontSize: 11,
+        fontWeight: 600,
         fontFamily: 'var(--font-body)',
+        cursor: 'pointer',
+        whiteSpace: 'nowrap',
       }}
-      onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'var(--paper)' }}
-      onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'white' }}
     >
-      <div style={{ fontSize: 12, fontWeight: active ? 600 : 500, color: active ? '#7A5800' : 'var(--ink)' }}>
-        {label}
-      </div>
-      <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>{sub}</div>
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 1l5 2v5c0 3-2.5 5.5-5 7-2.5-1.5-5-4-5-7V3l5-2z" />
+      </svg>
+      {label}
+      {hasOverrides && (
+        <span style={{
+          width: 6, height: 6, borderRadius: '50%',
+          background: 'var(--gold)',
+        }} />
+      )}
     </button>
   )
 }
@@ -143,6 +74,7 @@ function GearIcon() {
 export default function Topbar({ onMenuOpen }: TopbarProps) {
   const { user, avatarUrl } = useApp()
   const [showNotifications, setShowNotifications] = useState(false)
+  const [adminOpen, setAdminOpen] = useState(false)
   const firstInitial = user.name.charAt(0).toUpperCase()
   const photoSrc = avatarUrl ?? null
 
@@ -193,8 +125,8 @@ export default function Topbar({ onMenuOpen }: TopbarProps) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         {/* Program switcher — shows for anyone with 2+ accessible programs */}
         <ProgramSwitcher />
-        {/* Admin: view-as dropdown (renders nothing for non-admins) */}
-        <ViewAsDropdown />
+        {/* Admin console trigger (renders nothing for non-admins) */}
+        <AdminButton onOpen={() => setAdminOpen(true)} />
         {/* Bell */}
         <div style={{ position: 'relative' }}>
           <button
@@ -340,6 +272,8 @@ export default function Topbar({ onMenuOpen }: TopbarProps) {
           )}
         </div>
       </div>
+      {/* Admin console drawer — only mounts for admins; self-gated */}
+      <AdminConsole open={adminOpen} onClose={() => setAdminOpen(false)} />
     </header>
   )
 }
