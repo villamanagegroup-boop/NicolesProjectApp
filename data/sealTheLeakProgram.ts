@@ -20,6 +20,7 @@ export interface ProgramRoute {
   textColor: string
   coreWound: string
   coreShift: string
+  imageUrl: string
   days: ProgramDay[]
 }
 
@@ -50,6 +51,7 @@ export const programRoutes: Record<string, ProgramRoute> = {
     textColor: '#3D3080',
     coreWound: 'Accessible to everyone but themselves.',
     coreShift: 'Choosing who and what gets their energy.',
+    imageUrl: '/archetypes/door.jpg',
     days: [
       {
         day: 1,
@@ -214,6 +216,7 @@ export const programRoutes: Record<string, ProgramRoute> = {
     textColor: '#1A5230',
     coreWound: 'The mind became a control mechanism. Thinking feels safe; not-thinking feels dangerous.',
     coreShift: 'Action as the antidote to mental noise.',
+    imageUrl: '/archetypes/throne.jpg',
     days: [
       {
         day: 1,
@@ -375,6 +378,7 @@ export const programRoutes: Record<string, ProgramRoute> = {
     textColor: '#7D1F1F',
     coreWound: 'Momentum interruptions erode self-trust over time. Each restart costs more than the last.',
     coreShift: "Building an engine that doesn't require perfect conditions.",
+    imageUrl: '/archetypes/engine.jpg',
     days: [
       {
         day: 1,
@@ -535,6 +539,7 @@ export const programRoutes: Record<string, ProgramRoute> = {
     textColor: '#7A5800',
     coreWound: 'Rest was never safe, so the body learned to be ignored.',
     coreShift: 'The body becomes a trusted source of information — not an obstacle to override.',
+    imageUrl: '/archetypes/push.jpg',
     days: [
       {
         day: 1,

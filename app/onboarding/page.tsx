@@ -129,12 +129,12 @@ function scoreCompat(member: CohortMember, state: AssessmentState): { score: num
 
 // ── Reusable sub-components ──────────────────────────────────────────────────
 
-function RadioOption({ name, value, checked, label, sub, onChange }: {
-  name: string; value: string; checked: boolean; label: string; sub?: string; onChange: () => void
+function RadioOption({ name, value, checked, label, sub, onChange, imageUrl }: {
+  name: string; value: string; checked: boolean; label: string; sub?: string; onChange: () => void; imageUrl?: string
 }) {
   return (
     <label style={{
-      display: 'flex', alignItems: 'flex-start', gap: '10px',
+      display: 'flex', alignItems: 'center', gap: '12px',
       padding: '10px 14px', border: `1px solid ${checked ? '#1B4332' : '#e8e4dc'}`,
       borderRadius: '10px', cursor: 'pointer',
       background: checked ? '#f0f6f2' : '#fff',
@@ -143,8 +143,22 @@ function RadioOption({ name, value, checked, label, sub, onChange }: {
       <input
         type="radio" name={name} value={value} checked={checked}
         onChange={onChange}
-        style={{ marginTop: '2px', accentColor: '#1B4332', flexShrink: 0 }}
+        style={{ marginTop: imageUrl ? 0 : '2px', accentColor: '#1B4332', flexShrink: 0, alignSelf: imageUrl ? 'center' : 'flex-start' }}
       />
+      {imageUrl && (
+        <img
+          src={imageUrl}
+          alt=""
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: '8px',
+            objectFit: 'cover',
+            flexShrink: 0,
+            border: `1px solid ${checked ? '#1B4332' : '#e8e4dc'}`,
+          }}
+        />
+      )}
       <span style={{ fontSize: '13px', lineHeight: 1.5, color: '#333' }}>
         <strong style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#1a1a1a', marginBottom: '1px' }}>{label}</strong>
         {sub}
@@ -319,12 +333,12 @@ export default function OnboardingPage() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {([
-                  ['door',   'The Open Door',          'Your energy activates for others automatically. You give before you check in with yourself.'],
-                  ['throne', 'The Overthink Throne',   'Your mind stays on. Replaying, preparing, analyzing — it rarely gets to rest.'],
-                  ['engine', 'The Interrupted Engine', 'When you\'re moving you\'re unstoppable. Interruptions cost you more than just time.'],
-                  ['push',   'The Pushthrough',        'You move first, check in later. Your body has been speaking — you\'re learning to listen.'],
-                ] as [Archetype, string, string][]).map(([val, label, sub]) => (
-                  <RadioOption key={val} name="archetype" value={val} label={label} sub={sub}
+                  ['door',   'The Open Door',          'Your energy activates for others automatically. You give before you check in with yourself.',  '/archetypes/door.jpg'],
+                  ['throne', 'The Overthink Throne',   'Your mind stays on. Replaying, preparing, analyzing — it rarely gets to rest.',                  '/archetypes/throne.jpg'],
+                  ['engine', 'The Interrupted Engine', 'When you\'re moving you\'re unstoppable. Interruptions cost you more than just time.',            '/archetypes/engine.jpg'],
+                  ['push',   'The Pushthrough',        'You move first, check in later. Your body has been speaking — you\'re learning to listen.',     '/archetypes/push.jpg'],
+                ] as [Archetype, string, string, string][]).map(([val, label, sub, img]) => (
+                  <RadioOption key={val} name="archetype" value={val} label={label} sub={sub} imageUrl={img}
                     checked={state.archetype === val} onChange={() => set('archetype', val)} />
                 ))}
               </div>

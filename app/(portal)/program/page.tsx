@@ -166,6 +166,30 @@ export default function ProgramOverviewPage() {
             borderRadius: '10px',
             overflow: 'hidden',
           }}>
+            {route.imageUrl && (
+              <div style={{ position: 'relative', width: '100%', aspectRatio: '16 / 9', overflow: 'hidden' }}>
+                <img
+                  src={route.imageUrl}
+                  alt={route.name}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                />
+                <div style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  padding: '10px 14px',
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0) 100%)',
+                  color: 'white',
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '16px',
+                  fontWeight: 500,
+                  textShadow: '0 1px 2px rgba(0,0,0,0.4)',
+                }}>
+                  {route.name}
+                </div>
+              </div>
+            )}
             <div style={{ height: '3px', background: route.color }} />
             <div style={{ padding: '16px' }}>
               <p style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 8px', fontFamily: 'var(--font-body)' }}>
