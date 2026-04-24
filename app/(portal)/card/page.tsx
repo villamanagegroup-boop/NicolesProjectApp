@@ -32,23 +32,26 @@ function CardPageInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const dayParam = searchParams.get('day')
-  const { user, cards, dayNumber, todayCard, checkInToday, setCheckIn, journalEntries, addJournalEntry, updateJournalEntry } = useApp()
+  const { user, cards, dayNumber, todayCard, cardsAccess, checkInToday, setCheckIn, journalEntries, addJournalEntry, updateJournalEntry } = useApp()
 
   // If ?day= param exists, find that card; otherwise show today's card
   const displayCard = dayParam
     ? cards.find(c => c.dayNumber === parseInt(dayParam)) ?? todayCard
     : todayCard
 
-  const displayDayNumber = dayParam ? parseInt(dayParam) : dayNumber
-  const isHistoricalView = !!dayParam && parseInt(dayParam) !== dayNumber
+  // Effective day the user can view up to. For Path A this is clamped by
+  // their program progress (see lib/utils/pathAccess.ts).
+  const visibleMaxDay = cardsAccess.maxDay
+  const displayDayNumber = dayParam ? parseInt(dayParam) : visibleMaxDay
+  const isHistoricalView = !!dayParam && parseInt(dayParam) !== visibleMaxDay
 
-  // Prev/next nav — clamped to [1, dayNumber] (dayNumber reflects admin override)
+  // Prev/next nav clamped to what the user can see
   const canPrev = displayDayNumber > 1
-  const canNext = displayDayNumber < dayNumber
+  const canNext = displayDayNumber < visibleMaxDay
 
   function goToDay(target: number) {
-    if (target < 1 || target > dayNumber) return
-    if (target === dayNumber) router.push('/card')
+    if (target < 1 || target > visibleMaxDay) return
+    if (target === visibleMaxDay) router.push('/card')
     else router.push(`/card?day=${target}`)
   }
 
@@ -62,7 +65,7 @@ function CardPageInner() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canPrev, canNext, displayDayNumber, dayNumber])
+  }, [canPrev, canNext, displayDayNumber, visibleMaxDay])
 
   // Find existing entry for this specific card
   const existingEntry = displayCard
@@ -94,6 +97,56 @@ function CardPageInner() {
     drained:      { emoji: '🌑', label: 'Drained' },
     overwhelmed:  { emoji: '🌊', label: 'Overwhelmed' },
     disconnected: { emoji: '🪨', label: 'Disconnected' },
+  }
+
+  // Locked — cards don't open for Path A users until program Day 6.
+  if (cardsAccess.state === 'locked-not-yet') {
+    const daysLeft = (cardsAccess.unlocksOnDay ?? 6) - dayNumber
+    return (
+      <div style={{ padding: '60px 20px', maxWidth: 560, margin: '0 auto', textAlign: 'center' }}>
+        <div style={{ fontSize: 40, marginBottom: 16 }}>🔒</div>
+        <p style={{
+          fontSize: 10,
+          textTransform: 'uppercase',
+          letterSpacing: '0.12em',
+          color: 'var(--gold)',
+          fontFamily: 'var(--font-body)',
+          margin: '0 0 10px',
+          fontWeight: 500,
+        }}>
+          Daily Alignment unlocks on Day {cardsAccess.unlocksOnDay}
+        </p>
+        <h1 style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 32,
+          fontWeight: 300,
+          color: 'var(--ink)',
+          margin: '0 0 14px',
+          lineHeight: 1.15,
+        }}>
+          Stay with the program for now.
+        </h1>
+        <p style={{ fontSize: 14, color: 'var(--text-soft)', margin: '0 0 28px', lineHeight: 1.7 }}>
+          You&apos;re {daysLeft === 1 ? 'one day' : `${daysLeft} days`} away. Seal the Leak starts with focus, not breadth. Your first two Alignment cards will open on Days 6 and 7 as a taste of what the 365 rhythm feels like.
+        </p>
+        <Link
+          href="/program"
+          style={{
+            display: 'inline-block',
+            padding: '11px 22px',
+            background: '#3D3080',
+            color: 'white',
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: 500,
+            textDecoration: 'none',
+            fontFamily: 'var(--font-body)',
+          }}
+        >
+          Go to today&apos;s Seal the Leak session →
+        </Link>
+      </div>
+    )
   }
 
   if (!displayCard) {
@@ -150,7 +203,7 @@ function CardPageInner() {
               opacity: canNext ? 1 : 0.4,
             }}
           >
-            Day {Math.min(dayNumber, displayDayNumber + 1)} ▶
+            Day {Math.min(visibleMaxDay, displayDayNumber + 1)} ▶
           </button>
         </div>
       </div>
@@ -169,6 +222,48 @@ function CardPageInner() {
   const circumference = 2 * Math.PI * 42 // r=42 → 263.89
 
   return (
+    <>
+      {/* Upgrade prompt — Path A users past the 7-day program */}
+      {cardsAccess.state === 'locked-upgrade' && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(184,146,42,0.08) 0%, rgba(184,146,42,0.04) 100%)',
+          border: '1px solid rgba(184,146,42,0.35)',
+          borderLeft: '3px solid #b8922a',
+          borderRadius: 10,
+          padding: '14px 20px',
+          marginBottom: 20,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          flexWrap: 'wrap',
+        }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#b8922a', fontWeight: 600, marginBottom: 3 }}>
+              You&apos;ve finished Seal the Leak
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--ink)', fontFamily: 'var(--font-body)', lineHeight: 1.6 }}>
+              You&apos;ve seen the first two Alignment cards. The rest — 363 more — live inside 365 Days and Private Coaching.
+            </div>
+          </div>
+          <Link
+            href="/welcome"
+            style={{
+              padding: '8px 14px',
+              background: '#b8922a',
+              color: 'white',
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 500,
+              fontFamily: 'var(--font-body)',
+              textDecoration: 'none',
+              flexShrink: 0,
+            }}
+          >
+            See upgrade options →
+          </Link>
+        </div>
+      )}
+
       <div className="two-col-grid" style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
 
       {/* ── LEFT COLUMN ─ sticky card visual ── */}
@@ -299,7 +394,7 @@ function CardPageInner() {
             letterSpacing: '0.08em',
             textTransform: 'uppercase',
           }}>
-            {displayDayNumber} / {dayNumber}
+            {displayDayNumber} / {visibleMaxDay}
           </span>
           <button
             onClick={() => goToDay(displayDayNumber + 1)}
@@ -324,7 +419,7 @@ function CardPageInner() {
             onMouseEnter={(e) => { if (canNext) (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--green)' }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--line)' }}
           >
-            Day {Math.min(dayNumber, displayDayNumber + 1)}
+            Day {Math.min(visibleMaxDay, displayDayNumber + 1)}
             <span style={{ fontSize: '12px' }}>▶</span>
           </button>
         </div>
@@ -831,6 +926,7 @@ function CardPageInner() {
 
       </div>
     </div>
+    </>
   )
 }
 

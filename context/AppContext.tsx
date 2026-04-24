@@ -6,6 +6,7 @@ import { User, DailyCard, JournalEntry, DailyQuote, Win, QuizResultId, Path } fr
 import { mockCards } from '@/data/mockCards'
 import { mockQuotes } from '@/data/mockQuotes'
 import { getDayNumber, getTodayCard, getPastCards, getVaultCards } from '@/lib/utils/cardUtils'
+import { computeCardsAccess, type CardsAccess } from '@/lib/utils/pathAccess'
 
 // ── Mock fallback (used only when the viewer is not signed in) ───────────────
 const MOCK_SIGNUP = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000)
@@ -170,6 +171,7 @@ interface AppContextValue {
   todayCard: DailyCard | null
   pastCards: DailyCard[]
   vaultCards: DailyCard[]
+  cardsAccess: CardsAccess
   journalEntries: JournalEntry[]
   addJournalEntry: (entry: Omit<JournalEntry, 'id' | 'createdAt'>) => Promise<void>
   currentQuote: DailyQuote
@@ -320,9 +322,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const realDayNumber = useMemo(() => getDayNumber(user.signupDate), [user.signupDate])
   const dayNumber = adminCardDay ?? realDayNumber
-  const todayCard = useMemo(() => getTodayCard(cards, dayNumber), [cards, dayNumber])
-  const pastCards = useMemo(() => getPastCards(cards, dayNumber), [cards, dayNumber])
-  const vaultCards = useMemo(() => getVaultCards(cards, dayNumber), [cards, dayNumber])
+  // Effective path for gating respects the admin "View as" preview.
+  const effectivePathForGate = viewAsPath ?? user.selectedPath
+  const effectiveIsAdminForGate = user.isAdmin && viewAsPath === null
+  const cardsAccess = useMemo(
+    () => computeCardsAccess(effectivePathForGate, effectiveIsAdminForGate, dayNumber),
+    [effectivePathForGate, effectiveIsAdminForGate, dayNumber],
+  )
+  // Clamp the visible card day to what the user has access to. When locked
+  // entirely (maxDay = 0) todayCard becomes null and past/vault become empty.
+  const visibleDay = Math.min(dayNumber, cardsAccess.maxDay)
+  const todayCard = useMemo(
+    () => cardsAccess.unlocked ? getTodayCard(cards, visibleDay) : null,
+    [cards, visibleDay, cardsAccess.unlocked],
+  )
+  const pastCards = useMemo(
+    () => cardsAccess.unlocked ? getPastCards(cards, visibleDay) : [],
+    [cards, visibleDay, cardsAccess.unlocked],
+  )
+  const vaultCards = useMemo(
+    () => cardsAccess.unlocked ? getVaultCards(cards, visibleDay) : [],
+    [cards, visibleDay, cardsAccess.unlocked],
+  )
   const currentQuote = useMemo(() => mockQuotes[dayNumber % mockQuotes.length], [dayNumber])
 
   // ── 4. Mutations (DB when authed, local state otherwise) ───────────────────
@@ -446,6 +467,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     todayCard,
     pastCards,
     vaultCards,
+    cardsAccess,
     journalEntries,
     addJournalEntry,
     currentQuote,

@@ -8,7 +8,7 @@ import IntentionsPanel from '@/components/dashboard/IntentionsPanel'
 import HeroCard from '@/components/cards/HeroCard'
 
 export default function DashboardPage() {
-  const { user, dayNumber, todayCard, pastCards, journalEntries, currentQuote, streakCount, wins } = useApp()
+  const { user, dayNumber, todayCard, pastCards, journalEntries, currentQuote, streakCount, wins, cardsAccess } = useApp()
 
   const cardsUnlocked = pastCards.length + 1
   const recentPastCards = pastCards.slice(0, 5)
@@ -60,8 +60,66 @@ export default function DashboardPage() {
       >
         {/* LEFT COLUMN */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Hero Card or fallback */}
-          {todayCard ? (
+          {/* Hero Card — or a locked/upgrade state for Path A users */}
+          {cardsAccess.state === 'locked-not-yet' ? (
+            <div style={{
+              width: '100%',
+              minHeight: 340,
+              borderRadius: 12,
+              padding: '36px 32px',
+              background: 'linear-gradient(135deg, rgba(61,48,128,0.06) 0%, rgba(201,125,58,0.04) 100%)',
+              border: '1px solid rgba(61,48,128,0.2)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              gap: 10,
+            }}>
+              <div style={{ fontSize: 40, marginBottom: 6 }}>🔒</div>
+              <p style={{
+                fontSize: 10,
+                textTransform: 'uppercase',
+                letterSpacing: '0.12em',
+                color: '#3D3080',
+                fontFamily: 'var(--font-body)',
+                fontWeight: 600,
+                margin: 0,
+              }}>
+                Daily Alignment unlocks on Day {cardsAccess.unlocksOnDay}
+              </p>
+              <h2 style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 26,
+                fontWeight: 300,
+                color: 'var(--ink)',
+                margin: '4px 0',
+                lineHeight: 1.2,
+                maxWidth: 420,
+              }}>
+                Stay with Seal the Leak — your first cards arrive soon.
+              </h2>
+              <p style={{ fontSize: 13, color: 'var(--text-soft)', margin: 0, maxWidth: 420, lineHeight: 1.65 }}>
+                On Day 6 you&apos;ll see Alignment Day 1. On Day 7 you&apos;ll see Day 2. Then choose whether to keep going.
+              </p>
+              <Link
+                href="/program"
+                style={{
+                  marginTop: 10,
+                  padding: '10px 20px',
+                  background: '#3D3080',
+                  color: 'white',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  fontFamily: 'var(--font-body)',
+                  textDecoration: 'none',
+                }}
+              >
+                Go to today&apos;s Seal the Leak session →
+              </Link>
+            </div>
+          ) : todayCard ? (
             <HeroCard card={todayCard} dayNumber={dayNumber} />
           ) : (
             <div
@@ -90,6 +148,46 @@ export default function DashboardPage() {
                   Your journey begins tomorrow.
                 </p>
               </div>
+            </div>
+          )}
+
+          {/* Upgrade prompt for Path A users past the 7-day program */}
+          {cardsAccess.state === 'locked-upgrade' && (
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(184,146,42,0.08) 0%, rgba(184,146,42,0.04) 100%)',
+              border: '1px solid rgba(184,146,42,0.35)',
+              borderLeft: '3px solid #b8922a',
+              borderRadius: 10,
+              padding: '14px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 16,
+              flexWrap: 'wrap',
+            }}>
+              <div style={{ flex: 1, minWidth: 220 }}>
+                <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#b8922a', fontWeight: 600, marginBottom: 3 }}>
+                  You&apos;ve finished Seal the Leak
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--ink)', fontFamily: 'var(--font-body)', lineHeight: 1.6 }}>
+                  You&apos;ve unlocked Alignment Days 1 & 2. Upgrade to keep the rhythm going.
+                </div>
+              </div>
+              <Link
+                href="/welcome"
+                style={{
+                  padding: '8px 14px',
+                  background: '#b8922a',
+                  color: 'white',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  fontFamily: 'var(--font-body)',
+                  textDecoration: 'none',
+                  flexShrink: 0,
+                }}
+              >
+                See upgrade options →
+              </Link>
             </div>
           )}
 
