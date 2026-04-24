@@ -10,7 +10,7 @@
 //   • Full teaching content for weeks 1-2 (from circleStarterContent),
 //     skeleton titles for weeks 3-12
 
-import type { CircleMember, CirclePost, WeeklyContent, LiveCall } from '@/lib/circle'
+import type { CircleMember, CirclePost, PartnerMessage, WeeklyContent, LiveCall } from '@/lib/circle'
 import { CIRCLE_STARTER_CONTENT } from '@/data/circleStarterContent'
 
 const DAY = 86400000
@@ -361,6 +361,96 @@ export const MOCK_POSTS: CirclePost[] = [
       { emoji: '❤️', count: 6, user_reacted: false },
       { emoji: '✨', count: 3, user_reacted: false },
     ],
+  },
+]
+
+// ─── PARTNER THREAD ──────────────────────────────────────────────────────────
+// Wednesday partner check-ins with Jordan P. Viewer user_id = mock-user-1,
+// partner user_id = mock-user-jordan. Flow:
+//   - Intro exchange in week 1
+//   - Wednesday check-in in week 2 responding to the "cost of overriding" prompt
+//   - Casual follow-up earlier this week
+
+export const MOCK_PARTNER_USER_ID = 'mock-user-jordan'
+
+export const MOCK_PARTNER_THREAD: PartnerMessage[] = [
+  {
+    id: 'mock-msg-1',
+    sender_id: MOCK_PARTNER_USER_ID,
+    receiver_id: MOCK_MEMBER.user_id,
+    body:
+      "Hey! Jordan here — just got paired with you. Interrupted Engine, enneagram 9, I'm in Chicago. My 90-day focus is finishing the business plan I keep restarting. Looking forward to doing this together.",
+    audio_url: null,
+    read_at: new Date(now - 12 * DAY).toISOString(),
+    created_at: new Date(now - 12 * DAY).toISOString(),
+  },
+  {
+    id: 'mock-msg-2',
+    sender_id: MOCK_MEMBER.user_id,
+    receiver_id: MOCK_PARTNER_USER_ID,
+    body:
+      "Hi Jordan! Open Door, enneagram 2, in Atlanta. Mine is 'stop saying yes before I check with myself.' Wednesdays work for our voice exchange — does 7pm your time work?",
+    audio_url: null,
+    read_at: new Date(now - 12 * DAY).toISOString(),
+    created_at: new Date(now - 12 * DAY + 20 * 60_000).toISOString(),
+  },
+  {
+    id: 'mock-msg-3',
+    sender_id: MOCK_PARTNER_USER_ID,
+    receiver_id: MOCK_MEMBER.user_id,
+    body: "7pm Central works. Cool. See you Wednesday.",
+    audio_url: null,
+    read_at: new Date(now - 12 * DAY).toISOString(),
+    created_at: new Date(now - 12 * DAY + 35 * 60_000).toISOString(),
+  },
+  {
+    id: 'mock-msg-4',
+    sender_id: MOCK_PARTNER_USER_ID,
+    receiver_id: MOCK_MEMBER.user_id,
+    body:
+      "Wednesday check-in, week 2 — cost of overriding. For me it's been the business plan. Every time I restart I'm paying in momentum and self-trust. I can see the cost clearly now and it's making it harder to do the restart move.",
+    audio_url: null,
+    read_at: new Date(now - 6 * DAY).toISOString(),
+    created_at: new Date(now - 6 * DAY).toISOString(),
+  },
+  {
+    id: 'mock-msg-5',
+    sender_id: MOCK_MEMBER.user_id,
+    receiver_id: MOCK_PARTNER_USER_ID,
+    body:
+      "That's huge. What I noticed this week is my overgiving has been paying for other people's comfort with their own unfinished emotional work. My sister, mostly. If I stop filling the gap, she might have to face it herself. That feels uncomfortable — and important.",
+    audio_url: null,
+    read_at: new Date(now - 6 * DAY).toISOString(),
+    created_at: new Date(now - 6 * DAY + 45 * 60_000).toISOString(),
+  },
+  {
+    id: 'mock-msg-6',
+    sender_id: MOCK_PARTNER_USER_ID,
+    receiver_id: MOCK_MEMBER.user_id,
+    body:
+      "Yeah. And that's the part the people around us don't want us to see. Let me know how it goes with your sister this week if you want.",
+    audio_url: null,
+    read_at: new Date(now - 6 * DAY).toISOString(),
+    created_at: new Date(now - 6 * DAY + 60 * 60_000).toISOString(),
+  },
+  {
+    id: 'mock-msg-7',
+    sender_id: MOCK_MEMBER.user_id,
+    receiver_id: MOCK_PARTNER_USER_ID,
+    body:
+      "Quick update — she asked me to pick up my niece Friday (again). I said 'I can't this week, but Sunday afternoon works if that helps.' No long explanation. She was quiet for a second and said ok. That's it. But I felt different after.",
+    audio_url: null,
+    read_at: new Date(now - 2 * DAY).toISOString(),
+    created_at: new Date(now - 2 * DAY).toISOString(),
+  },
+  {
+    id: 'mock-msg-8',
+    sender_id: MOCK_PARTNER_USER_ID,
+    receiver_id: MOCK_MEMBER.user_id,
+    body: "That's the move. Proud of you. I'm at the laptop right now, first time in 3 weeks. We'll see how long it lasts but I'm here.",
+    audio_url: null,
+    read_at: new Date(now - 2 * DAY).toISOString(),
+    created_at: new Date(now - 2 * DAY + 12 * 60_000).toISOString(),
   },
 ]
 
