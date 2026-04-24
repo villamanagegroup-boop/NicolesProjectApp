@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useApp, getArchetypePlaceholder } from '@/context/AppContext'
 import { quizResults } from '@/data/quizData'
 import { PATHS, PATH_ORDER, getPath, type PathId } from '@/data/paths'
+import { signOut } from '@/lib/supabase/auth'
 
 const SECTIONS = [
   { id: 'profile',       label: 'Profile' },
@@ -218,7 +219,7 @@ export default function SettingsPage() {
             )
           })}
           <button
-            onClick={() => router.push('/')}
+            onClick={async () => { await signOut(); router.push('/') }}
             style={{
               textAlign: 'left',
               padding: '8px 12px',

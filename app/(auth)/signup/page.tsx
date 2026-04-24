@@ -23,6 +23,7 @@ function SignupForm() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   // Pre-fill from quiz lead capture
   useEffect(() => {
@@ -32,7 +33,7 @@ function SignupForm() {
     if (savedEmail) setEmail(savedEmail)
   }, [])
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (password !== confirmPassword) {
       setError('Passwords do not match.')
@@ -43,9 +44,49 @@ function SignupForm() {
       return
     }
     setError('')
-    // TODO: connect Supabase auth — createUser(name, email, password)
-    // On success, redirect to Stripe:
-    window.location.href = stripeLink
+    setSubmitting(true)
+
+    const { supabaseClient } = await import('@/lib/supabase/client')
+    const quizResult = typeof window !== 'undefined'
+      ? sessionStorage.getItem('clarity_quiz_result')
+      : null
+
+    const { data, error: authError } = await supabaseClient.auth.signUp({
+      email: email.trim(),
+      password,
+      options: { data: { name: name.trim() } },
+    })
+
+    if (authError) {
+      setError(authError.message)
+      setSubmitting(false)
+      return
+    }
+
+    // If session was created (email confirmation off), persist path + archetype on the user row.
+    // If confirmation is on, data.session is null — we'll fill these after first login.
+    if (data.session && data.user) {
+      await supabaseClient.from('users').update({
+        selected_path: path,
+        quiz_result: quizResult,
+      }).eq('id', data.user.id)
+    }
+
+    // If no session (needs email confirmation) and no Stripe link → show a sign-in prompt
+    if (!data.session && (stripeLink === '#' || !stripeLink)) {
+      setSubmitting(false)
+      setError('Check your email to confirm your account, then sign in.')
+      return
+    }
+
+    // If Stripe is configured, go to checkout (matches existing flow)
+    if (stripeLink && stripeLink !== '#') {
+      window.location.href = stripeLink
+      return
+    }
+
+    // Fallback: straight to dashboard
+    window.location.href = '/dashboard'
   }
 
   const inputStyle: React.CSSProperties = {
@@ -268,9 +309,10 @@ function SignupForm() {
 
           <button
             type="submit"
+            disabled={submitting}
             style={{
               width: '100%',
-              backgroundColor: 'var(--green)',
+              backgroundColor: submitting ? 'rgba(31,92,58,0.5)' : 'var(--green)',
               color: '#ffffff',
               padding: '13px',
               borderRadius: '8px',
@@ -278,14 +320,14 @@ function SignupForm() {
               fontWeight: 500,
               fontFamily: 'var(--font-body)',
               border: 'none',
-              cursor: 'pointer',
+              cursor: submitting ? 'not-allowed' : 'pointer',
               transition: 'opacity 0.15s ease',
               letterSpacing: '0.2px',
             }}
-            onMouseOver={(e) => { e.currentTarget.style.opacity = '0.88' }}
+            onMouseOver={(e) => { if (!submitting) e.currentTarget.style.opacity = '0.88' }}
             onMouseOut={(e) => { e.currentTarget.style.opacity = '1' }}
           >
-            Create Account & Continue to Payment →
+            {submitting ? 'Creating account…' : (stripeLink && stripeLink !== '#' ? 'Create Account & Continue to Payment →' : 'Create Account →')}
           </button>
         </form>
 

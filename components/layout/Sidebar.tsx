@@ -3,6 +3,7 @@ import React from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
+import { signOut } from '@/lib/supabase/auth'
 
 // Deep green accent — stays consistent throughout this sidebar
 const GREEN = '#1A5230'
@@ -479,7 +480,7 @@ export default function Sidebar() {
 
         {/* Sign Out */}
         <button
-          onClick={() => router.push('/')}
+          onClick={async () => { await signOut(); router.push('/') }}
           style={{
             background: 'none',
             border: 'none',

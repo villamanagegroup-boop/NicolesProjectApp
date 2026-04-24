@@ -3,17 +3,30 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
+import { supabaseClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const router = useRouter()
   const { setSidebarMode } = useApp()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    // TODO: connect Supabase auth
-    router.push('/choose-path')
+    setError(null)
+    setSubmitting(true)
+    const { error: authError } = await supabaseClient.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    })
+    if (authError) {
+      setError(authError.message)
+      setSubmitting(false)
+      return
+    }
+    router.push('/dashboard')
   }
 
   return (
@@ -213,12 +226,29 @@ export default function LoginPage() {
             />
           </div>
 
+          {/* Error message */}
+          {error && (
+            <p style={{
+              fontSize: 12,
+              color: 'var(--red)',
+              fontFamily: 'var(--font-body)',
+              margin: 0,
+              padding: '8px 12px',
+              background: 'rgba(178,60,60,0.06)',
+              border: '1px solid rgba(178,60,60,0.2)',
+              borderRadius: 6,
+            }}>
+              {error}
+            </p>
+          )}
+
           {/* Submit */}
           <button
             type="submit"
+            disabled={submitting}
             style={{
               width: '100%',
-              backgroundColor: 'var(--ink)',
+              backgroundColor: submitting ? 'rgba(12,12,10,0.5)' : 'var(--ink)',
               color: '#ffffff',
               padding: '12px',
               borderRadius: '8px',
@@ -226,13 +256,13 @@ export default function LoginPage() {
               fontWeight: 500,
               fontFamily: 'var(--font-body)',
               border: 'none',
-              cursor: 'pointer',
+              cursor: submitting ? 'not-allowed' : 'pointer',
               transition: 'opacity 0.15s ease',
             }}
-            onMouseOver={(e) => { e.currentTarget.style.opacity = '0.85' }}
+            onMouseOver={(e) => { if (!submitting) e.currentTarget.style.opacity = '0.85' }}
             onMouseOut={(e) => { e.currentTarget.style.opacity = '1' }}
           >
-            Sign In →
+            {submitting ? 'Signing in…' : 'Sign In →'}
           </button>
         </form>
 

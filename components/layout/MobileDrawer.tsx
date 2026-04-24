@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 import { programRoutes } from '@/data/sealTheLeakProgram'
+import { signOut } from '@/lib/supabase/auth'
 
 const GREEN  = '#1A5230'
 const GREEN_PALE = 'rgba(26,82,48,0.07)'
@@ -601,7 +602,7 @@ export default function MobileDrawer({ open, onClose }: Props) {
 
           {/* Sign Out */}
           <button
-            onClick={() => { onClose(); router.push('/') }}
+            onClick={async () => { onClose(); await signOut(); router.push('/') }}
             style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', padding: '0', textAlign: 'left' }}
           >
             Sign Out

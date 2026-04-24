@@ -1,19 +1,40 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 
-export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl
+/**
+ * Session refresh on every request.
+ * No route protection yet — the admin skip buttons on /login need to keep
+ * working for dev. Add redirects here once the auth flow is fully live.
+ */
+export async function proxy(request: NextRequest) {
+  let response = NextResponse.next({ request })
 
-  // TODO: When Supabase is connected, implement full auth protection:
-  // 1. Create Supabase server client with cookies
-  // 2. Get session: const { data: { session } } = await supabase.auth.getSession()
-  // 3. If no session AND pathname starts with '/(portal)' or matches portal routes → redirect to /login
-  // 4. If session AND no quiz_result in user row → redirect to /quiz
-  // 5. If session AND no selected_path in user row → redirect to /result
-  // 6. If pathname starts with '/program' AND user.has_paid === false → redirect to /checkout
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) return response
 
-  // For now: pass all requests through
-  return NextResponse.next()
+  const supabase = createServerClient(url, key, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll()
+      },
+      setAll(cookiesToSet) {
+        for (const { name, value } of cookiesToSet) {
+          request.cookies.set(name, value)
+        }
+        response = NextResponse.next({ request })
+        for (const { name, value, options } of cookiesToSet) {
+          response.cookies.set(name, value, options)
+        }
+      },
+    },
+  })
+
+  // Refreshes the session cookie if it's valid + expiring
+  await supabase.auth.getUser()
+
+  return response
 }
 
 export const config = {
