@@ -1,5 +1,5 @@
 export type QuizResultId = 'seeker' | 'builder' | 'healer' | 'visionary'
-export type Path = 'A' | 'B'
+export type Path = 'A' | 'B' | 'C'
 
 export interface User {
   id: string
@@ -10,6 +10,7 @@ export interface User {
   signupDate: Date
   stripeCustomerId: string | null
   hasPaid: boolean
+  isAdmin: boolean
 }
 
 export interface DailyCard {

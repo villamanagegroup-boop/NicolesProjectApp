@@ -5,6 +5,7 @@ import { useApp, getArchetypePlaceholder } from '@/context/AppContext'
 import EyebrowLabel from '@/components/ui/EyebrowLabel'
 import Button from '@/components/ui/Button'
 import { quizResults } from '@/data/quizData'
+import { getPath } from '@/data/paths'
 
 const archetypeColors: Record<string, string> = {
   seeker: 'var(--green)',
@@ -13,41 +14,84 @@ const archetypeColors: Record<string, string> = {
   visionary: '#2a1a5e',
 }
 
-export default function ProfilePage() {
-  const { user, dayNumber, cards, journalEntries, avatarUrl, setAvatarUrl, dailyReminders, setDailyReminders, sidebarMode } = useApp()
-  const isWorkMode = sidebarMode === 'work'
+const themeColors: Record<string, string> = {
+  Alignment: '#1a5230',
+  Clarity:   '#2c4b8a',
+  Strength:  '#8a3a2c',
+  Purpose:   '#5a3a8a',
+  Healing:   '#3a7a6e',
+}
 
-  // Journal entries from the last 7 days
-  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-  const weeklyEntries = journalEntries.filter(e => new Date(e.createdAt) >= oneWeekAgo)
+interface Milestone {
+  day: number
+  title: string
+  subtitle: string
+  href?: string
+}
+
+const MILESTONES: Milestone[] = [
+  { day: 7,   title: 'First Week',          subtitle: 'You showed up seven days.' },
+  { day: 30,  title: 'Vault Unlocked',      subtitle: 'Older cards become retrievable.', href: '/vault' },
+  { day: 90,  title: '90-Day Reassessment', subtitle: 'Retake the quiz — see who you\'ve become.' },
+  { day: 180, title: 'Halfway',             subtitle: 'Six months of alignment.' },
+  { day: 365, title: 'Full Journey',        subtitle: 'You completed all 365.' },
+]
+
+export default function ProfilePage() {
+  const { user, dayNumber, cards, journalEntries, avatarUrl, setAvatarUrl, streakCount } = useApp()
 
   const photoSrc = avatarUrl ?? getArchetypePlaceholder(user.quizResult)
   const frameBorder = user.quizResult
     ? `3px solid ${archetypeColors[user.quizResult] ?? 'var(--gold)'}`
     : '3px solid var(--gold)'
 
-  const matchedResult = quizResults.find((r) => r.id === user.quizResult)
+  const matchedResult = quizResults.find(r => r.id === user.quizResult)
+  const path = getPath(user.selectedPath)
   const daysToReassessment = Math.max(0, 90 - dayNumber)
   const reassessmentAvailable = dayNumber >= 90
 
+  const cardsUnlocked = Math.min(dayNumber, cards.length)
+  const reflectionsCount = journalEntries.length
+
+  // ── Recent reflections (last 10, newest first) ────────────────────────────
+  const recentReflections = [...journalEntries]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 10)
+    .map(entry => {
+      const card = cards.find(c => c.id === entry.cardId)
+      return { entry, card }
+    })
+
+  // ── Theme compass — unlocked + reflected counts per theme ─────────────────
+  const themeOrder = ['Alignment', 'Clarity', 'Strength', 'Purpose', 'Healing']
+  const themes = themeOrder.map(theme => {
+    const totalInTheme = cards.filter(c => c.theme === theme).length
+    const unlockedInTheme = cards.filter(c => c.theme === theme && c.dayNumber <= dayNumber).length
+    const reflectedInTheme = journalEntries.filter(e => {
+      const card = cards.find(c => c.id === e.cardId)
+      return card?.theme === theme
+    }).length
+    return { theme, totalInTheme, unlockedInTheme, reflectedInTheme }
+  }).filter(t => t.totalInTheme > 0)
+
   return (
     <div>
-      {/* Hero row */}
+      {/* ── 1. Identity header ─────────────────────────────────────────────── */}
       <div
         style={{
           background: 'linear-gradient(135deg, var(--gold-pale) 0%, var(--paper2) 100%)',
           border: '1px solid var(--gold-line)',
           borderRadius: '12px',
-          padding: '32px',
+          padding: '28px',
           marginBottom: '24px',
           display: 'flex',
           alignItems: 'center',
-          gap: '24px',
+          gap: '20px',
+          flexWrap: 'wrap',
         }}
       >
         {/* Avatar */}
         <div style={{ position: 'relative', flexShrink: 0 }}>
-          {/* Photo circle */}
           <div style={{
             width: 80, height: 80,
             borderRadius: '50%',
@@ -62,8 +106,6 @@ export default function ProfilePage() {
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           </div>
-
-          {/* Upload button — small camera icon overlaid bottom-right */}
           <label
             htmlFor="avatar-upload"
             style={{
@@ -82,14 +124,11 @@ export default function ProfilePage() {
             }}
             title="Upload photo"
           >
-            {/* Camera SVG icon 12px */}
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
               <circle cx="12" cy="13" r="4"/>
             </svg>
           </label>
-
-          {/* Hidden file input */}
           <input
             id="avatar-upload"
             type="file"
@@ -99,370 +138,412 @@ export default function ProfilePage() {
               const file = e.target.files?.[0]
               if (!file) return
               const reader = new FileReader()
-              reader.onloadend = () => {
-                setAvatarUrl(reader.result as string)
-              }
+              reader.onloadend = () => setAvatarUrl(reader.result as string)
               reader.readAsDataURL(file)
             }}
           />
         </div>
 
         {/* Info */}
-        <div>
-          <h1
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: '30px',
-              fontWeight: 300,
-              color: 'var(--ink)',
-              margin: 0,
-            }}
-          >
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <h1 style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '28px',
+            fontWeight: 300,
+            color: 'var(--ink)',
+            margin: 0,
+          }}>
             {user.name}
           </h1>
-          <div
-            style={{
-              display: 'flex',
-              gap: '12px',
-              marginTop: '4px',
-              fontSize: '12px',
-              color: 'var(--text-muted)',
-              fontFamily: 'var(--font-body)',
-            }}
-          >
-            <span>{user.email}</span>
-            <span>· Day {dayNumber}</span>
-            <span>· {isWorkMode ? 'Seal the Leak' : user.selectedPath === 'A' ? 'Full Journey' : 'Daily Practice'}</span>
+          <div style={{
+            fontSize: '12px',
+            color: 'var(--text-muted)',
+            fontFamily: 'var(--font-body)',
+            marginTop: '4px',
+          }}>
+            Day {dayNumber} of 365
           </div>
 
-          {/* Pills */}
-          <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+          <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
             {matchedResult && (
-              <span
-                style={{
-                  border: '1px solid rgba(184,148,83,0.40)',
-                  color: 'var(--gold)',
-                  fontSize: '11px',
-                  padding: '4px 12px',
-                  borderRadius: '999px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  fontFamily: 'var(--font-body)',
-                }}
-              >
-                {matchedResult.emoji} {matchedResult.title}
-              </span>
-            )}
-            <span
-              style={{
-                border: '1px solid var(--line-md)',
-                color: 'var(--text-soft)',
+              <span style={{
+                border: '1px solid rgba(184,148,83,0.40)',
+                color: 'var(--gold)',
                 fontSize: '11px',
                 padding: '4px 12px',
                 borderRadius: '999px',
                 textTransform: 'uppercase',
                 letterSpacing: '0.08em',
                 fontFamily: 'var(--font-body)',
-              }}
-            >
-              {user.selectedPath === 'A' ? '⚡ Full Journey' : '🌿 Daily Practice'}
+              }}>
+                {matchedResult.emoji} {matchedResult.title}
+              </span>
+            )}
+            <span style={{
+              border: `1px solid ${path.accent}40`,
+              color: path.accent,
+              fontSize: '11px',
+              padding: '4px 12px',
+              borderRadius: '999px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              fontFamily: 'var(--font-body)',
+            }}>
+              {path.icon} {path.shortTitle}
             </span>
           </div>
         </div>
+
+        {/* Edit profile link */}
+        <Link
+          href="/settings"
+          style={{
+            fontSize: '12px',
+            color: 'var(--text-soft)',
+            fontFamily: 'var(--font-body)',
+            textDecoration: 'none',
+            padding: '6px 12px',
+            borderRadius: '6px',
+            border: '1px solid var(--line-md)',
+            alignSelf: 'flex-start',
+            flexShrink: 0,
+          }}
+        >
+          Edit profile
+        </Link>
       </div>
 
-      {/* 2-column grid */}
+      {/* ── 2. Progress KPI strip ──────────────────────────────────────────── */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '24px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+          gap: '12px',
           marginBottom: '24px',
         }}
       >
-        {/* Left — Preferences */}
-        <div
-          style={{
-            border: '1px solid var(--line)',
-            borderRadius: '12px',
-            padding: '24px',
-            backgroundColor: '#ffffff',
-          }}
-        >
-          <h2
+        {[
+          { label: 'Days active',     value: dayNumber,        accent: 'var(--green)' },
+          { label: 'Cards unlocked',  value: cardsUnlocked,    accent: 'var(--gold)' },
+          { label: 'Reflections',     value: reflectionsCount, accent: '#5a3a8a' },
+          { label: 'Current streak',  value: streakCount,      accent: 'var(--red)' },
+        ].map(({ label, value, accent }) => (
+          <div
+            key={label}
             style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: '18px',
-              color: 'var(--ink)',
-              margin: '0 0 16px 0',
-              fontWeight: 400,
+              background: '#ffffff',
+              border: '1px solid var(--line)',
+              borderRadius: '10px',
+              padding: '18px 18px 16px',
+              position: 'relative',
+              overflow: 'hidden',
             }}
           >
-            Preferences
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {/* Daily reminders — live toggle */}
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingTop: '12px',
-                paddingBottom: '12px',
-                borderBottom: '1px solid var(--line)',
-              }}
-            >
-              <div>
-                <span style={{ fontSize: '13px', color: 'var(--ink)', fontFamily: 'var(--font-body)' }}>
-                  Daily reminders
-                </span>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', marginTop: 2 }}>
-                  {dailyReminders ? 'Delivered at 4am every day' : 'Reminders are off'}
-                </div>
-              </div>
-              <button
-                onClick={() => setDailyReminders(!dailyReminders)}
-                style={{
-                  width: 40, height: 22, borderRadius: 11, flexShrink: 0,
-                  background: dailyReminders ? 'var(--green)' : 'var(--line-md)',
-                  border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s',
-                }}
-              >
-                <div style={{
-                  width: 16, height: 16, borderRadius: '50%', background: 'white',
-                  position: 'absolute', top: 3,
-                  left: dailyReminders ? 21 : 3, transition: 'left 0.2s',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                }} />
-              </button>
+            <div style={{
+              position: 'absolute',
+              top: 0, left: 0,
+              width: '3px',
+              height: '100%',
+              background: accent,
+            }} />
+            <div style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '30px',
+              fontWeight: 300,
+              color: 'var(--ink)',
+              lineHeight: 1,
+            }}>
+              {value}
             </div>
-
-            {/* Static preference rows */}
-            {[
-              { label: 'Email digest', value: 'Weekly' },
-              { label: 'Card time', value: '4:00 AM' },
-              { label: 'Language', value: 'English' },
-            ].map(({ label, value }) => (
-              <div
-                key={label}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  paddingTop: '12px',
-                  paddingBottom: '12px',
-                  borderBottom: '1px solid var(--line)',
-                }}
-              >
-                <span style={{ fontSize: '13px', color: 'var(--ink)', fontFamily: 'var(--font-body)' }}>
-                  {label}
-                </span>
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
-                  {value}
-                </span>
-              </div>
-            ))}
+            <div style={{
+              fontSize: '10px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              color: 'var(--text-muted)',
+              fontFamily: 'var(--font-body)',
+              marginTop: '8px',
+            }}>
+              {label}
+            </div>
           </div>
+        ))}
+      </div>
+
+      {/* ── 3. Reflection thread ──────────────────────────────────────────── */}
+      <div style={{
+        border: '1px solid var(--line)',
+        borderRadius: '12px',
+        background: '#ffffff',
+        marginBottom: '24px',
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          padding: '18px 24px',
+          borderBottom: '1px solid var(--line)',
+          background: 'var(--paper)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 400, color: 'var(--ink)', margin: 0 }}>
+            Your reflections
+          </h2>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
+            {reflectionsCount === 0 ? 'None yet' : `Showing ${recentReflections.length} of ${reflectionsCount}`}
+          </span>
         </div>
 
-        {/* Right — Journey Stats (cards) or Program Progress (work) */}
-        {isWorkMode ? (
-          <div
-            style={{
-              border: '1px solid var(--gold-line)',
-              borderRadius: '12px',
-              padding: '24px',
-              backgroundColor: 'var(--gold-pale)',
-            }}
-          >
-            <h2
+        {recentReflections.length === 0 ? (
+          <div style={{ padding: '40px 24px', textAlign: 'center' }}>
+            <p style={{
+              fontSize: '14px',
+              color: 'var(--text-muted)',
+              fontFamily: 'var(--font-display)',
+              fontStyle: 'italic',
+              margin: '0 0 14px',
+            }}>
+              Your written reflections will gather here.
+            </p>
+            <Link
+              href="/card"
               style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: '18px',
-                color: 'var(--ink)',
-                margin: '0 0 4px 0',
-                fontWeight: 400,
+                fontSize: '13px',
+                color: 'var(--green)',
+                fontFamily: 'var(--font-body)',
+                textDecoration: 'underline',
+                textUnderlineOffset: '3px',
               }}
             >
-              Seal the Leak
-            </h2>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              7-Day Reset Progress
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {[
-                { label: 'Current day', value: `Day ${Math.min(dayNumber, 7)} of 7` },
-                { label: 'Sessions done', value: `${Math.min(dayNumber, 7)}` },
-                { label: 'Journal entries', value: String(journalEntries.length) },
-                { label: 'Status', value: dayNumber >= 7 ? '✓ Complete' : 'In progress' },
-              ].map(({ label, value }) => (
-                <div
-                  key={label}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    paddingTop: '12px',
-                    paddingBottom: '12px',
-                    borderBottom: '1px solid var(--gold-line)',
-                  }}
-                >
-                  <span style={{ fontSize: '13px', color: 'var(--ink)', fontFamily: 'var(--font-body)' }}>
-                    {label}
-                  </span>
-                  <span style={{ fontSize: '13px', color: 'var(--ink)', fontFamily: 'var(--font-body)', fontWeight: 500 }}>
-                    {value}
-                  </span>
-                </div>
-              ))}
-            </div>
-            {/* Progress bar */}
-            <div style={{ marginTop: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>Overall completion</span>
-                <span style={{ fontSize: '11px', color: 'var(--gold)', fontFamily: 'var(--font-body)', fontWeight: 500 }}>
-                  {Math.round((Math.min(dayNumber, 7) / 7) * 100)}%
-                </span>
-              </div>
-              <div style={{ height: '4px', background: 'var(--gold-line)', borderRadius: '2px' }}>
-                <div style={{
-                  height: '100%',
-                  width: `${Math.round((Math.min(dayNumber, 7) / 7) * 100)}%`,
-                  background: 'var(--gold)',
-                  borderRadius: '2px',
-                  transition: 'width 0.3s ease',
-                }} />
-              </div>
-            </div>
+              Start today's reflection →
+            </Link>
           </div>
         ) : (
-          <div
-            style={{
-              border: '1px solid var(--line)',
-              borderRadius: '12px',
-              padding: '24px',
-              backgroundColor: '#ffffff',
-            }}
-          >
-            <h2
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: '18px',
-                color: 'var(--ink)',
-                margin: '0 0 16px 0',
-                fontWeight: 400,
-              }}
-            >
-              Journey Stats
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {[
-                { label: 'Days active', value: String(dayNumber) },
-                { label: 'Cards unlocked', value: String(Math.min(dayNumber, cards.length)) },
-                { label: 'Journal entries', value: String(journalEntries.length) },
-              ].map(({ label, value }) => (
-                <div
-                  key={label}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    paddingTop: '12px',
-                    paddingBottom: '12px',
-                    borderBottom: '1px solid var(--line)',
-                  }}
+          <div style={{ maxHeight: 420, overflowY: 'auto' }}>
+            {recentReflections.map(({ entry, card }, i) => {
+              const isLast = i === recentReflections.length - 1
+              const themeColor = card ? themeColors[card.theme] ?? 'var(--text-soft)' : 'var(--text-soft)'
+              const date = new Date(entry.createdAt).toLocaleDateString('en-US', {
+                month: 'short', day: 'numeric',
+              })
+              return (
+                <Link
+                  key={entry.id}
+                  href={`/card?day=${entry.dayNumber}`}
+                  style={{ textDecoration: 'none', display: 'block' }}
                 >
-                  <span style={{ fontSize: '13px', color: 'var(--ink)', fontFamily: 'var(--font-body)' }}>
-                    {label}
-                  </span>
-                  <span style={{ fontSize: '13px', color: 'var(--ink)', fontFamily: 'var(--font-body)', fontWeight: 500 }}>
-                    {value}
-                  </span>
-                </div>
-              ))}
-            </div>
+                  <div
+                    style={{
+                      padding: '16px 24px',
+                      borderBottom: isLast ? 'none' : '1px solid var(--line)',
+                      transition: 'background 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = 'var(--paper)' }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = 'transparent' }}
+                  >
+                    <div style={{ display: 'flex', gap: 12, marginBottom: 6, alignItems: 'baseline' }}>
+                      <span style={{
+                        fontSize: '10px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.08em',
+                        color: themeColor,
+                        fontFamily: 'var(--font-body)',
+                        fontWeight: 600,
+                      }}>
+                        Day {entry.dayNumber}{card ? ` · ${card.theme}` : ''}
+                      </span>
+                      <span style={{
+                        fontSize: '11px',
+                        color: 'var(--text-muted)',
+                        fontFamily: 'var(--font-body)',
+                        marginLeft: 'auto',
+                      }}>
+                        {date}
+                      </span>
+                    </div>
+                    {card && (
+                      <p style={{
+                        fontFamily: 'var(--font-display)',
+                        fontStyle: 'italic',
+                        fontSize: '13px',
+                        color: 'var(--text-soft)',
+                        margin: '0 0 6px',
+                      }}>
+                        {card.title}
+                      </p>
+                    )}
+                    <p style={{
+                      fontSize: '13px',
+                      color: 'var(--ink)',
+                      fontFamily: 'var(--font-body)',
+                      margin: 0,
+                      lineHeight: 1.55,
+                      overflow: 'hidden',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                    }}>
+                      {entry.content || <em style={{ color: 'var(--text-muted)' }}>Empty entry</em>}
+                    </p>
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         )}
       </div>
 
-      {/* Weekly Reflection Summary */}
-      <div
-        style={{
-          border: '1px solid var(--line)',
-          borderRadius: '12px',
-          overflow: 'hidden',
-          marginBottom: '24px',
-        }}
-      >
-        <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)', background: 'var(--paper)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 400, color: 'var(--ink)', margin: 0 }}>
-            This Week&apos;s Reflections
-          </h2>
-          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
-            {weeklyEntries.length} {weeklyEntries.length === 1 ? 'entry' : 'entries'}
-          </span>
-        </div>
+      {/* ── 4. Theme compass ──────────────────────────────────────────────── */}
+      <div style={{
+        border: '1px solid var(--line)',
+        borderRadius: '12px',
+        background: '#ffffff',
+        padding: '24px',
+        marginBottom: '24px',
+      }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 400, color: 'var(--ink)', margin: '0 0 4px' }}>
+          Your theme compass
+        </h2>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 18px' }}>
+          Where your energy has gone across the five themes.
+        </p>
 
-        <div style={{ padding: weeklyEntries.length === 0 ? '24px' : '0 24px' }}>
-          {weeklyEntries.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '12px 0 8px' }}>
-              <p style={{ fontSize: '14px', color: 'var(--text-muted)', fontFamily: 'var(--font-display)', fontStyle: 'italic', marginBottom: '12px' }}>
-                No reflections this week yet.
-              </p>
-              <Link
-                href="/journal"
-                style={{
-                  fontSize: '13px',
-                  color: 'var(--gold)',
-                  fontFamily: 'var(--font-body)',
-                  textDecoration: 'underline',
-                  textUnderlineOffset: '3px',
-                }}
-              >
-                Go to Reflection →
-              </Link>
-            </div>
-          ) : (
-            weeklyEntries.map((entry, i) => {
-              const date = new Date(entry.createdAt)
-              const dayLabel = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-              const isLast = i === weeklyEntries.length - 1
-              return (
-                <div
-                  key={entry.id}
-                  style={{
-                    paddingTop: '16px',
-                    paddingBottom: '16px',
-                    borderBottom: isLast ? 'none' : '1px solid var(--line)',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p
-                        style={{
-                          fontSize: '13px',
-                          color: 'var(--ink)',
-                          fontFamily: 'var(--font-body)',
-                          margin: 0,
-                          lineHeight: 1.6,
-                          overflow: 'hidden',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                        }}
-                      >
-                        {entry.content || <em style={{ color: 'var(--text-muted)' }}>No content</em>}
-                      </p>
-                    </div>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                      {entry.cardId ? `✦ Day ${entry.dayNumber}` : dayLabel}
-                    </span>
-                  </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {themes.map(({ theme, totalInTheme, unlockedInTheme, reflectedInTheme }) => {
+            const color = themeColors[theme] ?? 'var(--text-soft)'
+            const unlockedPct = totalInTheme ? (unlockedInTheme / totalInTheme) * 100 : 0
+            const reflectedPct = totalInTheme ? (reflectedInTheme / totalInTheme) * 100 : 0
+            return (
+              <div key={theme}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
+                  <span style={{
+                    fontSize: '12px',
+                    fontFamily: 'var(--font-body)',
+                    color: 'var(--ink)',
+                    fontWeight: 500,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+                    {theme}
+                  </span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
+                    {unlockedInTheme} / {totalInTheme} unlocked · {reflectedInTheme} reflected
+                  </span>
                 </div>
-              )
-            })
-          )}
+                {/* Stacked bar: unlocked (faint) + reflected (bold) overlaid */}
+                <div style={{
+                  position: 'relative',
+                  height: '6px',
+                  background: 'var(--line)',
+                  borderRadius: '3px',
+                  overflow: 'hidden',
+                }}>
+                  <div style={{
+                    position: 'absolute',
+                    top: 0, left: 0,
+                    height: '100%',
+                    width: `${unlockedPct}%`,
+                    background: `${color}40`,
+                    transition: 'width 0.3s ease',
+                  }} />
+                  <div style={{
+                    position: 'absolute',
+                    top: 0, left: 0,
+                    height: '100%',
+                    width: `${reflectedPct}%`,
+                    background: color,
+                    transition: 'width 0.3s ease',
+                  }} />
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
 
-      {/* 90-Day Reassessment panel */}
+      {/* ── 5. Milestones earned ──────────────────────────────────────────── */}
+      <div style={{
+        border: '1px solid var(--line)',
+        borderRadius: '12px',
+        background: '#ffffff',
+        padding: '24px',
+        marginBottom: '24px',
+      }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 400, color: 'var(--ink)', margin: '0 0 4px' }}>
+          Milestones
+        </h2>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 18px' }}>
+          Markers along the 365.
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px' }}>
+          {MILESTONES.map(m => {
+            const earned = dayNumber >= m.day
+            const toGo = m.day - dayNumber
+            const content = (
+              <div
+                style={{
+                  padding: '16px',
+                  border: earned ? `1px solid ${archetypeColors[user.quizResult ?? ''] ?? 'var(--green)'}40` : '1px dashed var(--line-md)',
+                  borderRadius: '10px',
+                  background: earned ? 'var(--paper2)' : 'transparent',
+                  opacity: earned ? 1 : 0.55,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px',
+                  transition: 'border-color 0.15s ease',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{
+                    fontSize: '14px',
+                    color: earned ? 'var(--green)' : 'var(--text-muted)',
+                  }}>
+                    {earned ? '✓' : '○'}
+                  </span>
+                  <span style={{
+                    fontSize: '10px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    color: earned ? 'var(--green)' : 'var(--text-muted)',
+                    fontFamily: 'var(--font-body)',
+                    fontWeight: 600,
+                  }}>
+                    Day {m.day}
+                  </span>
+                </div>
+                <div style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '15px',
+                  fontWeight: 400,
+                  color: 'var(--ink)',
+                  lineHeight: 1.2,
+                }}>
+                  {m.title}
+                </div>
+                <div style={{
+                  fontSize: '11px',
+                  color: 'var(--text-muted)',
+                  fontFamily: 'var(--font-body)',
+                  lineHeight: 1.45,
+                }}>
+                  {earned ? m.subtitle : `${toGo} ${toGo === 1 ? 'day' : 'days'} to go`}
+                </div>
+              </div>
+            )
+            return earned && m.href ? (
+              <Link key={m.day} href={m.href} style={{ textDecoration: 'none' }}>
+                {content}
+              </Link>
+            ) : (
+              <div key={m.day}>{content}</div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── 6. 90-Day Reassessment ─────────────────────────────────────────── */}
       <div
         style={{
           background: 'linear-gradient(135deg, var(--gold-pale) 0%, var(--green-pale) 100%)',

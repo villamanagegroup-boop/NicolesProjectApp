@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import PathTile from '@/components/result/PathTile'
+import { PATHS, PATH_ORDER } from '@/data/paths'
 
 export default function QuizPathsPage() {
   return (
@@ -81,66 +82,10 @@ export default function QuizPathsPage() {
             marginBottom: '44px',
           }}
         >
-          {/* TIER 1 — Entry */}
-          <PathTile
-            path="B"
-            icon="🌿"
-            title="365 Days of Alignment"
-            subtitle="Tier 1 — Entry"
-            price="$9/mo"
-            priceNote="or $67/year (save 38%)"
-            description="Daily support built around your archetype — prompts, wins, and monthly focus to keep you moving forward consistently."
-            includes={[
-              'Daily prompt by archetype',
-              'Journal + win tracker',
-              'Monthly theme focus',
-              'Keeps you in your pipeline',
-            ]}
-            bestFor="Best if you want consistent daily support"
-            ctaLabel="Start Daily Practice →"
-            ctaHref="/signup?path=B"
-          />
-
-          {/* TIER 2 — Recommended (Featured) */}
-          <PathTile
-            path="A"
-            icon="🔥"
-            title="Seal the Leak"
-            subtitle="Tier 2 — Recommended"
-            price="$37"
-            priceNote="One-time · Instant access"
-            description="A 7-day archetype reset with daily prompts, actions, and shifts — plus 30 days of the 365 Alignment app included. Your conversion engine."
-            includes={[
-              '7-day reset by archetype',
-              'Daily prompt + action + shift',
-              'Includes 30-day app trial',
-              'Your conversion engine',
-            ]}
-            bestFor="Best if you're ready to fix this now"
-            ctaLabel="Seal the Leak →"
-            ctaHref="/signup?path=A"
-            featured
-          />
-
-          {/* TIER 3 — High Ticket */}
-          <PathTile
-            path="C"
-            icon="👑"
-            title="Private Coaching"
-            subtitle="Tier 3 — High Ticket"
-            price="$497+"
-            priceNote="Book a discovery call"
-            description="Identity-level shift work with direct access to Nicole. Group or 1:1 intensive — for when you're ready to fully change the pattern."
-            includes={[
-              'Identity-level shift work',
-              'Direct access to Nicole',
-              'Group: $97–$197/mo',
-              '1:1 intensive: $497–$997',
-            ]}
-            bestFor="Best if you're ready to go all the way in"
-            ctaLabel="Book a Discovery Call →"
-            ctaHref="/signup?path=C"
-          />
+          {PATH_ORDER.map((id) => {
+            const def = PATHS[id]
+            return <PathTile key={id} def={def} featured={!!def.recommended} />
+          })}
         </div>
 
         {/* Footer */}

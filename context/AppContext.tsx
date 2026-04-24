@@ -17,6 +17,7 @@ const mockUser: User = {
   signupDate: MOCK_SIGNUP,
   stripeCustomerId: null,
   hasPaid: false,
+  isAdmin: true,
 }
 
 const mockWins: Win[] = [
@@ -81,6 +82,10 @@ interface AppContextValue {
   setAdminProgramDay: (day: number | null) => void
   adminArchetype: string | null
   setAdminArchetype: (archetype: string | null) => void
+  // Admin cards-side override
+  adminCardDay: number | null
+  setAdminCardDay: (day: number | null) => void
+  realDayNumber: number
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -100,6 +105,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [sidebarMode, setSidebarMode] = useState<'cards' | 'work'>('cards')
   const [adminProgramDay, setAdminProgramDay] = useState<number | null>(null)
   const [adminArchetype, setAdminArchetype] = useState<string | null>(null)
+  const [adminCardDay, setAdminCardDay] = useState<number | null>(null)
 
   // On mount, read today's check-in from localStorage
   useEffect(() => {
@@ -110,7 +116,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const dayNumber = useMemo(() => getDayNumber(mockUser.signupDate), [])
+  const realDayNumber = useMemo(() => getDayNumber(mockUser.signupDate), [])
+  const dayNumber = adminCardDay ?? realDayNumber
   const todayCard = useMemo(() => getTodayCard(mockCards, dayNumber), [dayNumber])
   const pastCards = useMemo(() => getPastCards(mockCards, dayNumber), [dayNumber])
   const vaultCards = useMemo(() => getVaultCards(mockCards, dayNumber), [dayNumber])
@@ -195,6 +202,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setAdminProgramDay,
     adminArchetype,
     setAdminArchetype,
+    adminCardDay,
+    setAdminCardDay,
+    realDayNumber,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

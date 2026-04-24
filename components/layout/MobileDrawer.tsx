@@ -3,6 +3,7 @@ import React, { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
+import { programRoutes } from '@/data/sealTheLeakProgram'
 
 const GREEN  = '#1A5230'
 const GREEN_PALE = 'rgba(26,82,48,0.07)'
@@ -88,7 +89,14 @@ interface Props {
 export default function MobileDrawer({ open, onClose }: Props) {
   const pathname = usePathname()
   const router   = useRouter()
-  const { user, dayNumber, sidebarMode, setSidebarMode } = useApp()
+  const {
+    user, dayNumber, realDayNumber,
+    adminCardDay, setAdminCardDay,
+    adminProgramDay, setAdminProgramDay,
+    adminArchetype, setAdminArchetype,
+    sidebarMode, setSidebarMode,
+  } = useApp()
+  const [adminOpen, setAdminOpen] = React.useState(false)
 
   const isWork      = sidebarMode === 'work'
   const accent      = isWork ? PURPLE : GREEN
@@ -96,6 +104,11 @@ export default function MobileDrawer({ open, onClose }: Props) {
   const accentDim   = isWork ? PURPLE_DIM  : GREEN_DIM
   const bgColor     = isWork ? '#faf9fd' : '#f9fdfb'
   const vaultUnlocked = dayNumber >= 30
+  const quickPicks = [1, 7, 14, 30, 40]
+  const ROUTE_ORDER = ['door', 'throne', 'engine', 'push'] as const
+  const adminHasOverride = isWork
+    ? (adminProgramDay !== null || adminArchetype !== null)
+    : adminCardDay !== null
 
   const panelRef = useRef<HTMLDivElement>(null)
 
@@ -261,6 +274,277 @@ export default function MobileDrawer({ open, onClose }: Props) {
               </button>
             )}
           </div>
+
+          {/* Admin panel — mode-aware (cards or work) */}
+          {user.isAdmin && (
+            <div style={{ padding: '0 8px', marginTop: '12px' }}>
+              <div style={{ borderTop: '1px solid var(--line)', marginBottom: '8px' }} />
+              <button
+                onClick={() => setAdminOpen(o => !o)}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  background: adminOpen ? `${accent}10` : 'transparent',
+                  border: '1px solid ' + (adminOpen ? `${accent}30` : 'var(--line)'),
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-body)',
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke={adminOpen ? accent : 'var(--text-muted)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="8" cy="8" r="3" />
+                  <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" />
+                </svg>
+                <span style={{ fontSize: '11px', fontWeight: 500, color: adminOpen ? accent : 'var(--text-muted)', letterSpacing: '0.07em', textTransform: 'uppercase', flex: 1, textAlign: 'left' }}>
+                  Admin Preview
+                </span>
+                {adminHasOverride && (
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: accent, flexShrink: 0 }} />
+                )}
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{adminOpen ? '▲' : '▼'}</span>
+              </button>
+
+              {adminOpen && (
+                <div style={{
+                  marginTop: '8px',
+                  padding: '14px',
+                  background: `${accent}08`,
+                  border: `1px solid ${accent}20`,
+                  borderRadius: '10px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '14px',
+                }}>
+
+                  {/* Cards mode — day override */}
+                  {!isWork && (
+                    <>
+                      <div>
+                        <p style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 4px', fontFamily: 'var(--font-body)' }}>
+                          View Day
+                        </p>
+                        <p style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 8px', lineHeight: 1.4 }}>
+                          Real day: {realDayNumber}. Override unlocks cards + vault.
+                        </p>
+                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                          <button
+                            onClick={() => setAdminCardDay(null)}
+                            style={{
+                              padding: '5px 10px',
+                              borderRadius: '5px',
+                              border: adminCardDay === null ? `1.5px solid ${accent}` : '1px solid var(--line)',
+                              background: adminCardDay === null ? `${accent}15` : 'white',
+                              color: adminCardDay === null ? accent : 'var(--text-soft)',
+                              fontSize: '10px',
+                              fontWeight: adminCardDay === null ? 600 : 400,
+                              fontFamily: 'var(--font-body)',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Live
+                          </button>
+                          {quickPicks.map((d) => {
+                            const active = adminCardDay === d
+                            return (
+                              <button
+                                key={d}
+                                onClick={() => setAdminCardDay(d)}
+                                style={{
+                                  width: 30,
+                                  height: 30,
+                                  borderRadius: '50%',
+                                  border: active ? `1.5px solid ${accent}` : '1px solid var(--line)',
+                                  background: active ? accent : 'white',
+                                  color: active ? 'white' : 'var(--text-soft)',
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  fontFamily: 'var(--font-body)',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                }}
+                              >
+                                {d}
+                              </button>
+                            )
+                          })}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
+                            Any day:
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={365}
+                            value={adminCardDay ?? ''}
+                            placeholder="1–365"
+                            onChange={(e) => {
+                              const raw = e.target.value
+                              if (raw === '') { setAdminCardDay(null); return }
+                              const n = parseInt(raw, 10)
+                              if (Number.isNaN(n)) return
+                              setAdminCardDay(Math.max(1, Math.min(365, n)))
+                            }}
+                            style={{
+                              flex: 1,
+                              padding: '6px 8px',
+                              borderRadius: '5px',
+                              border: '1px solid var(--line-md)',
+                              fontSize: '12px',
+                              fontFamily: 'var(--font-body)',
+                              color: 'var(--ink)',
+                              outline: 'none',
+                              width: '100%',
+                              minWidth: 0,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Work mode — archetype + day override */}
+                  {isWork && (
+                    <>
+                      <div>
+                        <p style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 8px', fontFamily: 'var(--font-body)' }}>
+                          Archetype / Route
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <button
+                            onClick={() => setAdminArchetype(null)}
+                            style={{
+                              padding: '8px 10px',
+                              borderRadius: '6px',
+                              border: adminArchetype === null ? `1.5px solid ${accent}` : '1px solid var(--line)',
+                              background: adminArchetype === null ? `${accent}10` : 'white',
+                              color: adminArchetype === null ? accent : 'var(--text-soft)',
+                              fontSize: '12px',
+                              fontWeight: adminArchetype === null ? 600 : 400,
+                              fontFamily: 'var(--font-body)',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                            }}
+                          >
+                            Default (user&apos;s route)
+                          </button>
+                          {ROUTE_ORDER.map((id) => {
+                            const r = programRoutes[id]
+                            const active = adminArchetype === id
+                            return (
+                              <button
+                                key={id}
+                                onClick={() => setAdminArchetype(id)}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  padding: '8px 10px',
+                                  borderRadius: '6px',
+                                  border: active ? `1.5px solid ${r.color}` : '1px solid var(--line)',
+                                  background: active ? `${r.color}10` : 'white',
+                                  color: active ? r.color : 'var(--text-soft)',
+                                  fontSize: '12px',
+                                  fontWeight: active ? 600 : 400,
+                                  fontFamily: 'var(--font-body)',
+                                  cursor: 'pointer',
+                                  textAlign: 'left',
+                                }}
+                              >
+                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: r.color, flexShrink: 0 }} />
+                                {r.name}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      <div>
+                        <p style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 4px', fontFamily: 'var(--font-body)' }}>
+                          View Day
+                        </p>
+                        <p style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 8px', lineHeight: 1.4 }}>
+                          All 7 days unlocked in admin mode.
+                        </p>
+                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                          <button
+                            onClick={() => setAdminProgramDay(null)}
+                            style={{
+                              padding: '6px 10px',
+                              borderRadius: '5px',
+                              border: adminProgramDay === null ? `1.5px solid ${accent}` : '1px solid var(--line)',
+                              background: adminProgramDay === null ? `${accent}15` : 'white',
+                              color: adminProgramDay === null ? accent : 'var(--text-soft)',
+                              fontSize: '11px',
+                              fontWeight: adminProgramDay === null ? 600 : 400,
+                              fontFamily: 'var(--font-body)',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Current
+                          </button>
+                          {[1,2,3,4,5,6,7].map((d) => {
+                            const active = adminProgramDay === d
+                            return (
+                              <button
+                                key={d}
+                                onClick={() => setAdminProgramDay(d)}
+                                style={{
+                                  width: 30,
+                                  height: 30,
+                                  borderRadius: '50%',
+                                  border: active ? `1.5px solid ${accent}` : '1px solid var(--line)',
+                                  background: active ? accent : 'white',
+                                  color: active ? 'white' : 'var(--text-soft)',
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  fontFamily: 'var(--font-body)',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                }}
+                              >
+                                {d}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Reset */}
+                  {adminHasOverride && (
+                    <button
+                      onClick={() => {
+                        if (isWork) { setAdminProgramDay(null); setAdminArchetype(null) }
+                        else setAdminCardDay(null)
+                      }}
+                      style={{
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--line)',
+                        background: 'white',
+                        color: 'var(--text-muted)',
+                        fontSize: '11px',
+                        fontFamily: 'var(--font-body)',
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      ✕ Reset to live defaults
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </nav>
 
         {/* Bottom — New Journal Entry + Settings + Sign Out */}

@@ -1,43 +1,12 @@
+import type { PathDefinition } from '@/data/paths'
+
 interface PathTileProps {
-  path: 'A' | 'B' | 'C'
-  icon: string
-  title: string
-  subtitle: string
-  description: string
-  price: string
-  priceNote?: string
-  bestFor: string
-  includes: string[]
-  ctaLabel: string
-  ctaHref: string
+  def: PathDefinition
   featured?: boolean
 }
 
-const ACCENT: Record<string, string> = {
-  A: '#b8922a',
-  B: '#1f5c3a',
-  C: '#0c0c0a',
-}
-
-const BADGE_COLOR: Record<string, string> = {
-  A: 'var(--gold)',
-  B: '#1f5c3a',
-  C: 'var(--ink)',
-}
-
-const CTA_BG: Record<string, string> = {
-  A: '#b8922a',
-  B: '#1f5c3a',
-  C: '#0c0c0a',
-}
-
-export default function PathTile({
-  path, icon, title, subtitle, description, price, priceNote,
-  bestFor, includes, ctaLabel, ctaHref, featured = false,
-}: PathTileProps) {
-  const accent = ACCENT[path]
-  const badgeColor = BADGE_COLOR[path]
-  const ctaBg = CTA_BG[path]
+export default function PathTile({ def, featured = false }: PathTileProps) {
+  const accent = def.accent
 
   return (
     <div
@@ -52,7 +21,7 @@ export default function PathTile({
         position: 'relative',
         overflow: 'hidden',
         background: featured ? '#fffdf7' : 'white',
-        boxShadow: featured ? '0 8px 32px rgba(184,146,42,0.12)' : 'none',
+        boxShadow: featured ? `0 8px 32px ${accent}20` : 'none',
       }}
     >
       {/* Top accent bar */}
@@ -94,18 +63,18 @@ export default function PathTile({
           margin: '0 0 6px',
           lineHeight: 1.1,
         }}>
-          {title}
+          {def.icon} {def.title}
         </h3>
         <p style={{
           fontSize: '11px',
           letterSpacing: '0.8px',
           textTransform: 'uppercase',
-          color: badgeColor,
+          color: accent,
           margin: 0,
           fontFamily: 'var(--font-body)',
           opacity: 0.85,
         }}>
-          {subtitle}
+          {def.tierLabel}
         </p>
       </div>
 
@@ -118,9 +87,9 @@ export default function PathTile({
           color: 'var(--ink)',
           lineHeight: 1,
         }}>
-          {price}
+          {def.price}
         </span>
-        {priceNote && (
+        {def.priceNote && (
           <p style={{
             fontSize: '12px',
             color: 'var(--text-muted)',
@@ -128,7 +97,7 @@ export default function PathTile({
             fontFamily: 'var(--font-body)',
             lineHeight: 1.5,
           }}>
-            {priceNote}
+            {def.priceNote}
           </p>
         )}
       </div>
@@ -141,12 +110,12 @@ export default function PathTile({
         margin: 0,
         fontFamily: 'var(--font-body)',
       }}>
-        {description}
+        {def.description}
       </p>
 
       {/* Includes */}
       <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {includes.map((item) => (
+        {def.includes.map((item) => (
           <li key={item} style={{
             display: 'flex',
             alignItems: 'flex-start',
@@ -163,31 +132,31 @@ export default function PathTile({
 
       {/* Best for callout */}
       <div style={{
-        background: featured ? 'rgba(184,146,42,0.07)' : 'rgba(12,12,10,0.03)',
-        border: `1px solid ${featured ? 'rgba(184,146,42,0.18)' : 'rgba(12,12,10,0.07)'}`,
+        background: featured ? `${accent}10` : 'rgba(12,12,10,0.03)',
+        border: `1px solid ${featured ? `${accent}28` : 'rgba(12,12,10,0.07)'}`,
         borderRadius: '6px',
         padding: '10px 14px',
       }}>
         <p style={{
           fontSize: '12px',
-          color: featured ? 'rgba(184,146,42,0.9)' : 'var(--text-soft)',
+          color: featured ? accent : 'var(--text-soft)',
           margin: 0,
           fontFamily: 'var(--font-body)',
           fontStyle: 'italic',
           lineHeight: 1.5,
         }}>
-          👉 {bestFor}
+          👉 {def.bestFor}
         </p>
       </div>
 
       {/* CTA */}
       <a
-        href={ctaHref}
-        aria-label={ctaLabel}
+        href={def.ctaHref}
+        aria-label={def.ctaLabel}
         style={{
           display: 'block',
           width: '100%',
-          background: ctaBg,
+          background: accent,
           color: 'white',
           borderRadius: '6px',
           padding: featured ? '15px' : '13px',
@@ -201,7 +170,7 @@ export default function PathTile({
           boxSizing: 'border-box',
         }}
       >
-        {ctaLabel}
+        {def.ctaLabel}
       </a>
     </div>
   )

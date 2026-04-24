@@ -2,7 +2,7 @@
 import React, { useState, useEffect, Suspense } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 import Button from '@/components/ui/Button'
 import EyebrowLabel from '@/components/ui/EyebrowLabel'
@@ -30,6 +30,7 @@ function getLockedLabel(lockedDayNumber: number, currentDay: number) {
 
 function CardPageInner() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const dayParam = searchParams.get('day')
   const { user, cards, dayNumber, todayCard, checkInToday, setCheckIn, journalEntries, addJournalEntry, updateJournalEntry } = useApp()
 
@@ -40,6 +41,28 @@ function CardPageInner() {
 
   const displayDayNumber = dayParam ? parseInt(dayParam) : dayNumber
   const isHistoricalView = !!dayParam && parseInt(dayParam) !== dayNumber
+
+  // Prev/next nav — clamped to [1, dayNumber] (dayNumber reflects admin override)
+  const canPrev = displayDayNumber > 1
+  const canNext = displayDayNumber < dayNumber
+
+  function goToDay(target: number) {
+    if (target < 1 || target > dayNumber) return
+    if (target === dayNumber) router.push('/card')
+    else router.push(`/card?day=${target}`)
+  }
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const t = e.target as HTMLElement | null
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
+      if (e.key === 'ArrowLeft' && canPrev) { e.preventDefault(); goToDay(displayDayNumber - 1) }
+      else if (e.key === 'ArrowRight' && canNext) { e.preventDefault(); goToDay(displayDayNumber + 1) }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canPrev, canNext, displayDayNumber, dayNumber])
 
   // Find existing entry for this specific card
   const existingEntry = displayCard
@@ -59,15 +82,77 @@ function CardPageInner() {
     setIsEditingReflection(false)
   }, [displayCard?.id])
 
-  // Only show check-in if viewing today's card
-  const [showCheckIn, setShowCheckIn] = useState(!checkInToday && !isHistoricalView)
+  // 'open' = full widget, 'minimized' = pill button at top
+  const [checkInState, setCheckInState] = useState<'open' | 'minimized'>(
+    !checkInToday && !isHistoricalView ? 'open' : 'minimized'
+  )
+  const [savedMood, setSavedMood] = useState<string | null>(checkInToday || null)
+
+  const moodMeta: Record<string, { emoji: string; label: string }> = {
+    aligned:      { emoji: '🌿', label: 'Aligned' },
+    clear:        { emoji: '✨', label: 'Clear' },
+    drained:      { emoji: '🌑', label: 'Drained' },
+    overwhelmed:  { emoji: '🌊', label: 'Overwhelmed' },
+    disconnected: { emoji: '🪨', label: 'Disconnected' },
+  }
 
   if (!displayCard) {
     return (
       <div style={{ padding: '60px 0', textAlign: 'center' }}>
-        <p style={{ fontFamily: 'var(--font-body)', color: 'var(--text-muted)', fontSize: '14px' }}>
-          No card available for today.
+        <p style={{ fontFamily: 'var(--font-body)', color: 'var(--text-muted)', fontSize: '14px', marginBottom: '20px' }}>
+          No card available for Day {displayDayNumber}.
         </p>
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+          <button
+            onClick={() => goToDay(displayDayNumber - 1)}
+            disabled={!canPrev}
+            style={{
+              padding: '8px 14px',
+              background: 'white',
+              border: '1px solid var(--line)',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontFamily: 'var(--font-body)',
+              color: canPrev ? 'var(--text-soft)' : 'var(--text-muted)',
+              cursor: canPrev ? 'pointer' : 'not-allowed',
+              opacity: canPrev ? 1 : 0.4,
+            }}
+          >
+            ◀ Day {Math.max(1, displayDayNumber - 1)}
+          </button>
+          <button
+            onClick={() => router.push('/card')}
+            style={{
+              padding: '8px 14px',
+              background: 'var(--green)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontFamily: 'var(--font-body)',
+              cursor: 'pointer',
+            }}
+          >
+            Back to today
+          </button>
+          <button
+            onClick={() => goToDay(displayDayNumber + 1)}
+            disabled={!canNext}
+            style={{
+              padding: '8px 14px',
+              background: 'white',
+              border: '1px solid var(--line)',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontFamily: 'var(--font-body)',
+              color: canNext ? 'var(--text-soft)' : 'var(--text-muted)',
+              cursor: canNext ? 'pointer' : 'not-allowed',
+              opacity: canNext ? 1 : 0.4,
+            }}
+          >
+            Day {Math.min(dayNumber, displayDayNumber + 1)} ▶
+          </button>
+        </div>
       </div>
     )
   }
@@ -84,16 +169,6 @@ function CardPageInner() {
   const circumference = 2 * Math.PI * 42 // r=42 → 263.89
 
   return (
-    <>
-      {showCheckIn && (
-        <DailyCheckIn
-          onComplete={(mood) => {
-            if (mood) setCheckIn(mood)
-            setShowCheckIn(false)
-          }}
-        />
-      )}
-
       <div className="two-col-grid" style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
 
       {/* ── LEFT COLUMN ─ sticky card visual ── */}
@@ -180,10 +255,137 @@ function CardPageInner() {
             {card.theme}
           </span>
         </div>
+
+        {/* Day nav — prev / next */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginTop: '10px',
+          padding: '8px 6px',
+          borderTop: '1px solid var(--line)',
+          gap: '8px',
+        }}>
+          <button
+            onClick={() => goToDay(displayDayNumber - 1)}
+            disabled={!canPrev}
+            aria-label="Previous day"
+            title="Previous day (←)"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 10px',
+              background: 'transparent',
+              border: '1px solid var(--line)',
+              borderRadius: '6px',
+              fontSize: '11px',
+              fontFamily: 'var(--font-body)',
+              color: canPrev ? 'var(--text-soft)' : 'var(--text-muted)',
+              cursor: canPrev ? 'pointer' : 'not-allowed',
+              opacity: canPrev ? 1 : 0.4,
+              transition: 'border-color 0.15s ease, color 0.15s ease',
+            }}
+            onMouseEnter={(e) => { if (canPrev) (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--green)' }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--line)' }}
+          >
+            <span style={{ fontSize: '12px' }}>◀</span>
+            Day {Math.max(1, displayDayNumber - 1)}
+          </button>
+          <span style={{
+            fontSize: '10px',
+            color: 'var(--text-muted)',
+            fontFamily: 'var(--font-body)',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+          }}>
+            {displayDayNumber} / {dayNumber}
+          </span>
+          <button
+            onClick={() => goToDay(displayDayNumber + 1)}
+            disabled={!canNext}
+            aria-label="Next day"
+            title="Next day (→)"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 10px',
+              background: 'transparent',
+              border: '1px solid var(--line)',
+              borderRadius: '6px',
+              fontSize: '11px',
+              fontFamily: 'var(--font-body)',
+              color: canNext ? 'var(--text-soft)' : 'var(--text-muted)',
+              cursor: canNext ? 'pointer' : 'not-allowed',
+              opacity: canNext ? 1 : 0.4,
+              transition: 'border-color 0.15s ease, color 0.15s ease',
+            }}
+            onMouseEnter={(e) => { if (canNext) (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--green)' }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--line)' }}
+          >
+            Day {Math.min(dayNumber, displayDayNumber + 1)}
+            <span style={{ fontSize: '12px' }}>▶</span>
+          </button>
+        </div>
       </div>
 
       {/* ── RIGHT COLUMN ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '32px' }}>
+
+        {/* Optional daily check-in widget */}
+        {checkInState === 'open' && (
+          <DailyCheckIn
+            compact
+            onComplete={(mood) => {
+              if (mood) { setCheckIn(mood); setSavedMood(mood) }
+              setCheckInState('minimized')
+            }}
+            onDismiss={() => setCheckInState('minimized')}
+          />
+        )}
+
+        {/* Minimized check-in pill — inline at top of right column */}
+        {checkInState === 'minimized' && (() => {
+          const confirmed = savedMood ? moodMeta[savedMood] : null
+          return (
+            <button
+              onClick={() => setCheckInState('open')}
+              style={{
+                alignSelf: 'flex-start',
+                padding: '7px 14px',
+                background: confirmed ? 'var(--paper2)' : 'var(--paper)',
+                border: confirmed ? '1px solid var(--green)' : '1px solid var(--gold)',
+                borderRadius: '24px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '7px',
+                fontFamily: 'var(--font-body)',
+                fontSize: '12px',
+                fontWeight: 500,
+                color: confirmed ? 'var(--green)' : 'var(--gold)',
+                transition: 'background 0.15s ease',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = confirmed ? '#edf6ef' : 'var(--gold-pale)' }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = confirmed ? 'var(--paper2)' : 'var(--paper)' }}
+            >
+              {confirmed ? (
+                <>
+                  <span style={{ fontSize: '13px' }}>{confirmed.emoji}</span>
+                  {confirmed.label} — confirmed
+                  <span style={{ fontSize: '10px', opacity: 0.5 }}>✓</span>
+                </>
+              ) : (
+                <>
+                  <span style={{ fontSize: '13px' }}>✦</span>
+                  Daily Check-In
+                  <span style={{ fontSize: '10px', opacity: 0.5 }}>+</span>
+                </>
+              )}
+            </button>
+          )
+        })()}
 
         {/* Historical view banner */}
         {isHistoricalView && (
@@ -629,7 +831,6 @@ function CardPageInner() {
 
       </div>
     </div>
-    </>
   )
 }
 
