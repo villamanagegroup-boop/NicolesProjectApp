@@ -55,18 +55,24 @@ export default function CirclePage() {
   useEffect(() => {
     if (loading) return
 
-    // Unauthed preview — render the full Circle experience from mock data.
-    if (!isAuthed) {
+    // Helper — populate state from the mock cohort.
+    const loadMock = () => {
       setState({ kind: 'ready', member: MOCK_MEMBER })
       setPartner(MOCK_PARTNER)
       setWeeks(MOCK_WEEKS_OVERVIEW)
       setProgress(MOCK_PROGRESS)
       setCalls(MOCK_CALLS)
       setCurrentWeek(getCurrentWeekNumber(MOCK_COHORT.starts_at))
-      return
     }
 
-    if (!effectiveIsAdmin && effectivePath !== 'C') return // layout will redirect
+    // Unauthed preview — render the full Circle experience from mock data.
+    if (!isAuthed) { loadMock(); return }
+
+    // Admin preview with no real Circle data — drop straight to mocks.
+    // Avoids a "no-cohort" dead end while the backend is still empty.
+    if (effectiveIsAdmin) { loadMock(); return }
+
+    if (effectivePath !== 'C') return // layout will redirect
 
     (async () => {
       let member = await getMyCircleMember()
@@ -103,11 +109,8 @@ export default function CirclePage() {
         }
       }
 
-      // Still no member? Admin previewing with no enrollment, or a data edge case.
-      if (!member) {
-        if (effectiveIsAdmin) { setState({ kind: 'no-cohort' }); return }
-        setState({ kind: 'needs-intake' }); return
-      }
+      // No member after auto-enroll attempt → intake.
+      if (!member) { setState({ kind: 'needs-intake' }); return }
 
       // Gate: any required field missing → route to intake.
       const missing = !member.enneagram_type || !member.attachment_style

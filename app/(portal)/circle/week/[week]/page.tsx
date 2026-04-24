@@ -31,7 +31,7 @@ const ARCHETYPE_LABELS: Record<string, string> = {
 export default function WeekPage() {
   const params = useParams()
   const router = useRouter()
-  const { isAuthed } = useApp()
+  const { isAuthed, effectiveIsAdmin } = useApp()
   const weekNum = parseInt(params.week as string, 10)
 
   const [universal, setUniversal]         = useState<WeeklyContent | null>(null)
@@ -50,8 +50,8 @@ export default function WeekPage() {
       return
     }
 
-    // Unauthed preview — render from mock data.
-    if (!isAuthed) {
+    // Unauthed or admin preview — render from mock data.
+    if (!isAuthed || effectiveIsAdmin) {
       setMemberId(MOCK_MEMBER.id)
       setArchetype(MOCK_MEMBER.archetype)
       const content = getMockWeekContent(weekNum, MOCK_MEMBER.archetype)
@@ -90,8 +90,8 @@ export default function WeekPage() {
   async function handleMarkComplete(field: 'journal_completed' | 'action_completed') {
     if (!memberId) return
     setSaving(true)
-    // Unauthed preview — flip the flag locally only.
-    if (!isAuthed) {
+    // Unauthed or admin preview — flip the flag locally only.
+    if (!isAuthed || effectiveIsAdmin) {
       setProgress((prev: any) => ({ ...(prev ?? {}), [field]: true, week_number: weekNum }))
       setSaving(false)
       return

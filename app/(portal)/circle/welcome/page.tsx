@@ -31,8 +31,8 @@ export default function CircleWelcomePage() {
   useEffect(() => {
     if (loading) return
 
-    // Unauthed preview — render from mock cohort.
-    if (!isAuthed) {
+    // Unauthed or admin preview — render from mock cohort.
+    if (!isAuthed || effectiveIsAdmin) {
       setMember(MOCK_MEMBER)
       setCohort({ name: MOCK_COHORT.name, starts_at: MOCK_COHORT.starts_at, ends_at: MOCK_COHORT.ends_at })
       setNextCall(MOCK_CALLS.find(c => new Date(c.scheduled_at) > new Date()) ?? null)
@@ -41,7 +41,7 @@ export default function CircleWelcomePage() {
       return
     }
 
-    if (!effectiveIsAdmin && effectivePath !== 'C') { router.replace('/dashboard'); return }
+    if (effectivePath !== 'C') { router.replace('/dashboard'); return }
 
     (async () => {
       const m = await getMyCircleMember()
