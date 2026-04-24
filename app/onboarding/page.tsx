@@ -3,6 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabaseClient } from '@/lib/supabase/client'
+import { useApp } from '@/context/AppContext'
 
 type Archetype = 'door' | 'throne' | 'engine' | 'push'
 type Ennea = '1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9'
@@ -181,6 +182,7 @@ function BtnRow({ children }: { children: React.ReactNode }) {
 
 export default function OnboardingPage() {
   const router = useRouter()
+  const { refreshUser } = useApp()
   const [step, setStep] = useState(1)
   const [state, setState] = useState<AssessmentState>({
     archetype: null, ennea: null, attach: null, acctFeel: null, feedback: null, goal: '',
@@ -229,6 +231,9 @@ export default function OnboardingPage() {
       return
     }
 
+    // Pull the updated user row into AppContext so the portal guard sees
+    // onboarding_complete = true and doesn't bounce us back here.
+    await refreshUser()
     router.push('/dashboard')
   }
 

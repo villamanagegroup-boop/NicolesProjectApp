@@ -159,6 +159,7 @@ interface AppContextValue {
   isAuthed: boolean
   loading: boolean
   user: User
+  refreshUser: () => Promise<void>
   updateUser: (updates: { name?: string; email?: string }) => Promise<void>
   cards: DailyCard[]
   dayNumber: number
@@ -320,6 +321,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [authUser])
 
+  const refreshUser = useCallback(async () => {
+    if (!authUser) return
+    const { data } = await supabaseClient.from('users').select('*').eq('id', authUser.id).maybeSingle()
+    if (data) setUserRow(data as UserRow)
+  }, [authUser])
+
   const addJournalEntry = useCallback(async (entry: Omit<JournalEntry, 'id' | 'createdAt'>) => {
     if (authUser) {
       const { data } = await supabaseClient.from('journal_entries').insert({
@@ -411,6 +418,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     isAuthed: !!authUser,
     loading,
     user,
+    refreshUser,
     updateUser,
     cards,
     dayNumber,
