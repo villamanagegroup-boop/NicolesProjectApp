@@ -85,7 +85,7 @@ function PromptItem({
         <textarea
           value={value}
           onChange={(e) => handleChange(e.target.value)}
-          placeholder="Write your reflection here..."
+          placeholder={item}
           rows={3}
           style={{
             display: 'block', width: '100%', boxSizing: 'border-box',
@@ -162,7 +162,7 @@ function PromptItems({
 }
 
 function TodaysSessionInner() {
-  const { user, dayNumber, adminProgramDay, adminArchetype } = useApp()
+  const { user, dayNumber, adminProgramDay, adminArchetype, streakCount } = useApp()
   const searchParams = useSearchParams()
 
   const baseRouteId = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
@@ -180,6 +180,7 @@ function TodaysSessionInner() {
 
   const [viewingDay, setViewingDay] = useState(initialDay)
   const [sealedDays, setSealedDays] = useState<Set<number>>(new Set())
+  const [celebratingDay, setCelebratingDay] = useState(false)
 
   // Sync viewingDay when admin picks a specific day
   useEffect(() => {
@@ -196,6 +197,8 @@ function TodaysSessionInner() {
 
   function handleSeal() {
     setSealedDays(prev => new Set(prev).add(viewingDay))
+    setCelebratingDay(true)
+    setTimeout(() => setCelebratingDay(false), 1400)
   }
 
   const sealContent = (
@@ -204,6 +207,7 @@ function TodaysSessionInner() {
       borderRadius: '10px',
       padding: '20px 24px',
       textAlign: 'center',
+      animation: celebratingDay ? 'sealReveal 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' : undefined,
     }}>
       <p style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)', fontFamily: 'var(--font-body)', margin: '0 0 10px' }}>
         {isDay7 ? 'Sealed identity' : isPast ? "Day's seal" : "Today's seal"}
@@ -219,7 +223,7 @@ function TodaysSessionInner() {
 
       {/* ── Top strip: breadcrumb + day dots ── */}
       <div style={{ marginBottom: '20px' }}>
-        {/* Row 1: breadcrumb */}
+        {/* Row 1: breadcrumb + streak */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
           <Link
             href="/program"
@@ -233,9 +237,26 @@ function TodaysSessionInner() {
           <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
             {isToday ? "Today's Session" : `Day ${viewingDay}`}
           </span>
+          {streakCount > 0 && (
+            <span style={{
+              marginLeft: 'auto',
+              fontSize: '11px',
+              fontWeight: 600,
+              color: route.color,
+              fontFamily: 'var(--font-body)',
+              background: `${route.color}10`,
+              border: `1px solid ${route.color}25`,
+              borderRadius: '999px',
+              padding: '2px 10px',
+              letterSpacing: '0.02em',
+            }}>
+              🔥 {streakCount} day streak
+            </span>
+          )}
         </div>
 
         {/* Row 2: day dots — scrollable on mobile */}
+        <div style={{ position: 'relative' }}>
         <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '4px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 'max-content' }}>
           {route.days.map((d) => {
@@ -277,6 +298,13 @@ function TodaysSessionInner() {
           </div>
         </div>
         </div>{/* end scroll wrapper */}
+        {/* Fade edge hint */}
+        <div style={{
+          position: 'absolute', top: 0, right: 0, bottom: '4px', width: '40px',
+          background: 'linear-gradient(to right, transparent, var(--paper))',
+          pointerEvents: 'none',
+        }} className="dots-fade" />
+        </div>{/* end relative wrapper */}
       </div>
 
       {/* ── Day title row ── */}
@@ -294,6 +322,45 @@ function TodaysSessionInner() {
           </span>
         )}
       </div>
+
+      {/* ── Day 7 completion hero ── */}
+      {isDay7 && (isPast || isSealed) && (
+        <div style={{
+          background: `linear-gradient(135deg, ${route.color} 0%, ${route.color}cc 100%)`,
+          borderRadius: '14px',
+          padding: '28px 32px',
+          marginBottom: '24px',
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '20px',
+          flexWrap: 'wrap',
+        }}>
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <p style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)', margin: '0 0 8px', fontFamily: 'var(--font-body)' }}>
+              Program complete
+            </p>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: 300, margin: '0 0 6px', fontStyle: 'italic' }}>
+              You sealed the leak.
+            </h2>
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.75)', margin: 0, lineHeight: 1.6, fontFamily: 'var(--font-body)' }}>
+              7 days. Every prompt. Every action. The work you did here is permanent.
+            </p>
+          </div>
+          <div style={{
+            background: 'rgba(255,255,255,0.12)',
+            borderRadius: '10px',
+            padding: '14px 20px',
+            textAlign: 'center',
+            flexShrink: 0,
+          }}>
+            <p style={{ fontSize: '28px', margin: '0 0 4px' }}>✦</p>
+            <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.75)', margin: 0, fontFamily: 'var(--font-body)' }}>
+              {route.name}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── Two-column main layout ── */}
       <div className="two-col-grid" style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '20px', alignItems: 'start' }}>
@@ -379,9 +446,35 @@ function TodaysSessionInner() {
 
         {/* RIGHT: prompt / reflection column */}
         <div style={{ background: 'white', border: '1px solid var(--line)', borderRadius: '10px', padding: '24px' }}>
-          <p style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 6px' }}>
-            {isPast ? 'Reflection prompt' : "Today's prompt"}
-          </p>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '6px' }}>
+            <p style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: 0 }}>
+              {isPast ? 'Reflection prompt' : "Today's prompt"}
+            </p>
+            <Link
+              href={`/journal?day=${viewingDay}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                fontSize: '11px',
+                fontWeight: 500,
+                color: route.color,
+                fontFamily: 'var(--font-body)',
+                textDecoration: 'none',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                border: `1px solid ${route.color}30`,
+                background: `${route.color}06`,
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+                transition: 'opacity 0.15s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = '0.75' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = '1' }}
+            >
+              ✏ {isPast ? `Add Day ${viewingDay} reflection` : 'Write in journal'}
+            </Link>
+          </div>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: 400, color: 'var(--ink)', margin: '0 0 20px' }}>
             {day.prompt.title}
           </h2>
@@ -396,6 +489,45 @@ function TodaysSessionInner() {
 
       </div>
 
+      {/* ── Prev / Next day navigation ── */}
+      {(viewingDay > 1 || (isAdminMode ? viewingDay < 7 : viewingDay < currentDay)) && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '32px', gap: '12px' }}>
+          {viewingDay > 1 ? (
+            <button
+              onClick={() => { setViewingDay(v => v - 1); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '10px 18px', borderRadius: '8px', border: '1px solid var(--line)',
+                background: 'white', color: 'var(--text-soft)', fontSize: '13px',
+                fontFamily: 'var(--font-body)', fontWeight: 500, cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = route.color; (e.currentTarget as HTMLButtonElement).style.color = route.color }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--line)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-soft)' }}
+            >
+              ← Day {viewingDay - 1} — {route.days[viewingDay - 2]?.title}
+            </button>
+          ) : <div />}
+
+          {(isAdminMode ? viewingDay < 7 : viewingDay < currentDay) ? (
+            <button
+              onClick={() => { setViewingDay(v => v + 1); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '10px 18px', borderRadius: '8px', border: `1px solid ${route.color}30`,
+                background: `${route.color}08`, color: route.color, fontSize: '13px',
+                fontFamily: 'var(--font-body)', fontWeight: 500, cursor: 'pointer',
+                transition: 'opacity 0.15s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.75' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
+            >
+              Day {viewingDay + 1} — {route.days[viewingDay]?.title} →
+            </button>
+          ) : <div />}
+        </div>
+      )}
+
       {/* ── Recorded section ── */}
       <RecordedSection routeId={routeId} route={route} currentDay={currentDay} />
 
@@ -404,8 +536,16 @@ function TodaysSessionInner() {
           from { opacity: 0; transform: translateY(8px); }
           to   { opacity: 1; transform: translateY(0); }
         }
+        @keyframes sealReveal {
+          from { transform: scale(0.93); opacity: 0; }
+          to   { transform: scale(1);    opacity: 1; }
+        }
         @media (max-width: 780px) {
           .session-grid { grid-template-columns: 1fr !important; }
+          .dots-fade { display: none; }
+        }
+        @media (min-width: 781px) {
+          .dots-fade { display: none; }
         }
       `}</style>
     </div>

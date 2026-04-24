@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useApp } from '@/context/AppContext'
 import { programRoutes, archetypeToRoute, PHASE_DAYS } from '@/data/sealTheLeakProgram'
 import type { ProgramDay } from '@/data/sealTheLeakProgram'
+import ProgressRing from '@/components/program/ProgressRing'
 
 function useWorkProgress(dayNumber: number) {
   const completedDays = Math.min(Math.max(dayNumber - 1, 0), 7)
@@ -212,29 +213,76 @@ function DayCard({ dayData, color, isCompleted }: { dayData: ProgramDay; color: 
           </div>
         )}
 
-        {/* Link to Today's Session for this day */}
-        <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--line)' }}>
+        {/* Action buttons */}
+        <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--line)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {isCompleted ? (
+            <Link
+              href={`/program/reflections?day=${dayData.day}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '12px',
+                fontWeight: 500,
+                color,
+                fontFamily: 'var(--font-body)',
+                textDecoration: 'none',
+                padding: '7px 14px',
+                borderRadius: '6px',
+                border: `1px solid ${color}30`,
+                background: `${color}06`,
+                transition: 'opacity 0.15s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = '0.75' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = '1' }}
+            >
+              Review reflections →
+            </Link>
+          ) : (
+            <Link
+              href={`/program/today?day=${dayData.day}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '12px',
+                fontWeight: 500,
+                color,
+                fontFamily: 'var(--font-body)',
+                textDecoration: 'none',
+                padding: '7px 14px',
+                borderRadius: '6px',
+                border: `1px solid ${color}30`,
+                background: `${color}06`,
+                transition: 'opacity 0.15s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = '0.75' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = '1' }}
+            >
+              Open Today&apos;s Session →
+            </Link>
+          )}
           <Link
-            href={`/program/today?day=${dayData.day}`}
+            href="/program/today"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
               fontSize: '12px',
               fontWeight: 500,
-              color,
+              color: 'var(--text-soft)',
               fontFamily: 'var(--font-body)',
               textDecoration: 'none',
               padding: '7px 14px',
               borderRadius: '6px',
-              border: `1px solid ${color}30`,
-              background: `${color}06`,
+              border: '1px solid var(--line)',
+              background: 'white',
               transition: 'opacity 0.15s',
             }}
             onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = '0.75' }}
             onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = '1' }}
           >
-            {isCompleted ? 'Review reflections →' : 'Open Today\'s Session →'}
+            Review my sessions →
           </Link>
         </div>
       </div>
@@ -322,42 +370,26 @@ export default function MyProgressPage() {
           }}>
             <div style={{ height: '3px', background: route.color }} />
             <div style={{ padding: '16px 20px' }}>
-              {/* Progress bar */}
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    Overall progress
-                  </span>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: route.color, fontFamily: 'var(--font-body)' }}>
-                    {progressPercent}%
-                  </span>
-                </div>
-                <div style={{ height: '6px', background: 'var(--line)', borderRadius: '3px' }}>
-                  <div style={{
-                    height: '100%',
-                    width: `${progressPercent}%`,
-                    background: route.color,
-                    borderRadius: '3px',
-                    transition: 'width 0.4s ease',
-                  }} />
-                </div>
-              </div>
-
-              {/* Phase + Days done */}
-              <div style={{ display: 'flex', gap: '16px' }}>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 6px' }}>
-                    Current phase
-                  </p>
-                  <PhaseTag phase={currentPhase} color={route.color} />
+              {/* Progress ring + stats */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ flexShrink: 0 }}>
+                  <ProgressRing value={progressPercent} size={84} strokeWidth={7} color={route.color} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 4px' }}>
-                    Days done
-                  </p>
-                  <p style={{ fontSize: '20px', fontWeight: 600, color: route.color, fontFamily: 'var(--font-body)', margin: 0 }}>
-                    {completedDays}<span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 400 }}>/7</span>
-                  </p>
+                  <div style={{ marginBottom: '12px' }}>
+                    <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 4px' }}>
+                      Days done
+                    </p>
+                    <p style={{ fontSize: '22px', fontWeight: 600, color: route.color, fontFamily: 'var(--font-body)', margin: 0, lineHeight: 1 }}>
+                      {completedDays}<span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 400 }}>/7</span>
+                    </p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 6px' }}>
+                      Current phase
+                    </p>
+                    <PhaseTag phase={currentPhase} color={route.color} />
+                  </div>
                 </div>
               </div>
             </div>

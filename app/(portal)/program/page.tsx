@@ -1,14 +1,23 @@
 'use client'
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useApp } from '@/context/AppContext'
-import { programRoutes, archetypeToRoute } from '@/data/sealTheLeakProgram'
+import { programRoutes, archetypeToRoute, PHASE_DAYS, PHASE_ORDER } from '@/data/sealTheLeakProgram'
 
 const PHASE_COLOR: Record<string, string> = {
   Awareness:    'var(--green)',
   Interruption: 'var(--gold)',
   Reclamation:  'var(--red)',
   Identity:     'var(--ink)',
+}
+
+function getFirstReflectionSnippet(routeId: string, dayNum: number, itemCount: number): string {
+  if (typeof window === 'undefined') return ''
+  for (let i = 0; i < itemCount; i++) {
+    const val = localStorage.getItem(`stl_${routeId}_day${dayNum}_item${i}`)
+    if (val?.trim()) return val.trim().slice(0, 110)
+  }
+  return ''
 }
 
 export default function ProgramOverviewPage() {
@@ -22,6 +31,16 @@ export default function ProgramOverviewPage() {
   const completedDays = isAdminMode ? 7 : currentDay - 1
   const isFirstDay    = !isAdminMode && currentDay === 1
   const completedData = isAdminMode ? route.days : route.days.filter(d => d.day < currentDay)
+
+  const [snippets, setSnippets] = useState<Record<number, string>>({})
+  useEffect(() => {
+    const result: Record<number, string> = {}
+    for (const d of route.days) {
+      const s = getFirstReflectionSnippet(routeId, d.day, d.prompt.items.length)
+      if (s) result[d.day] = s
+    }
+    setSnippets(result)
+  }, [routeId, route.days])
 
   return (
     <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
@@ -101,6 +120,43 @@ export default function ProgramOverviewPage() {
               </p>
             </div>
             <span style={{ fontSize: '20px' }}>→</span>
+          </Link>
+
+          {/* Reflection journal CTA */}
+          <Link
+            href={`/journal?day=${currentDay}`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'white',
+              color: route.color,
+              borderRadius: '10px',
+              padding: '14px 18px',
+              textDecoration: 'none',
+              border: `1px solid ${route.color}30`,
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => {
+              const el = e.currentTarget as HTMLAnchorElement
+              el.style.background = `${route.color}06`
+              el.style.borderColor = `${route.color}60`
+            }}
+            onMouseLeave={e => {
+              const el = e.currentTarget as HTMLAnchorElement
+              el.style.background = 'white'
+              el.style.borderColor = `${route.color}30`
+            }}
+          >
+            <div>
+              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 2px' }}>
+                Reflection journal
+              </p>
+              <p style={{ fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', margin: 0, color: 'var(--ink)' }}>
+                Complete today&apos;s reflection prompt
+              </p>
+            </div>
+            <span style={{ fontSize: '16px', opacity: 0.6 }}>✏</span>
           </Link>
 
           {/* Route identity card */}
@@ -236,83 +292,108 @@ export default function ProgramOverviewPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
                 {completedData.map((day) => {
                   const phaseColor = PHASE_COLOR[day.phase] ?? 'var(--ink)'
+                  // Detect phase completion: this day is the last in its phase and all phase days are in completedData
+                  const phaseDays = PHASE_DAYS[day.phase] ?? []
+                  const isPhaseLastDay = day.day === Math.max(...phaseDays)
+                  const phaseComplete = isPhaseLastDay && phaseDays.every(d => completedData.some(cd => cd.day === d))
+                  const snippet = snippets[day.day]
+
                   return (
-                    <Link
-                      key={day.day}
-                      href={`/program/today?day=${day.day}`}
-                      style={{ textDecoration: 'none' }}
-                    >
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          gap: '16px',
-                          padding: '16px 20px',
-                          borderRadius: '10px',
-                          background: 'white',
-                          border: '1px solid var(--line)',
-                          cursor: 'pointer',
-                          transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
-                        }}
-                        onMouseEnter={e => {
-                          const el = e.currentTarget as HTMLDivElement
-                          el.style.borderColor = `${route.color}50`
-                          el.style.boxShadow = `0 2px 12px ${route.color}12`
-                        }}
-                        onMouseLeave={e => {
-                          const el = e.currentTarget as HTMLDivElement
-                          el.style.borderColor = 'var(--line)'
-                          el.style.boxShadow = 'none'
-                        }}
-                      >
+                    <React.Fragment key={day.day}>
+                      <Link href={`/program/today?day=${day.day}`} style={{ textDecoration: 'none' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '16px',
+                            padding: '16px 20px',
+                            borderRadius: '10px',
+                            background: 'white',
+                            border: '1px solid var(--line)',
+                            cursor: 'pointer',
+                            transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+                          }}
+                          onMouseEnter={e => {
+                            const el = e.currentTarget as HTMLDivElement
+                            el.style.borderColor = `${route.color}50`
+                            el.style.boxShadow = `0 2px 12px ${route.color}12`
+                          }}
+                          onMouseLeave={e => {
+                            const el = e.currentTarget as HTMLDivElement
+                            el.style.borderColor = 'var(--line)'
+                            el.style.boxShadow = 'none'
+                          }}
+                        >
+                          <div style={{
+                            width: 32, height: 32,
+                            borderRadius: '50%',
+                            background: route.color,
+                            color: 'white',
+                            fontSize: '14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}>
+                            ✓
+                          </div>
+
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
+                                Day {day.day}
+                              </span>
+                              <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.08em', color: phaseColor, fontFamily: 'var(--font-body)', opacity: 0.85 }}>
+                                · {day.phase}
+                              </span>
+                            </div>
+                            <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--ink)', fontFamily: 'var(--font-body)', margin: '0 0 8px' }}>
+                              {day.title}
+                            </p>
+                            <div style={{ background: `${route.color}06`, border: `1px solid ${route.color}20`, borderRadius: '6px', padding: '8px 12px', marginBottom: snippet ? '8px' : '0' }}>
+                              <p style={{ fontSize: '12px', fontStyle: 'italic', color: 'var(--ink)', margin: 0, fontFamily: 'var(--font-display)', lineHeight: 1.6 }}>
+                                &ldquo;{day.seal}&rdquo;
+                              </p>
+                            </div>
+                            {snippet && (
+                              <div style={{ padding: '6px 0 0' }}>
+                                <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 3px', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 500 }}>
+                                  You wrote
+                                </p>
+                                <p style={{ fontSize: '12px', color: 'var(--text-soft)', fontFamily: 'var(--font-body)', lineHeight: 1.6, margin: 0, fontStyle: 'italic' }}>
+                                  &ldquo;{snippet}{snippet.length >= 110 ? '…' : ''}&rdquo;
+                                </p>
+                              </div>
+                            )}
+                          </div>
+
+                          <span style={{ color: route.color, fontSize: '16px', alignSelf: 'center', flexShrink: 0, opacity: 0.6 }}>→</span>
+                        </div>
+                      </Link>
+
+                      {/* Phase completion banner */}
+                      {phaseComplete && (
                         <div style={{
-                          width: 32, height: 32,
-                          borderRadius: '50%',
-                          background: route.color,
-                          color: 'white',
-                          fontSize: '14px',
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
+                          gap: '12px',
+                          padding: '10px 16px',
+                          borderRadius: '8px',
+                          background: `${phaseColor}08`,
+                          border: `1px solid ${phaseColor}20`,
                         }}>
-                          ✓
-                        </div>
-
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
-                              Day {day.day}
+                          <span style={{ fontSize: '14px' }}>✦</span>
+                          <div>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: phaseColor, fontFamily: 'var(--font-body)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                              {day.phase} — phase complete
                             </span>
-                            <span style={{
-                              fontSize: '10px',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.08em',
-                              color: phaseColor,
-                              fontFamily: 'var(--font-body)',
-                              opacity: 0.85,
-                            }}>
-                              · {day.phase}
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', marginLeft: '8px' }}>
+                              {phaseDays.length} {phaseDays.length === 1 ? 'day' : 'days'} done
                             </span>
                           </div>
-                          <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--ink)', fontFamily: 'var(--font-body)', margin: '0 0 8px' }}>
-                            {day.title}
-                          </p>
-                          <div style={{
-                            background: `${route.color}06`,
-                            border: `1px solid ${route.color}20`,
-                            borderRadius: '6px',
-                            padding: '8px 12px',
-                          }}>
-                            <p style={{ fontSize: '12px', fontStyle: 'italic', color: 'var(--ink)', margin: 0, fontFamily: 'var(--font-display)', lineHeight: 1.6 }}>
-                              &ldquo;{day.seal}&rdquo;
-                            </p>
-                          </div>
                         </div>
-
-                        <span style={{ color: route.color, fontSize: '16px', alignSelf: 'center', flexShrink: 0, opacity: 0.6 }}>→</span>
-                      </div>
-                    </Link>
+                      )}
+                    </React.Fragment>
                   )
                 })}
               </div>
@@ -337,7 +418,7 @@ export default function ProgramOverviewPage() {
                             padding: '10px 12px',
                             borderRadius: '8px',
                             background: isToday ? `${route.color}08` : 'transparent',
-                            opacity: isToday ? 1 : 0.5,
+                            opacity: isToday ? 1 : 0.7,
                           }}
                         >
                           <div style={{

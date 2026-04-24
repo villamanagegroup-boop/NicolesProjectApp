@@ -1,5 +1,6 @@
 'use client'
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 import { programRoutes, archetypeToRoute } from '@/data/sealTheLeakProgram'
 import EyebrowLabel from '@/components/ui/EyebrowLabel'
@@ -17,7 +18,8 @@ function parseEntry(content: string) {
   return { topic: null, body: content }
 }
 
-export default function JournalPage() {
+function JournalInner() {
+  const searchParams = useSearchParams()
   const {
     user, dayNumber, todayCard,
     journalEntries, addJournalEntry, updateJournalEntry, deleteJournalEntry,
@@ -26,11 +28,17 @@ export default function JournalPage() {
 
   const isWorkMode = sidebarMode === 'work'
 
-  // ── Work mode: derive today's program prompt ──
-  const routeId   = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
-  const route     = programRoutes[routeId]
+  // ── Work mode: derive program prompt, respecting ?day= param ──
+  const routeId    = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
+  const route      = programRoutes[routeId]
   const currentDay = Math.min(dayNumber, 7)
-  const programDay = route.days[currentDay - 1]
+
+  // If a valid past (or current) day was passed via query param, use it
+  const dayParam  = isWorkMode ? (Number(searchParams?.get('day')) || 0) : 0
+  const targetDay = dayParam >= 1 && dayParam <= 7 && dayParam <= currentDay ? dayParam : currentDay
+  const isViewingPastDay = isWorkMode && targetDay < currentDay
+
+  const programDay = route.days[targetDay - 1]
 
   // ── Cards mode state ──
   const todayCardEntry = todayCard
@@ -118,7 +126,7 @@ export default function JournalPage() {
     addJournalEntry({
       userId:    user.id,
       cardId:    isWorkMode ? '' : (todayCard?.id ?? ''),
-      dayNumber,
+      dayNumber: isWorkMode ? targetDay : dayNumber,
       content:   entryContent,
     })
     if (isWorkMode) setEntryContent('')
@@ -158,6 +166,30 @@ export default function JournalPage() {
           )}
         </div>
 
+        {/* Past-day review banner */}
+        {isViewingPastDay && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '10px',
+            background: `${PURPLE}08`,
+            border: `1px solid ${PURPLE}20`,
+            borderRadius: '8px',
+            padding: '10px 14px',
+            marginBottom: '18px',
+          }}>
+            <span style={{ fontSize: '14px', flexShrink: 0, marginTop: '1px' }}>↩</span>
+            <div>
+              <p style={{ fontSize: '12px', fontWeight: 600, color: PURPLE, fontFamily: 'var(--font-body)', margin: '0 0 2px' }}>
+                Reviewing Day {targetDay} — {route.days[targetDay - 1]?.title}
+              </p>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: 0, lineHeight: 1.5 }}>
+                You&apos;re on Day {currentDay} today. Any reflection you save here will be added to Day {targetDay}&apos;s entries — your previous work is preserved in the log below.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Prompt block */}
         {isWorkMode ? (
           // Work mode: program prompt (two-part — title + full body)
@@ -177,7 +209,7 @@ export default function JournalPage() {
               margin: '0 0 6px',
               fontWeight: 500,
             }}>
-              Day {currentDay} Prompt — {route.name}
+              Day {targetDay} Prompt — {route.name}
             </p>
             <p style={{
               fontFamily: 'var(--font-display)',
@@ -459,7 +491,16 @@ export default function JournalPage() {
               No entries yet. Start writing today.
             </p>
           ) : (
-            journalEntries.map((entry) => {
+            // When reviewing a past day, show that day's entries pinned at the top
+            [...journalEntries].sort((a, b) => {
+              if (isViewingPastDay) {
+                const aMatch = (a.cardId === '' || !a.cardId) && a.dayNumber === targetDay
+                const bMatch = (b.cardId === '' || !b.cardId) && b.dayNumber === targetDay
+                if (aMatch && !bMatch) return -1
+                if (!aMatch && bMatch) return 1
+              }
+              return 0
+            }).map((entry) => {
               const isSelected = selectedEntryId === entry.id
               const parsed = parseEntry(entry.content)
               const isProgramEntry = entry.cardId === '' && !entry.cardId
@@ -497,7 +538,12 @@ export default function JournalPage() {
                         style={{ cursor: 'pointer' }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
-                          {isProgramEntry && (
+                          {isViewingPastDay && isProgramEntry && entry.dayNumber === targetDay && (
+                            <span style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: PURPLE, background: `${PURPLE}12`, borderRadius: '3px', padding: '1px 5px', fontFamily: 'var(--font-body)', flexShrink: 0 }}>
+                              Day {targetDay}
+                            </span>
+                          )}
+                          {isProgramEntry && !(isViewingPastDay && entry.dayNumber === targetDay) && (
                             <span style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: PURPLE, fontFamily: 'var(--font-body)' }}>
                               The Work ·{' '}
                             </span>
@@ -536,5 +582,13 @@ export default function JournalPage() {
       </div>
 
     </div>
+  )
+}
+
+export default function JournalPage() {
+  return (
+    <Suspense fallback={null}>
+      <JournalInner />
+    </Suspense>
   )
 }
