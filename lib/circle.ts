@@ -393,6 +393,136 @@ export async function getLiveCalls(cohortId: string): Promise<LiveCall[]> {
   return data as LiveCall[]
 }
 
+// ─── PAIRING ────────────────────────────────────────────────
+
+export interface PairableMember {
+  id: string
+  archetype: Archetype
+  enneagram_type: string | null
+  attachment_style: AttachmentStyle | null
+  feedback_pref: FeedbackPref | null
+  partner_id: string | null
+}
+
+/**
+ * Compatibility score between two members (0–97).
+ * Ported from the onboarding cohort-match algorithm.
+ */
+export function scoreCompat(a: PairableMember, b: PairableMember): number {
+  const archetypeCompat: Record<Archetype, Record<Archetype, number>> = {
+    door:   { engine:30, push:25, throne:20, door:10 },
+    throne: { engine:30, push:25, door:20,   throne:8 },
+    engine: { door:30,   throne:25, push:20, engine:12 },
+    push:   { throne:30, door:25,   engine:20, push:8 },
+  }
+  let score = archetypeCompat[a.archetype]?.[b.archetype] ?? 10
+
+  if (a.attachment_style && b.attachment_style) {
+    const attachCompat: Record<AttachmentStyle, Record<AttachmentStyle, number>> = {
+      secure:       { secure:20, anxious:25, avoidant:25, disorganized:20 },
+      anxious:      { secure:28, avoidant:10, anxious:14, disorganized:12 },
+      avoidant:     { secure:25, anxious:10,  avoidant:15, disorganized:12 },
+      disorganized: { secure:28, anxious:12,  avoidant:12, disorganized:10 },
+    }
+    score += attachCompat[a.attachment_style]?.[b.attachment_style] ?? 10
+  }
+
+  if (a.enneagram_type && b.enneagram_type) {
+    const enneaPairs: Record<string, string[]> = {
+      '2':['3','8','9'], '3':['2','6','9'], '9':['3','8','1'],
+      '6':['3','9','8'], '5':['8','3','7'], '1':['7','4','9'],
+      '4':['1','8','2'], '8':['2','5','9'], '7':['1','5','4'],
+    }
+    if ((enneaPairs[a.enneagram_type] ?? []).includes(b.enneagram_type)) score += 18
+    else if (a.enneagram_type !== b.enneagram_type) score += 8
+  }
+
+  if (a.feedback_pref && b.feedback_pref) {
+    if (a.feedback_pref === b.feedback_pref) score += 8
+    else if (
+      (a.feedback_pref === 'straight' && b.feedback_pref === 'context') ||
+      (a.feedback_pref === 'context'  && b.feedback_pref === 'straight')
+    ) score += 5
+  }
+
+  return Math.min(score, 97)
+}
+
+/**
+ * Auto-match all unpaired members in a cohort by compatibility score.
+ * Greedy: picks the highest-scoring available pair each round.
+ * Returns the number of new pairings created.
+ */
+export async function autoMatchCohort(cohortId: string): Promise<number> {
+  const { data } = await supabase
+    .from('circle_members')
+    .select('id, archetype, enneagram_type, attachment_style, feedback_pref, partner_id')
+    .eq('cohort_id', cohortId)
+
+  if (!data) return 0
+  const unpaired = (data as PairableMember[]).filter(m => !m.partner_id)
+  if (unpaired.length < 2) return 0
+
+  // Compute all pairwise scores, sort desc
+  type Edge = { a: string; b: string; score: number }
+  const edges: Edge[] = []
+  for (let i = 0; i < unpaired.length; i++) {
+    for (let j = i + 1; j < unpaired.length; j++) {
+      edges.push({ a: unpaired[i].id, b: unpaired[j].id, score: scoreCompat(unpaired[i], unpaired[j]) })
+    }
+  }
+  edges.sort((x, y) => y.score - x.score)
+
+  const matched = new Set<string>()
+  let pairings = 0
+  for (const e of edges) {
+    if (matched.has(e.a) || matched.has(e.b)) continue
+    const { error } = await setPartner(e.a, e.b)
+    if (!error) {
+      matched.add(e.a)
+      matched.add(e.b)
+      pairings += 1
+    }
+  }
+  return pairings
+}
+
+/**
+ * Assign two members as partners (sets partner_id on both sides).
+ * Safe to call on already-paired members — overwrites the existing link.
+ */
+export async function setPartner(aId: string, bId: string): Promise<{ error: { message: string } | null }> {
+  const [r1, r2] = await Promise.all([
+    supabase.from('circle_members').update({ partner_id: bId }).eq('id', aId),
+    supabase.from('circle_members').update({ partner_id: aId }).eq('id', bId),
+  ])
+  return { error: r1.error ?? r2.error }
+}
+
+/**
+ * Remove the partner link from a member (and their current partner).
+ */
+export async function unsetPartner(memberId: string): Promise<{ error: { message: string } | null }> {
+  const { data } = await supabase
+    .from('circle_members')
+    .select('partner_id')
+    .eq('id', memberId)
+    .maybeSingle()
+  const partnerId = (data as { partner_id: string | null } | null)?.partner_id
+  const ops: Promise<{ error: { message: string } | null }>[] = [
+    supabase.from('circle_members').update({ partner_id: null }).eq('id', memberId)
+      .then(r => ({ error: r.error })) as Promise<{ error: { message: string } | null }>,
+  ]
+  if (partnerId) {
+    ops.push(
+      supabase.from('circle_members').update({ partner_id: null }).eq('id', partnerId)
+        .then(r => ({ error: r.error })) as Promise<{ error: { message: string } | null }>
+    )
+  }
+  const rs = await Promise.all(ops)
+  return { error: rs[0].error ?? rs[1]?.error ?? null }
+}
+
 // ─── HELPER: compute current week number ────────────────────
 
 /**

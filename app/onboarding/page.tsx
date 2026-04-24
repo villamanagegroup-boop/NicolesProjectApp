@@ -196,7 +196,7 @@ function BtnRow({ children }: { children: React.ReactNode }) {
 
 export default function OnboardingPage() {
   const router = useRouter()
-  const { refreshUser } = useApp()
+  const { refreshUser, user: appUser } = useApp()
   const [step, setStep] = useState(1)
   const [state, setState] = useState<AssessmentState>({
     archetype: null, ennea: null, attach: null, acctFeel: null, feedback: null, goal: '',
@@ -245,10 +245,38 @@ export default function OnboardingPage() {
       return
     }
 
+    // Path C users auto-enroll in the currently active cohort.
+    // Silent if no active cohort exists yet — their /circle will show the
+    // "not joined" state until an admin activates one.
+    let enrolled = false
+    if (appUser.selectedPath === 'C' && state.archetype) {
+      const { data: cohort } = await supabaseClient
+        .from('circle_cohorts')
+        .select('id')
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle()
+
+      if (cohort) {
+        const { error: enrollError } = await supabaseClient
+          .from('circle_members')
+          .upsert({
+            user_id:          user.id,
+            cohort_id:        cohort.id,
+            archetype:        state.archetype,
+            enneagram_type:   state.ennea,
+            attachment_style: state.attach,
+            feedback_pref:    state.feedback,
+            goal_90day:       state.goal.trim() || null,
+          }, { onConflict: 'user_id,cohort_id' })
+        if (!enrollError) enrolled = true
+      }
+    }
+
     // Pull the updated user row into AppContext so the portal guard sees
     // onboarding_complete = true and doesn't bounce us back here.
     await refreshUser()
-    router.push('/dashboard')
+    router.push(enrolled ? '/circle' : '/dashboard')
   }
 
   const stepLabels = ['','Your archetype','Enneagram type','Attachment style','Coaching preferences','Your matches']
