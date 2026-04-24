@@ -20,6 +20,7 @@ const mockUser: User = {
   hasPaid: false,
   isAdmin: true,
   onboardingComplete: true,
+  skipPathChooser: true,
 }
 
 const mockWins: Win[] = [
@@ -60,6 +61,7 @@ interface UserRow {
   is_admin: boolean | null
   avatar_url: string | null
   onboarding_complete: boolean | null
+  skip_path_chooser: boolean | null
 }
 
 function userFromRow(row: UserRow, fallbackEmail: string): User {
@@ -74,6 +76,7 @@ function userFromRow(row: UserRow, fallbackEmail: string): User {
     hasPaid: row.has_paid ?? false,
     isAdmin: row.is_admin ?? false,
     onboardingComplete: row.onboarding_complete ?? false,
+    skipPathChooser:    row.skip_path_chooser ?? false,
   }
 }
 
@@ -161,6 +164,7 @@ interface AppContextValue {
   user: User
   refreshUser: () => Promise<void>
   updateUser: (updates: { name?: string; email?: string }) => Promise<void>
+  setSkipPathChooser: (skip: boolean) => Promise<void>
   cards: DailyCard[]
   dayNumber: number
   todayCard: DailyCard | null
@@ -249,6 +253,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setStreakCount(0)
         setAvatarUrlState(null)
         setLoading(false)
+        // Next sign-in should see the path-chooser again
+        try { sessionStorage.removeItem('welcomed_this_session') } catch {}
       }
     })
     return () => {
@@ -332,6 +338,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!authUser) return
     const { data } = await supabaseClient.from('users').select('*').eq('id', authUser.id).maybeSingle()
     if (data) setUserRow(data as UserRow)
+  }, [authUser])
+
+  const setSkipPathChooser = useCallback(async (skip: boolean) => {
+    if (authUser) {
+      await supabaseClient.from('users').update({ skip_path_chooser: skip }).eq('id', authUser.id)
+      setUserRow(prev => prev ? { ...prev, skip_path_chooser: skip } : prev)
+    }
   }, [authUser])
 
   const addJournalEntry = useCallback(async (entry: Omit<JournalEntry, 'id' | 'createdAt'>) => {
@@ -427,6 +440,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     user,
     refreshUser,
     updateUser,
+    setSkipPathChooser,
     cards,
     dayNumber,
     todayCard,

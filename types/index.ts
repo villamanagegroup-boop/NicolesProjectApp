@@ -12,6 +12,7 @@ export interface User {
   hasPaid: boolean
   isAdmin: boolean
   onboardingComplete: boolean
+  skipPathChooser: boolean
 }
 
 export interface DailyCard {

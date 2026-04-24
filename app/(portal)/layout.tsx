@@ -25,7 +25,13 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     if (!user.quizResult)         { router.replace('/quiz'); return }
     if (!user.selectedPath)       { router.replace('/quiz/paths'); return }
     if (!user.onboardingComplete) { router.replace('/onboarding'); return }
-  }, [loading, isAuthed, effectiveIsAdmin, user.quizResult, user.selectedPath, user.onboardingComplete, router])
+    // First pageview of this browser session → welcome/path-chooser,
+    // unless the user has turned it off in settings.
+    if (!user.skipPathChooser) {
+      const welcomed = typeof window !== 'undefined' && sessionStorage.getItem('welcomed_this_session') === '1'
+      if (!welcomed) { router.replace('/welcome'); return }
+    }
+  }, [loading, isAuthed, effectiveIsAdmin, user.quizResult, user.selectedPath, user.onboardingComplete, user.skipPathChooser, router])
 
   // Auto-switch sidebar mode based on the route the user is on.
   useEffect(() => {
