@@ -39,7 +39,7 @@ const FEATURE_LINKS: { href: string; label: string; sub: string }[] = [
   { href: '/circle/community',   label: 'Community feed',     sub: 'Cohort posts' },
   { href: '/circle/partner',     label: 'Partner thread',     sub: 'Accountability DMs' },
   { href: '/circle/calls',       label: 'Live calls',         sub: 'Zoom schedule + replays' },
-  { href: '/welcome',            label: 'Welcome / path chooser', sub: 'Post-signin splash' },
+  { href: '/upgrade',            label: 'Upgrade',            sub: 'Paths the user hasn\'t bought yet' },
   { href: '/quiz',               label: 'Quiz',               sub: 'Archetype assessment' },
   { href: '/onboarding',         label: 'Onboarding',         sub: '5-step assessment flow' },
   { href: '/settings',           label: 'Settings',           sub: 'Plan + preferences' },

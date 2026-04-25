@@ -65,10 +65,13 @@ function SignupForm() {
 
     // If session was created (email confirmation off), persist path + archetype on the user row.
     // If confirmation is on, data.session is null — we'll fill these after first login.
+    // Path A/B don't need the Enneagram onboarding (it's only for Circle matchmaking),
+    // so mark them complete immediately and route them straight to their portal home.
     if (data.session && data.user) {
       await supabaseClient.from('users').update({
         selected_path: path,
         quiz_result: quizResult,
+        onboarding_complete: path !== 'C',
       }).eq('id', data.user.id)
     }
 
@@ -79,9 +82,8 @@ function SignupForm() {
       return
     }
 
-    // Signed in — proceed to onboarding. Stripe will slot in here later once
-    // the checkout success URL points back to /onboarding.
-    window.location.href = '/onboarding'
+    const dest = path === 'A' ? '/program' : path === 'C' ? '/onboarding' : '/dashboard'
+    window.location.href = dest
   }
 
   const inputStyle: React.CSSProperties = {

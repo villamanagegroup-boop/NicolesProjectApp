@@ -9,7 +9,6 @@ import { signOut } from '@/lib/supabase/auth'
 
 const SECTIONS = [
   { id: 'profile',       label: 'Profile' },
-  { id: 'preferences',   label: 'Preferences' },
   { id: 'notifications', label: 'Notifications' },
   { id: 'delivery',      label: 'Card Delivery' },
   { id: 'plan',          label: 'Your Plan' },
@@ -21,7 +20,7 @@ type SectionId = typeof SECTIONS[number]['id']
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { user, updateUser, avatarUrl, setAvatarUrl, dailyReminders, setDailyReminders, setSkipPathChooser, enableCardsAddOn } = useApp()
+  const { user, updateUser, avatarUrl, setAvatarUrl, dailyReminders, setDailyReminders, enableCardsAddOn } = useApp()
 
   // ── Profile autosave ─────────────────────────────────────────────────────
   const [name, setName] = useState(user.name)
@@ -391,46 +390,6 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
-          </section>
-
-          {/* ── Preferences ──────────────────────────────────────────── */}
-          <section
-            id="preferences"
-            ref={el => { sectionRefs.current.preferences = el }}
-            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: '#ffffff' }}
-          >
-            <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
-              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 400, color: 'var(--ink)', margin: 0 }}>Preferences</h2>
-            </div>
-            <div style={{ padding: '0 24px' }}>
-              <div style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '18px 0',
-              }}>
-                <div>
-                  <div style={{ fontSize: 13, color: 'var(--ink)', fontFamily: 'var(--font-body)' }}>Show &ldquo;Choose your path&rdquo; on sign-in</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)', marginTop: 2, lineHeight: 1.5 }}>
-                    Displays all three paths each time you sign in so you can preview upgrades. Turn off to jump straight to your portal.
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSkipPathChooser(!user.skipPathChooser)}
-                  aria-label={user.skipPathChooser ? 'Enable path chooser' : 'Disable path chooser'}
-                  style={{
-                    width: 44, height: 24, borderRadius: 12, flexShrink: 0,
-                    background: !user.skipPathChooser ? 'var(--green)' : 'var(--line-md)',
-                    border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s',
-                  }}
-                >
-                  <div style={{
-                    width: 18, height: 18, borderRadius: '50%', background: 'white',
-                    position: 'absolute', top: 3,
-                    left: !user.skipPathChooser ? 23 : 3, transition: 'left 0.2s',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                  }} />
-                </button>
               </div>
             </div>
           </section>

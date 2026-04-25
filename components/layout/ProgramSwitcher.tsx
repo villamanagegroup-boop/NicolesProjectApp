@@ -64,10 +64,12 @@ export default function ProgramSwitcher() {
     work:   hasWorkAccess,
     circle: hasCircleAccess,
   }
+  const lockedModes = (['cards', 'work', 'circle'] as Mode[]).filter(m => !access[m])
   const accessibleCount = (hasCardsAccess ? 1 : 0) + (hasWorkAccess ? 1 : 0) + (hasCircleAccess ? 1 : 0)
 
-  // Only render the switcher when the user has more than one program to pick from.
-  if (accessibleCount < 2) return null
+  // Only render the switcher when there's something to switch to —
+  // either another owned program or at least one upgrade prompt.
+  if (accessibleCount < 2 && lockedModes.length === 0) return null
 
   const current = PROGRAMS[sidebarMode]
   const CurrentIcon = current.Icon
@@ -75,6 +77,11 @@ export default function ProgramSwitcher() {
   function selectProgram(mode: Mode) {
     setSidebarMode(mode)
     router.push(PROGRAMS[mode].href)
+    setOpen(false)
+  }
+
+  function goUpgrade() {
+    router.push('/upgrade')
     setOpen(false)
   }
 
@@ -185,6 +192,73 @@ export default function ProgramSwitcher() {
                   </button>
                 )
               })}
+
+            {lockedModes.length > 0 && (
+              <>
+                <div style={{
+                  padding: '8px 14px',
+                  fontSize: 9,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-muted)',
+                  background: 'var(--paper)',
+                  borderTop: '1px solid var(--line)',
+                  borderBottom: '1px solid var(--line)',
+                  fontFamily: 'var(--font-body)',
+                }}>
+                  Add another path
+                </div>
+                {lockedModes.map(m => {
+                  const p = PROGRAMS[m]
+                  const Icon = p.Icon
+                  return (
+                    <button
+                      key={m}
+                      onClick={goUpgrade}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        width: '100%',
+                        padding: '12px 14px',
+                        background: '#fff',
+                        border: 'none',
+                        borderBottom: '1px solid var(--line)',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        fontFamily: 'var(--font-body)',
+                      }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--paper)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#fff' }}
+                    >
+                      <span style={{
+                        width: 28, height: 28, borderRadius: '50%',
+                        background: p.accentPale, color: p.accent,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0,
+                        opacity: 0.55,
+                      }}>
+                        <Icon />
+                      </span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-soft)' }}>
+                          {p.title}
+                        </div>
+                        <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
+                          {p.short}
+                        </div>
+                      </div>
+                      <span style={{
+                        fontSize: 10, fontWeight: 700, color: p.accent,
+                        letterSpacing: '0.08em', textTransform: 'uppercase',
+                      }}>
+                        Upgrade →
+                      </span>
+                    </button>
+                  )
+                })}
+              </>
+            )}
           </div>
         </>
       )}

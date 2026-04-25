@@ -300,8 +300,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setStreakCount(0)
         setAvatarUrlState(null)
         setLoading(false)
-        // Next sign-in should see the path-chooser again
-        try { sessionStorage.removeItem('welcomed_this_session') } catch {}
       }
     })
     return () => {

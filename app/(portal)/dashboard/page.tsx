@@ -173,7 +173,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <Link
-                href="/welcome"
+                href="/upgrade"
                 style={{
                   padding: '8px 14px',
                   background: '#b8922a',

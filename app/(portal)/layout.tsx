@@ -20,6 +20,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   // A: /program + (when unlocked) /card·/dashboard·... — no /circle.
   // B: cards routes only — no /program, no /circle.
   // C: /circle only — no cards routes, no /program.
+  // Locked paths now route to /upgrade so the user sees what to buy next.
   // Admins bypass.
   useEffect(() => {
     if (loading || !isAuthed || effectiveIsAdmin || !pathname) return
@@ -27,27 +28,24 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     const inCards  = CARDS_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))
     const inWork   = pathname.startsWith('/program')
     const inCircle = pathname.startsWith('/circle')
-    if (effectivePath === 'A' && inCircle)             { router.replace('/program'); return }
-    if (effectivePath === 'B' && (inWork || inCircle)) { router.replace('/dashboard'); return }
-    if (effectivePath === 'C' && (inWork || inCards))  { router.replace('/circle'); return }
+    if (effectivePath === 'A' && inCircle)             { router.replace('/upgrade'); return }
+    if (effectivePath === 'B' && (inWork || inCircle)) { router.replace('/upgrade'); return }
+    if (effectivePath === 'C' && (inWork || inCards))  { router.replace('/upgrade'); return }
   }, [loading, isAuthed, effectiveIsAdmin, effectivePath, pathname, router])
 
   // Flow guard: signed-in users who haven't finished setup get bounced back.
+  // Onboarding (Enneagram quiz) is only required for Path C — A/B skip it.
   // Admins skip the guard (unless they're previewing as a user via the
   // top-right dropdown — then effectiveIsAdmin goes false and the real
   // flow applies so they see exactly what a user would).
   useEffect(() => {
     if (loading || !isAuthed || effectiveIsAdmin) return
-    if (!user.quizResult)         { router.replace('/quiz'); return }
-    if (!user.selectedPath)       { router.replace('/quiz/paths'); return }
-    if (!user.onboardingComplete) { router.replace('/onboarding'); return }
-    // First pageview of this browser session → welcome/path-chooser,
-    // unless the user has turned it off in settings.
-    if (!user.skipPathChooser) {
-      const welcomed = typeof window !== 'undefined' && sessionStorage.getItem('welcomed_this_session') === '1'
-      if (!welcomed) { router.replace('/welcome'); return }
+    if (!user.quizResult)   { router.replace('/quiz'); return }
+    if (!user.selectedPath) { router.replace('/quiz/paths'); return }
+    if (user.selectedPath === 'C' && !user.onboardingComplete) {
+      router.replace('/onboarding'); return
     }
-  }, [loading, isAuthed, effectiveIsAdmin, user.quizResult, user.selectedPath, user.onboardingComplete, user.skipPathChooser, router])
+  }, [loading, isAuthed, effectiveIsAdmin, user.quizResult, user.selectedPath, user.onboardingComplete, router])
 
   // One-time init: on first load with a known path, set the sidebar mode
   // to the user's natural home so direct /settings (or any shared route)
@@ -65,14 +63,14 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   }, [loading, user.selectedPath])
 
   // Auto-switch sidebar mode based on the route the user is on.
-  // Shared routes (/settings, /profile, /welcome) don't change the mode —
+  // Shared routes (/settings, /profile, /upgrade) don't change the mode —
   // they stay in whatever mode the user last navigated to.
   useEffect(() => {
     if (!pathname) return
     const isShared =
       pathname === '/settings' || pathname.startsWith('/settings/') ||
       pathname === '/profile'  || pathname.startsWith('/profile/')  ||
-      pathname === '/welcome'
+      pathname === '/upgrade'
     if (isShared) return
     if (pathname.startsWith('/circle')) {
       if (sidebarMode !== 'circle') setSidebarMode('circle')
