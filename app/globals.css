@@ -183,3 +183,38 @@ html, body {
     padding: 32px 48px !important;
   }
 }
+
+/* ─── Admin portal responsive behavior ───────────────────────────────────
+   Desktop: sidebar sits inline. Mobile: sidebar slides in from the left
+   over a backdrop, triggered by a hamburger in the admin top bar. */
+@media (max-width: 768px) {
+  .admin-shell {
+    flex-direction: column !important;
+  }
+  .admin-mobile-topbar {
+    display: flex !important;
+  }
+  .admin-sidebar {
+    position: fixed !important;
+    left: 0; top: 0; bottom: 0;
+    width: 84vw !important;
+    max-width: 320px !important;
+    transform: translateX(-100%);
+    box-shadow: 0 0 24px rgba(12,12,10,0.18);
+  }
+  .admin-sidebar.admin-sidebar-open {
+    transform: translateX(0);
+  }
+  .admin-main {
+    padding: 20px 16px !important;
+    min-height: calc(100vh - 56px);
+  }
+}
+@media (min-width: 769px) {
+  .admin-mobile-topbar {
+    display: none !important;
+  }
+  .admin-backdrop {
+    display: none !important;
+  }
+}

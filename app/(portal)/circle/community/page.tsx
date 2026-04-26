@@ -9,9 +9,11 @@ import {
   createPost,
   toggleReaction,
   getCurrentWeekNumber,
+  uploadCircleAttachment,
   type CirclePost,
   type PostType,
 } from '@/lib/circle'
+import AttachmentPicker, { type AttachmentSlots, type AttachmentSlot } from '@/components/circle/AttachmentPicker'
 
 const ORANGE      = '#C97D3A'
 const ORANGE_PALE = '#fdf6f2'
@@ -44,6 +46,16 @@ export default function CommunityPage() {
   const [newType, setNewType]       = useState<PostType>('wins')
   const [posting, setPosting]       = useState(false)
   const [showCompose, setShowCompose] = useState(false)
+  const [attachments, setAttachments] = useState<AttachmentSlots>({ audio: null, video: null, image: null, doc: null })
+  const [uploading, setUploading]     = useState(false)
+  const [postError, setPostError]     = useState<string | null>(null)
+
+  function setSlot(slot: AttachmentSlot, file: File | null) {
+    setAttachments(prev => ({ ...prev, [slot]: file }))
+  }
+  function clearAttachments() {
+    setAttachments({ audio: null, video: null, image: null, doc: null })
+  }
 
   useEffect(() => {
     if (loading) return
@@ -82,14 +94,46 @@ export default function CommunityPage() {
 
   async function handlePost() {
     if (!newBody.trim()) return
+    if (!cohortId) return
     setPosting(true)
-    if (!cohortId) { setPosting(false); return }
-    const ok = await createPost(cohortId, newType, newBody.trim(), weekNumber)
+    setPostError(null)
+
+    const urls: { audio_url?: string | null; video_url?: string | null; image_url?: string | null; file_url?: string | null; file_name?: string | null } = {}
+
+    if (attachments.audio || attachments.video || attachments.image || attachments.doc) {
+      setUploading(true)
+      try {
+        if (attachments.audio) urls.audio_url = await uploadCircleAttachment(attachments.audio)
+        if (attachments.video) urls.video_url = await uploadCircleAttachment(attachments.video)
+        if (attachments.image) urls.image_url = await uploadCircleAttachment(attachments.image)
+        if (attachments.doc) {
+          urls.file_url  = await uploadCircleAttachment(attachments.doc)
+          urls.file_name = attachments.doc.name
+        }
+      } finally {
+        setUploading(false)
+      }
+      const allOk =
+        (!attachments.audio || !!urls.audio_url) &&
+        (!attachments.video || !!urls.video_url) &&
+        (!attachments.image || !!urls.image_url) &&
+        (!attachments.doc   || !!urls.file_url)
+      if (!allOk) {
+        setPostError('One or more uploads failed. Try a smaller file or check the storage bucket.')
+        setPosting(false)
+        return
+      }
+    }
+
+    const ok = await createPost(cohortId, newType, newBody.trim(), weekNumber, urls)
     if (ok) {
       setNewBody('')
+      clearAttachments()
       setShowCompose(false)
       const data = await getCommunityPosts(cohortId, filter === 'all' ? undefined : filter)
       setPosts(data)
+    } else {
+      setPostError('Could not save the post. Try again.')
     }
     setPosting(false)
   }
@@ -164,16 +208,22 @@ export default function CommunityPage() {
             onFocus={e => { e.currentTarget.style.borderColor = ORANGE }}
             onBlur={e => { e.currentTarget.style.borderColor = 'var(--line-md)' }}
           />
+          <AttachmentPicker slots={attachments} onChange={setSlot} />
+
+          {postError && <p style={{ fontSize: 12, color: 'var(--red)', margin: 0 }}>{postError}</p>}
+
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Tagged to Week {weekNumber}</span>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+              {uploading ? 'Uploading…' : `Tagged to Week ${weekNumber}`}
+            </span>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => { setShowCompose(false); setNewBody('') }} style={ghostBtn}>Cancel</button>
+              <button onClick={() => { setShowCompose(false); setNewBody(''); clearAttachments() }} style={ghostBtn}>Cancel</button>
               <button onClick={handlePost} disabled={posting || !newBody.trim()} style={{
                 ...primaryBtn,
                 background: posting || !newBody.trim() ? 'var(--paper3)' : ORANGE,
                 cursor: posting || !newBody.trim() ? 'not-allowed' : 'pointer',
               }}>
-                {posting ? 'Posting…' : 'Post'}
+                {posting ? (uploading ? 'Uploading…' : 'Posting…') : 'Post'}
               </button>
             </div>
           </div>
@@ -272,6 +322,35 @@ function PostCard({ post, onReact }: { post: CirclePost; onReact: (emoji: string
       }}>
         {post.body}
       </p>
+
+      {/* Attachments */}
+      {(post.video_url || post.audio_url || post.image_url || post.file_url) && (
+        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {post.video_url && (
+            <video controls src={post.video_url} style={{ width: '100%', borderRadius: 10, background: '#000', maxHeight: 380 }} />
+          )}
+          {post.image_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={post.image_url} alt="" style={{ width: '100%', borderRadius: 10, maxHeight: 480, objectFit: 'cover' }} />
+          )}
+          {post.audio_url && (
+            <audio controls src={post.audio_url} style={{ width: '100%', height: 36 }} />
+          )}
+          {post.file_url && (
+            <a href={post.file_url} target="_blank" rel="noreferrer" style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '10px 12px', borderRadius: 10,
+              border: '1px solid var(--line-md)', background: '#fff',
+              color: 'var(--ink)', textDecoration: 'none', fontSize: 13,
+            }}>
+              📎 <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {post.file_name ?? 'attachment'}
+              </span>
+              <span style={{ color: ORANGE, fontWeight: 600 }}>Download</span>
+            </a>
+          )}
+        </div>
+      )}
 
       {/* Reactions */}
       <div style={{
@@ -384,3 +463,4 @@ const ghostBtn: React.CSSProperties = {
   fontSize: 12, fontWeight: 600,
   cursor: 'pointer', fontFamily: 'inherit',
 }
+

@@ -11,8 +11,10 @@ import {
   sendPartnerMessage,
   getCurrentWeekNumber,
   getWeekContent,
+  uploadCircleAttachment,
   type PartnerMessage,
 } from '@/lib/circle'
+import AttachmentPicker, { type AttachmentSlots, type AttachmentSlot } from '@/components/circle/AttachmentPicker'
 
 const ORANGE      = '#C97D3A'
 const ORANGE_PALE = '#fdf6f2'
@@ -38,7 +40,17 @@ export default function PartnerPage() {
   const [body, setBody]           = useState('')
   const [sending, setSending]     = useState(false)
   const [hydrating, setHydrating] = useState(true)
+  const [attachments, setAttachments] = useState<AttachmentSlots>({ audio: null, video: null, image: null, doc: null })
+  const [showPicker, setShowPicker]   = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  function setSlot(slot: AttachmentSlot, file: File | null) {
+    setAttachments(prev => ({ ...prev, [slot]: file }))
+  }
+  function clearAttachments() {
+    setAttachments({ audio: null, video: null, image: null, doc: null })
+  }
+  const hasAttachment = !!(attachments.audio || attachments.video || attachments.image || attachments.doc)
 
   useEffect(() => {
     if (loading) return
@@ -86,13 +98,21 @@ export default function PartnerPage() {
   }, [messages])
 
   async function handleSend() {
-    if (!body.trim()) return
+    if (!body.trim() && !hasAttachment) return
+    if (!partnerUserId || !cohortId) return
     setSending(true)
 
-    if (!partnerUserId || !cohortId) { setSending(false); return }
-    const ok = await sendPartnerMessage(partnerUserId, cohortId, body.trim())
+    const urls: { audio_url?: string | null; video_url?: string | null; image_url?: string | null; file_url?: string | null; file_name?: string | null } = {}
+    if (attachments.audio) urls.audio_url = await uploadCircleAttachment(attachments.audio)
+    if (attachments.video) urls.video_url = await uploadCircleAttachment(attachments.video)
+    if (attachments.image) urls.image_url = await uploadCircleAttachment(attachments.image)
+    if (attachments.doc)  { urls.file_url = await uploadCircleAttachment(attachments.doc); urls.file_name = attachments.doc.name }
+
+    const ok = await sendPartnerMessage(partnerUserId, cohortId, body.trim(), urls)
     if (ok) {
       setBody('')
+      clearAttachments()
+      setShowPicker(false)
       const msgs = await getPartnerThread(partnerUserId)
       setMessages(msgs)
     }
@@ -287,7 +307,35 @@ export default function PartnerPage() {
                     color: isMe ? '#fff' : 'var(--ink)',
                     whiteSpace: 'pre-wrap',
                   }}>
-                    <div>{msg.body}</div>
+                    {msg.body && <div>{msg.body}</div>}
+                    {(msg.video_url || msg.image_url || msg.audio_url || msg.file_url) && (
+                      <div style={{ marginTop: msg.body ? 8 : 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {msg.video_url && (
+                          <video controls src={msg.video_url} style={{ width: '100%', maxWidth: 320, borderRadius: 10, background: '#000' }} />
+                        )}
+                        {msg.image_url && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={msg.image_url} alt="" style={{ width: '100%', maxWidth: 320, borderRadius: 10, objectFit: 'cover' }} />
+                        )}
+                        {msg.audio_url && (
+                          <audio controls src={msg.audio_url} style={{ width: 260, height: 32 }} />
+                        )}
+                        {msg.file_url && (
+                          <a href={msg.file_url} target="_blank" rel="noreferrer" style={{
+                            display: 'flex', alignItems: 'center', gap: 6,
+                            padding: '6px 10px', borderRadius: 8,
+                            background: isMe ? 'rgba(255,255,255,0.15)' : '#fff',
+                            color: isMe ? '#fff' : 'var(--ink)',
+                            border: isMe ? '1px solid rgba(255,255,255,0.3)' : '1px solid var(--line-md)',
+                            textDecoration: 'none', fontSize: 12,
+                          }}>
+                            📎 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
+                              {msg.file_name ?? 'attachment'}
+                            </span>
+                          </a>
+                        )}
+                      </div>
+                    )}
                     <div style={{
                       fontSize: 10,
                       marginTop: 4,
@@ -309,47 +357,71 @@ export default function PartnerPage() {
 
       {/* Compose */}
       <div style={{
-        display: 'flex', gap: 8,
         padding: '12px 0 4px',
         borderTop: '1px solid var(--line)',
         flexShrink: 0,
+        display: 'flex', flexDirection: 'column', gap: 8,
       }}>
-        <textarea
-          value={body}
-          onChange={e => setBody(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={`Message ${partnerName.split(' ')[0]}…`}
-          rows={2}
-          style={{
-            flex: 1,
-            padding: '10px 14px',
-            border: '1px solid var(--line-md)',
-            borderRadius: 12,
-            fontSize: 14, lineHeight: 1.5,
-            fontFamily: 'inherit',
-            resize: 'none',
-            background: '#fff', color: 'var(--ink)',
-            outline: 'none', boxSizing: 'border-box',
-          }}
-          onFocus={e => { e.currentTarget.style.borderColor = ORANGE }}
-          onBlur={e => { e.currentTarget.style.borderColor = 'var(--line-md)' }}
-        />
-        <button
-          onClick={handleSend}
-          disabled={sending || !body.trim()}
-          style={{
-            background: sending || !body.trim() ? 'var(--paper3)' : ORANGE,
-            color: '#fff',
-            border: 'none', borderRadius: 12,
-            padding: '0 18px',
-            fontSize: 14, fontWeight: 600,
-            cursor: sending || !body.trim() ? 'not-allowed' : 'pointer',
-            fontFamily: 'inherit',
-            flexShrink: 0,
-          }}
-        >
-          {sending ? '…' : 'Send'}
-        </button>
+        {(showPicker || hasAttachment) && (
+          <AttachmentPicker compact slots={attachments} onChange={setSlot} />
+        )}
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            type="button"
+            onClick={() => setShowPicker(s => !s)}
+            title="Add attachment"
+            style={{
+              background: showPicker ? ORANGE_PALE : '#fff',
+              border: `1px solid ${showPicker ? ORANGE : 'var(--line-md)'}`,
+              color: showPicker ? ORANGE : 'var(--text-soft)',
+              borderRadius: 12,
+              padding: '0 14px',
+              fontSize: 16,
+              cursor: 'pointer',
+              flexShrink: 0,
+              fontFamily: 'inherit',
+            }}
+          >
+            +
+          </button>
+          <textarea
+            value={body}
+            onChange={e => setBody(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={`Message ${partnerName.split(' ')[0]}…`}
+            rows={2}
+            style={{
+              flex: 1,
+              padding: '10px 14px',
+              border: '1px solid var(--line-md)',
+              borderRadius: 12,
+              fontSize: 14, lineHeight: 1.5,
+              fontFamily: 'inherit',
+              resize: 'none',
+              background: '#fff', color: 'var(--ink)',
+              outline: 'none', boxSizing: 'border-box',
+            }}
+            onFocus={e => { e.currentTarget.style.borderColor = ORANGE }}
+            onBlur={e => { e.currentTarget.style.borderColor = 'var(--line-md)' }}
+          />
+          <button
+            onClick={handleSend}
+            disabled={sending || (!body.trim() && !hasAttachment)}
+            style={{
+              background: sending || (!body.trim() && !hasAttachment) ? 'var(--paper3)' : ORANGE,
+              color: '#fff',
+              border: 'none', borderRadius: 12,
+              padding: '0 18px',
+              fontSize: 14, fontWeight: 600,
+              cursor: sending || (!body.trim() && !hasAttachment) ? 'not-allowed' : 'pointer',
+              fontFamily: 'inherit',
+              flexShrink: 0,
+            }}
+          >
+            {sending ? '…' : 'Send'}
+          </button>
+        </div>
       </div>
     </div>
   )

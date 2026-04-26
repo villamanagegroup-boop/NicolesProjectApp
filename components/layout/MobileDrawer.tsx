@@ -94,7 +94,7 @@ const circleNavItems: NavItem[] = [
   { href: '/circle',           icon: CircleIcon,     label: 'Your Circle',   subtitle: 'Week + progress',       exact: true },
   { href: '/circle/community', icon: CommunityIcon,  label: 'Community',     subtitle: 'Wins + conversations',  exact: true },
   { href: '/circle/partner',   icon: PartnerMsgIcon, label: 'Partner',       subtitle: 'Accountability thread', exact: true },
-  { href: '/circle/calls',     icon: CallsIcon,      label: 'Live Calls',    subtitle: 'Zoom + recordings',     exact: true },
+  { href: '/circle/calls',     icon: CallsIcon,      label: 'Live Streams',  subtitle: 'Schedule + recordings', exact: true },
 ]
 
 function isActive(href: string, pathname: string, exact?: boolean) {

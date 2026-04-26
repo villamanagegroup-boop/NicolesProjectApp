@@ -15,7 +15,7 @@ export default function LoginPage() {
     e.preventDefault()
     setError(null)
     setSubmitting(true)
-    const { error: authError } = await supabaseClient.auth.signInWithPassword({
+    const { data, error: authError } = await supabaseClient.auth.signInWithPassword({
       email: email.trim(),
       password,
     })
@@ -24,7 +24,20 @@ export default function LoginPage() {
       setSubmitting(false)
       return
     }
-    router.push('/dashboard')
+
+    // If the user is in admin_roles, send them to the admin portal.
+    // Otherwise the regular member dashboard.
+    const userId = data.user?.id
+    let redirectTo = '/dashboard'
+    if (userId) {
+      const { data: adminRow } = await supabaseClient
+        .from('admin_roles')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle()
+      if (adminRow) redirectTo = '/admin'
+    }
+    router.push(redirectTo)
   }
 
   return (

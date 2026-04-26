@@ -186,7 +186,7 @@ function NextUpCard({ call }: { call: LiveCall }) {
               border: 'none', cursor: 'pointer',
               fontFamily: 'inherit',
             }}>
-              Join Zoom →
+              Join live stream →
             </button>
           </a>
         )}
@@ -312,7 +312,7 @@ function CallRow({ call, kind }: { call: LiveCall; kind: 'upcoming' | 'past' }) 
                     fontSize: 11, fontWeight: 600,
                     cursor: 'pointer', fontFamily: 'inherit',
                   }}>
-                    Zoom link →
+                    Live stream link →
                   </button>
                 </a>
               )}
@@ -372,7 +372,7 @@ function downloadIcs(call: LiveCall) {
     `SUMMARY:The Circle — Call ${call.call_number}: ${call.title}`,
     `DESCRIPTION:${(CALL_DESCRIPTIONS[call.call_number] ?? '').replace(/\n/g, '\\n')}`,
     call.zoom_url ? `URL:${call.zoom_url}` : '',
-    call.zoom_url ? `LOCATION:${call.zoom_url}` : 'LOCATION:Zoom',
+    call.zoom_url ? `LOCATION:${call.zoom_url}` : 'LOCATION:Live stream',
     'END:VEVENT',
     'END:VCALENDAR',
   ].filter(Boolean).join('\r\n')

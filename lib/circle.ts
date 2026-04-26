@@ -47,6 +47,10 @@ export interface CirclePost {
   week_number: number | null
   body: string
   audio_url: string | null
+  video_url: string | null
+  image_url: string | null
+  file_url:  string | null
+  file_name: string | null
   created_at: string
   author?: { name: string; avatar_url: string | null }
   reactions?: { emoji: string; count: number; user_reacted: boolean }[]
@@ -58,8 +62,20 @@ export interface PartnerMessage {
   receiver_id: string
   body: string
   audio_url: string | null
+  video_url: string | null
+  image_url: string | null
+  file_url:  string | null
+  file_name: string | null
   read_at: string | null
   created_at: string
+}
+
+export interface Attachments {
+  audio_url?: string | null
+  video_url?: string | null
+  image_url?: string | null
+  file_url?:  string | null
+  file_name?: string | null
 }
 
 export interface LiveCall {
@@ -268,7 +284,7 @@ export async function createPost(
   postType: PostType,
   body: string,
   weekNumber?: number,
-  audioUrl?: string
+  attachments: Attachments = {},
 ): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return false
@@ -281,10 +297,28 @@ export async function createPost(
       post_type: postType,
       body,
       week_number: weekNumber ?? null,
-      audio_url: audioUrl ?? null,
+      audio_url: attachments.audio_url ?? null,
+      video_url: attachments.video_url ?? null,
+      image_url: attachments.image_url ?? null,
+      file_url:  attachments.file_url  ?? null,
+      file_name: attachments.file_name ?? null,
     })
 
   return !error
+}
+
+/** Upload a file to the public circle-uploads bucket and return its URL. */
+export async function uploadCircleAttachment(file: File): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+  const ext = file.name.split('.').pop() ?? 'bin'
+  const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+  const { error } = await supabase.storage
+    .from('circle-uploads')
+    .upload(path, file, { contentType: file.type, upsert: false })
+  if (error) return null
+  const { data } = supabase.storage.from('circle-uploads').getPublicUrl(path)
+  return data.publicUrl
 }
 
 /**
@@ -359,7 +393,7 @@ export async function sendPartnerMessage(
   receiverId: string,
   cohortId: string,
   body: string,
-  audioUrl?: string
+  attachments: Attachments = {},
 ): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return false
@@ -371,7 +405,11 @@ export async function sendPartnerMessage(
       receiver_id: receiverId,
       cohort_id: cohortId,
       body,
-      audio_url: audioUrl ?? null,
+      audio_url: attachments.audio_url ?? null,
+      video_url: attachments.video_url ?? null,
+      image_url: attachments.image_url ?? null,
+      file_url:  attachments.file_url  ?? null,
+      file_name: attachments.file_name ?? null,
     })
 
   return !error

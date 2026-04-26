@@ -3,6 +3,7 @@ import React from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { signOut } from '@/lib/supabase/auth'
+import AdminPortalLink from './AdminPortalLink'
 
 // Pale orange accent — distinguishes Circle from cards (green) and work (purple).
 const ORANGE      = '#C97D3A'
@@ -46,6 +47,15 @@ function CallsIcon() {
   )
 }
 
+function CoachIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 1l5 2v5c0 3-2.5 5.5-5 7-2.5-1.5-5-4-5-7V3l5-2z" />
+      <path d="M6 8h4M8 6v4" />
+    </svg>
+  )
+}
+
 function GearIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -64,10 +74,11 @@ interface NavItem {
 }
 
 const circleNavItems: NavItem[] = [
-  { href: '/circle',           icon: CircleIcon,    label: 'Your Circle',    subtitle: 'Week + progress',       exact: true },
-  { href: '/circle/community', icon: CommunityIcon, label: 'Community',      subtitle: 'Wins + conversations',  exact: true },
-  { href: '/circle/partner',   icon: PartnerIcon,   label: 'Partner',        subtitle: 'Accountability thread', exact: true },
-  { href: '/circle/calls',     icon: CallsIcon,     label: 'Live Calls',     subtitle: 'Zoom + recordings',     exact: true },
+  { href: '/circle',           icon: CircleIcon,    label: 'Your Circle',    subtitle: 'Week + progress',         exact: true },
+  { href: '/circle/community', icon: CommunityIcon, label: 'Community',      subtitle: 'Wins + conversations',    exact: true },
+  { href: '/circle/partner',   icon: PartnerIcon,   label: 'Partner',        subtitle: 'Accountability thread',   exact: true },
+  { href: '/circle/coach',     icon: CoachIcon,     label: 'Coach chat',     subtitle: 'Direct line to your coach', exact: true },
+  { href: '/circle/calls',     icon: CallsIcon,     label: 'Live Streams',   subtitle: 'Schedule + recordings',   exact: true },
 ]
 
 function isItemActive(href: string, pathname: string, exact?: boolean): boolean {
@@ -174,6 +185,9 @@ export default function SidebarCircle() {
 
       {/* Bottom — Settings + Sign Out */}
       <div style={{ padding: '12px 20px 24px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {/* Admin shortcut — only renders when the user is in admin_roles */}
+        <AdminPortalLink />
+
         <Link
           href="/settings"
           style={{

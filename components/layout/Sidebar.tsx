@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 import { signOut } from '@/lib/supabase/auth'
+import AdminPortalLink from './AdminPortalLink'
 
 // Deep green accent — stays consistent throughout this sidebar
 const GREEN = '#1A5230'
@@ -206,6 +207,9 @@ export default function Sidebar() {
 
       {/* Bottom section */}
       <div style={{ padding: '0 20px 24px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {/* Admin shortcut — only renders when the user is in admin_roles */}
+        <AdminPortalLink />
+
         {/* Vault */}
         {vaultUnlocked ? (
           <Link
