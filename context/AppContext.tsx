@@ -2,88 +2,27 @@
 import { createContext, useContext, useState, useMemo, useEffect, useCallback, ReactNode } from 'react'
 import type { User as AuthUser } from '@supabase/supabase-js'
 import { supabaseClient } from '@/lib/supabase/client'
-import { User, DailyCard, JournalEntry, DailyQuote, Win, QuizResultId, Path } from '@/types'
-import { mockCards } from '@/data/mockCards'
-import { mockQuotes } from '@/data/mockQuotes'
+import { User, DailyCard, JournalEntry, Win, QuizResultId, Path } from '@/types'
 import { getDayNumber, getTodayCard, getPastCards, getVaultCards } from '@/lib/utils/cardUtils'
 import { computeCardsAccess, type CardsAccess } from '@/lib/utils/pathAccess'
 
-// ── Mock fallback (used only when the viewer is not signed in) ───────────────
-const MOCK_SIGNUP = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000)
-const mockUser: User = {
-  id: 'mock-user-1',
-  name: 'Nicole',
-  email: 'nicole@example.com',
-  quizResult: 'seeker',
-  selectedPath: 'B',
-  signupDate: MOCK_SIGNUP,
+// Default user shape used before sign-in (or while the row is loading).
+// Portal routes guard on isAuthed and redirect to /login, so this is mostly
+// a placeholder so the rest of the app can read fields without null-checking.
+const defaultUser: User = {
+  id: '',
+  name: '',
+  email: '',
+  quizResult: null,
+  selectedPath: null,
+  signupDate: new Date(),
   stripeCustomerId: null,
   hasPaid: false,
-  isAdmin: true,
-  onboardingComplete: true,
-  skipPathChooser: true,
+  isAdmin: false,
+  onboardingComplete: false,
+  skipPathChooser: false,
   cardsAddOnAt: null,
 }
-
-const DAY = 86400000
-
-const mockWins: Win[] = [
-  {
-    id: 'mock-win-1',
-    category: 'boundary',
-    title: 'Said no without explaining myself',
-    description: "Declined a request that didn't align with my energy this week.",
-    createdAt: new Date(Date.now() - 2 * DAY),
-  },
-  {
-    id: 'mock-win-2',
-    category: 'choice',
-    title: 'Chose rest over productivity',
-    description: 'Let myself recover instead of pushing through exhaustion.',
-    createdAt: new Date(Date.now() - DAY),
-  },
-  {
-    id: 'mock-win-3',
-    category: 'moment',
-    title: 'Spoke my truth in a hard conversation',
-    description: 'Said what I actually felt, even though it was uncomfortable.',
-    createdAt: new Date(),
-  },
-  {
-    id: 'mock-win-4',
-    category: 'growth',
-    title: 'Noticed I was about to override myself — and stopped',
-    description: "Caught it in the chest-tightness moment. Didn't say yes this time.",
-    createdAt: new Date(Date.now() - 4 * DAY),
-  },
-]
-
-const mockJournalEntries: JournalEntry[] = [
-  {
-    id: 'mock-journal-1',
-    userId: 'mock-admin',
-    cardId: '',
-    dayNumber: 3,
-    content: "Today's card about boundaries hit. I've been saying yes to my sister's requests for years without checking with myself first — I said yes to picking up my niece Friday before I even looked at my calendar. This week I'm trying to leave a 60-second pause between the ask and my answer.",
-    createdAt: new Date(Date.now() - DAY),
-  },
-  {
-    id: 'mock-journal-2',
-    userId: 'mock-admin',
-    cardId: '',
-    dayNumber: 2,
-    content: "Rest isn't the reward for finishing the list. It's what lets me finish the list. Still trying to let that land.",
-    createdAt: new Date(Date.now() - 2 * DAY),
-  },
-  {
-    id: 'mock-journal-3',
-    userId: 'mock-admin',
-    cardId: '',
-    dayNumber: 1,
-    content: "Day one. I wrote down three things I've been carrying for other people that aren't mine. It's uncomfortable to see them on paper.",
-    createdAt: new Date(Date.now() - 3 * DAY),
-  },
-]
 
 // ── Supabase row → domain model transforms ───────────────────────────────────
 
@@ -214,7 +153,6 @@ interface AppContextValue {
   cardsAccess: CardsAccess
   journalEntries: JournalEntry[]
   addJournalEntry: (entry: Omit<JournalEntry, 'id' | 'createdAt'>) => Promise<void>
-  currentQuote: DailyQuote
   checkInToday: string | null
   setCheckIn: (mood: string) => Promise<void>
   streakCount: number
@@ -230,20 +168,7 @@ interface AppContextValue {
   setDailyReminders: (on: boolean) => void
   sidebarMode: 'cards' | 'work' | 'circle'
   setSidebarMode: (mode: 'cards' | 'work' | 'circle') => void
-  adminProgramDay: number | null
-  setAdminProgramDay: (day: number | null) => void
-  adminArchetype: string | null
-  setAdminArchetype: (archetype: string | null) => void
-  adminCardDay: number | null
-  setAdminCardDay: (day: number | null) => void
-  realDayNumber: number
-  // Admin "view as user" preview — null means acting as admin; 'A'|'B'|'C'
-  // previews the app as if the admin had chosen that path (gates behave accordingly).
-  viewAsPath: Path | null
-  setViewAsPath: (p: Path | null) => void
-  effectivePath: Path | null
-  effectiveIsAdmin: boolean
-  // What the effective user is allowed to navigate into.
+  // What the user is allowed to navigate into.
   // Drives sidebar swap-button visibility + portal layout redirects.
   hasWorkAccess: boolean
   hasCardsAccess: boolean
@@ -265,21 +190,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [userRow, setUserRow] = useState<UserRow | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Domain data — start from mocks; replace with DB rows when signed in
-  const [cards, setCards] = useState<DailyCard[]>(mockCards)
+  // Domain data — empty until the signed-in user loads from the DB
+  const [cards, setCards] = useState<DailyCard[]>([])
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([])
-  const [wins, setWins] = useState<Win[]>(mockWins)
+  const [wins, setWins] = useState<Win[]>([])
   const [checkInToday, setCheckInState] = useState<string | null>(null)
   const [streakCount, setStreakCount] = useState<number>(0)
 
-  // UI / session-only state (unchanged)
+  // UI / session-only state
   const [avatarUrl, setAvatarUrlState] = useState<string | null>(null)
   const [dailyReminders, setDailyReminders] = useState(true)
   const [sidebarMode, setSidebarMode] = useState<'cards' | 'work' | 'circle'>('cards')
-  const [adminProgramDay, setAdminProgramDay] = useState<number | null>(null)
-  const [adminArchetype, setAdminArchetype] = useState<string | null>(null)
-  const [adminCardDay, setAdminCardDay] = useState<number | null>(null)
-  const [viewAsPath, setViewAsPath] = useState<Path | null>(null)
 
   // ── 1. Subscribe to auth state ─────────────────────────────────────────────
   useEffect(() => {
@@ -292,10 +213,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabaseClient.auth.onAuthStateChange((_event, session) => {
       setAuthUser(session?.user ?? null)
       if (!session?.user) {
-        // Reset to mocks when signed out
+        // Reset to empty when signed out
         setUserRow(null)
+        setCards([])
         setJournalEntries([])
-        setWins(mockWins)
+        setWins([])
         setCheckInState(null)
         setStreakCount(0)
         setAvatarUrlState(null)
@@ -330,24 +252,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (uRes.data) setUserRow(uRes.data as UserRow)
       if (uRes.data?.avatar_url) setAvatarUrlState(uRes.data.avatar_url)
 
-      // Admins see populated mock data wherever their real data is empty,
-      // so a walkthrough of the app doesn't bottom out on blank states.
-      const isAdmin = (uRes.data as UserRow | null)?.is_admin === true
-
-      if (cRes.data && cRes.data.length > 0) {
-        setCards((cRes.data as CardRow[]).map(cardFromRow))
-      }
-
-      const realJournal = jRes.data ? (jRes.data as JournalRow[]).map(journalFromRow) : []
-      setJournalEntries(realJournal.length === 0 && isAdmin ? mockJournalEntries : realJournal)
-
-      const realWins = wRes.data ? (wRes.data as WinRow[]).map(winFromRow) : []
-      setWins(realWins.length === 0 && isAdmin ? mockWins : realWins)
+      setCards(cRes.data ? (cRes.data as CardRow[]).map(cardFromRow) : [])
+      setJournalEntries(jRes.data ? (jRes.data as JournalRow[]).map(journalFromRow) : [])
+      setWins(wRes.data ? (wRes.data as WinRow[]).map(winFromRow) : [])
 
       if (ciRes.data) {
         setCheckInState((ciRes.data as { mood: string }).mood)
-      } else if (isAdmin) {
-        setCheckInState('grounded')
       }
 
       // Streak: count consecutive days backward from today (or yesterday if today missing)
@@ -361,11 +271,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           streak += 1
           cursor.setDate(cursor.getDate() - 1)
         }
-        // Admin with no check-in history → seed a 5-day streak for preview
-        if (streak === 0 && isAdmin) streak = 5
         setStreakCount(streak)
-      } else if (isAdmin) {
-        setStreakCount(5)
       }
 
       setLoading(false)
@@ -377,25 +283,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // ── 3. Derived values ──────────────────────────────────────────────────────
   const user: User = useMemo(() => {
     if (authUser && userRow) return userFromRow(userRow, authUser.email ?? '')
-    return mockUser
+    return defaultUser
   }, [authUser, userRow])
 
-  const realDayNumber = useMemo(() => getDayNumber(user.signupDate), [user.signupDate])
-  const dayNumber = adminCardDay ?? realDayNumber
-  // Effective path for gating respects the admin "View as" preview.
-  const effectivePathForGate = viewAsPath ?? user.selectedPath
-  const effectiveIsAdminForGate = user.isAdmin && viewAsPath === null
+  const dayNumber = useMemo(() => getDayNumber(user.signupDate), [user.signupDate])
   // When does the user's cards plan start? Path B — their signup_date.
   // Path A with the add-on — when they enabled it. Otherwise null.
   const cardsPlanStart = useMemo<Date | null>(() => {
-    if (effectivePathForGate === 'B') return user.signupDate
-    if (effectivePathForGate === 'A' && user.cardsAddOnAt) return user.cardsAddOnAt
+    if (user.selectedPath === 'B') return user.signupDate
+    if (user.selectedPath === 'A' && user.cardsAddOnAt) return user.cardsAddOnAt
     return null
-  }, [effectivePathForGate, user.signupDate, user.cardsAddOnAt])
+  }, [user.selectedPath, user.signupDate, user.cardsAddOnAt])
 
   const cardsAccess = useMemo(
-    () => computeCardsAccess(effectivePathForGate, effectiveIsAdminForGate, dayNumber, cardsPlanStart),
-    [effectivePathForGate, effectiveIsAdminForGate, dayNumber, cardsPlanStart],
+    () => computeCardsAccess(user.selectedPath, user.isAdmin, dayNumber, cardsPlanStart),
+    [user.selectedPath, user.isAdmin, dayNumber, cardsPlanStart],
   )
   // Clamp the visible card day to what the user has access to. When locked
   // entirely (maxDay = 0) todayCard becomes null and past/vault become empty.
@@ -412,7 +314,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     () => cardsAccess.unlocked ? getVaultCards(cards, visibleDay) : [],
     [cards, visibleDay, cardsAccess.unlocked],
   )
-  const currentQuote = useMemo(() => mockQuotes[dayNumber % mockQuotes.length], [dayNumber])
 
   // ── 4. Mutations (DB when authed, local state otherwise) ───────────────────
 
@@ -546,7 +447,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     cardsAccess,
     journalEntries,
     addJournalEntry,
-    currentQuote,
     checkInToday,
     setCheckIn,
     streakCount,
@@ -562,20 +462,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setDailyReminders,
     sidebarMode,
     setSidebarMode,
-    adminProgramDay,
-    setAdminProgramDay,
-    adminArchetype,
-    setAdminArchetype,
-    adminCardDay,
-    setAdminCardDay,
-    realDayNumber,
-    viewAsPath,
-    setViewAsPath,
-    effectivePath: effectivePathForGate,
-    effectiveIsAdmin: effectiveIsAdminForGate,
-    hasWorkAccess:   effectivePathForGate === 'A' || effectiveIsAdminForGate,
-    hasCardsAccess:  effectivePathForGate === 'B' || (effectivePathForGate === 'A' && cardsAccess.unlocked) || effectiveIsAdminForGate,
-    hasCircleAccess: effectivePathForGate === 'C' || effectiveIsAdminForGate,
+    hasWorkAccess:   user.selectedPath === 'A' || user.isAdmin,
+    hasCardsAccess:  user.selectedPath === 'B' || (user.selectedPath === 'A' && cardsAccess.unlocked) || user.isAdmin,
+    hasCircleAccess: user.selectedPath === 'C' || user.isAdmin,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

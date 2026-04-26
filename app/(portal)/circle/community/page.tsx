@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabaseClient } from '@/lib/supabase/client'
 import { useApp } from '@/context/AppContext'
 import {
@@ -11,12 +12,6 @@ import {
   type CirclePost,
   type PostType,
 } from '@/lib/circle'
-import {
-  MOCK_COHORT,
-  MOCK_MEMBER,
-  MOCK_POSTS,
-  MOCK_COHORT_AUTHORS,
-} from '@/data/mockCircle'
 
 const ORANGE      = '#C97D3A'
 const ORANGE_PALE = '#fdf6f2'
@@ -36,7 +31,8 @@ const POST_TYPE_LABEL: Record<PostType, string> = {
 const EMOJIS = ['❤️', '🔥', '✨', '👏', '💪']
 
 export default function CommunityPage() {
-  const { loading, isAuthed, effectiveIsAdmin, user } = useApp()
+  const router = useRouter()
+  const { loading, isAuthed } = useApp()
 
   const [posts, setPosts]           = useState<CirclePost[]>([])
   const [cohortId, setCohortId]     = useState<string>('')
@@ -49,20 +45,9 @@ export default function CommunityPage() {
   const [posting, setPosting]       = useState(false)
   const [showCompose, setShowCompose] = useState(false)
 
-  // Mock/live split — mock covers unauthed AND admin preview.
-  const useMock = !loading && (!isAuthed || effectiveIsAdmin)
-
   useEffect(() => {
     if (loading) return
-
-    if (useMock) {
-      setPosts(MOCK_POSTS)
-      setCohortId(MOCK_COHORT.id)
-      const wn = getCurrentWeekNumber(MOCK_COHORT.starts_at)
-      if (wn) setWeekNumber(wn)
-      setHydrating(false)
-      return
-    }
+    if (!isAuthed) { router.replace('/login'); return }
 
     (async () => {
       const member = await getMyCircleMember()
@@ -79,16 +64,16 @@ export default function CommunityPage() {
       setPosts(data)
       setHydrating(false)
     })()
-  }, [loading, useMock])
+  }, [loading, isAuthed, router])
 
-  // Re-fetch on filter change (live mode only — mock filters client-side below).
+  // Re-fetch on filter change.
   useEffect(() => {
-    if (!cohortId || useMock) return
+    if (!cohortId) return
     (async () => {
       const data = await getCommunityPosts(cohortId, filter === 'all' ? undefined : filter)
       setPosts(data)
     })()
-  }, [filter, cohortId, useMock])
+  }, [filter, cohortId])
 
   const visiblePosts = useMemo(() => {
     if (filter === 'all') return posts
@@ -98,26 +83,6 @@ export default function CommunityPage() {
   async function handlePost() {
     if (!newBody.trim()) return
     setPosting(true)
-    if (useMock) {
-      // Optimistic local insert — no persistence.
-      const authorName = user.name || 'You'
-      const local: CirclePost = {
-        id: `local-${Date.now()}`,
-        cohort_id: cohortId || MOCK_COHORT.id,
-        author_id: MOCK_MEMBER.user_id,
-        post_type: newType,
-        week_number: weekNumber,
-        body: newBody.trim(),
-        audio_url: null,
-        created_at: new Date().toISOString(),
-        author: { name: authorName, avatar_url: null },
-        reactions: [],
-      }
-      setPosts(prev => [local, ...prev])
-      setNewBody(''); setShowCompose(false); setPosting(false)
-      return
-    }
-
     if (!cohortId) { setPosting(false); return }
     const ok = await createPost(cohortId, newType, newBody.trim(), weekNumber)
     if (ok) {
@@ -130,24 +95,6 @@ export default function CommunityPage() {
   }
 
   async function handleReaction(postId: string, emoji: string) {
-    if (useMock) {
-      // Toggle locally.
-      setPosts(prev => prev.map(p => {
-        if (p.id !== postId) return p
-        const reactions = [...(p.reactions ?? [])]
-        const i = reactions.findIndex(r => r.emoji === emoji)
-        if (i >= 0) {
-          const r = reactions[i]
-          const nextCount = r.user_reacted ? Math.max(0, r.count - 1) : r.count + 1
-          if (nextCount === 0) reactions.splice(i, 1)
-          else reactions[i] = { ...r, count: nextCount, user_reacted: !r.user_reacted }
-        } else {
-          reactions.push({ emoji, count: 1, user_reacted: true })
-        }
-        return { ...p, reactions }
-      }))
-      return
-    }
     await toggleReaction(postId, emoji)
     if (cohortId) {
       const data = await getCommunityPosts(cohortId, filter === 'all' ? undefined : filter)
@@ -271,7 +218,6 @@ function PostCard({ post, onReact }: { post: CirclePost; onReact: (emoji: string
   const typeMeta = POST_TYPES.find(t => t.id === post.post_type)
   const isCoach = post.post_type === 'coach_note'
   const authorName = post.author?.name ?? 'Member'
-  const archetype = MOCK_COHORT_AUTHORS[post.author_id]?.archetype
 
   return (
     <div style={{
@@ -303,7 +249,6 @@ function PostCard({ post, onReact }: { post: CirclePost; onReact: (emoji: string
           <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
             {relativeTime(post.created_at)}
             {post.week_number ? ` · Week ${post.week_number}` : ''}
-            {archetype && !isCoach ? ` · ${archetypeShort(archetype)}` : ''}
           </p>
         </div>
         {typeMeta && (
@@ -395,10 +340,6 @@ function placeholderFor(t: PostType): string {
     case 'general':         return "What's on your mind…"
     case 'coach_note':      return 'A note to the cohort…'
   }
-}
-
-function archetypeShort(a: string): string {
-  return ({ door: 'Open Door', throne: 'Throne', engine: 'Engine', push: 'Pushthrough' } as Record<string, string>)[a] ?? a
 }
 
 function avatarColorFor(name: string): string {

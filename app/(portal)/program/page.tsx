@@ -21,16 +21,14 @@ function getFirstReflectionSnippet(routeId: string, dayNum: number, itemCount: n
 }
 
 export default function ProgramOverviewPage() {
-  const { user, dayNumber, adminProgramDay, adminArchetype } = useApp()
+  const { user, dayNumber } = useApp()
 
-  const routeId     = adminArchetype ?? (archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door')
+  const routeId     = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
   const route       = programRoutes[routeId]
-  // In admin mode all 7 days are fully unlocked
-  const isAdminMode   = adminProgramDay !== null || adminArchetype !== null
-  const currentDay    = isAdminMode ? 7 : Math.min(dayNumber, 7)
-  const completedDays = isAdminMode ? 7 : currentDay - 1
-  const isFirstDay    = !isAdminMode && currentDay === 1
-  const completedData = isAdminMode ? route.days : route.days.filter(d => d.day < currentDay)
+  const currentDay    = Math.min(dayNumber, 7)
+  const completedDays = currentDay - 1
+  const isFirstDay    = currentDay === 1
+  const completedData = route.days.filter(d => d.day < currentDay)
 
   const [snippets, setSnippets] = useState<Record<number, string>>({})
   useEffect(() => {
@@ -135,9 +133,9 @@ export default function ProgramOverviewPage() {
             <span style={{ fontSize: '20px' }}>→</span>
           </Link>
 
-          {/* Reflection journal CTA */}
+          {/* Daily journal CTA */}
           <Link
-            href={`/journal?day=${currentDay}`}
+            href="/program/reflections"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -163,10 +161,10 @@ export default function ProgramOverviewPage() {
           >
             <div>
               <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 2px' }}>
-                Reflection journal
+                Daily Journal
               </p>
               <p style={{ fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', margin: 0, color: 'var(--ink)' }}>
-                Complete today&apos;s reflection prompt
+                Open your daily journal
               </p>
             </div>
             <span style={{ fontSize: '16px', opacity: 0.6 }}>✏</span>

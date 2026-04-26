@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 import { getMyCircleMember, getLiveCalls, type LiveCall } from '@/lib/circle'
-import { MOCK_CALLS } from '@/data/mockCircle'
 
 const ORANGE      = '#C97D3A'
 const ORANGE_PALE = '#fdf6f2'
@@ -26,21 +26,15 @@ const MONTH_FOR_CALL: Record<number, { label: string; tint: string }> = {
 }
 
 export default function CallsPage() {
-  const { loading, isAuthed, effectiveIsAdmin } = useApp()
+  const router = useRouter()
+  const { loading, isAuthed } = useApp()
 
   const [calls, setCalls] = useState<LiveCall[]>([])
   const [hydrating, setHydrating] = useState(true)
 
-  const useMock = !loading && (!isAuthed || effectiveIsAdmin)
-
   useEffect(() => {
     if (loading) return
-
-    if (useMock) {
-      setCalls(MOCK_CALLS)
-      setHydrating(false)
-      return
-    }
+    if (!isAuthed) { router.replace('/login'); return }
 
     (async () => {
       const member = await getMyCircleMember()
@@ -49,7 +43,7 @@ export default function CallsPage() {
       setCalls(data)
       setHydrating(false)
     })()
-  }, [loading, useMock])
+  }, [loading, isAuthed, router])
 
   const { past, upcoming, nextId } = useMemo(() => {
     const now = Date.now()

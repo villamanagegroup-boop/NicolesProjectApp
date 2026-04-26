@@ -20,7 +20,7 @@ function DownloadAllButton({ routeId, route, currentDay, journalEntries }: {
   function handleDownload() {
     const lines: string[] = []
     lines.push(`SEAL THE LEAK — ${route.name}`)
-    lines.push(`Reflections Export`)
+    lines.push(`Daily Journal Export`)
     lines.push(`Generated ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`)
     lines.push('')
     lines.push('─'.repeat(60))
@@ -34,7 +34,7 @@ function DownloadAllButton({ routeId, route, currentDay, journalEntries }: {
         const answer = localStorage.getItem(storageKey(routeId, d.day, i))
         if (answer?.trim()) {
           if (!hasPrompts) {
-            lines.push(''); lines.push('PROGRAM REFLECTION PROMPTS'); lines.push('')
+            lines.push(''); lines.push('PROGRAM PROMPTS'); lines.push('')
             hasPrompts = true
           }
           if (dayLines.length === 0) {
@@ -52,9 +52,9 @@ function DownloadAllButton({ routeId, route, currentDay, journalEntries }: {
       }
     }
 
-    // Journal entries
+    // Daily Journal entries
     if (journalEntries.length > 0) {
-      lines.push(''); lines.push('JOURNAL ENTRIES'); lines.push('')
+      lines.push(''); lines.push('DAILY JOURNAL'); lines.push('')
       for (const entry of journalEntries) {
         lines.push(`Day ${entry.dayNumber} · ${entry.createdAt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`)
         lines.push(entry.content.trim())
@@ -67,7 +67,7 @@ function DownloadAllButton({ routeId, route, currentDay, journalEntries }: {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `seal-the-leak-reflections.txt`
+    a.download = `seal-the-leak-daily-journal.txt`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -100,14 +100,13 @@ function parseEntry(content: string) {
 }
 
 function ReflectionsInner() {
-  const { user, dayNumber, journalEntries, adminProgramDay, adminArchetype } = useApp()
+  const { user, dayNumber, journalEntries } = useApp()
   const searchParams = useSearchParams()
 
-  const routeId = adminArchetype ?? (archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door')
+  const routeId = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
   const route   = programRoutes[routeId]
 
-  const isAdminMode  = adminProgramDay !== null || adminArchetype !== null
-  const currentDay   = isAdminMode ? 7 : Math.min(dayNumber, 7)
+  const currentDay   = Math.min(dayNumber, 7)
 
   // Which day tab is active — default to query param or currentDay
   const paramDay = searchParams ? Number(searchParams.get('day')) : 0
@@ -122,7 +121,7 @@ function ReflectionsInner() {
   useEffect(() => {
     const result: PromptEntry[] = []
     for (const d of route.days) {
-      if (!isAdminMode && d.day > currentDay) break
+      if (d.day > currentDay) break
       const saved = d.prompt.items
         .map((q, i) => ({ question: q, answer: localStorage.getItem(storageKey(routeId, d.day, i)) ?? '' }))
         .filter(e => e.answer.trim())
@@ -131,29 +130,29 @@ function ReflectionsInner() {
       }
     }
     setPromptEntries(result)
-  }, [routeId, route, currentDay, isAdminMode])
+  }, [routeId, route, currentDay])
 
-  const completedDays = isAdminMode ? 7 : Math.max(currentDay - 1, 0)
+  const completedDays = Math.max(currentDay - 1, 0)
 
   // Journal entries split into program reflections and free-write
-  const programJournalEntries = journalEntries.filter(e => e.cardId === '' || !e.cardId)
-  const cardJournalEntries    = journalEntries.filter(e => e.cardId && e.cardId !== '')
+  // Daily journal entries belong to the program (no card binding).
+  const programJournalEntries = journalEntries.filter(e => !e.cardId)
 
   // Active prompt entry for selected day
   const activePromptEntry = typeof activeDay === 'number'
     ? promptEntries.find(e => e.day === activeDay)
     : null
 
-  const hasSomething = promptEntries.length > 0 || journalEntries.length > 0
+  const hasSomething = promptEntries.length > 0 || programJournalEntries.length > 0
 
   // ── Cycle navigation ──
   const availableDays = route.days
-    .filter(d => isAdminMode || d.day <= currentDay)
+    .filter(d => d.day <= currentDay)
     .map(d => d.day)
 
   const allTabs: (number | 'journal')[] = [
     ...availableDays,
-    ...(journalEntries.length > 0 ? ['journal' as const] : []),
+    ...(programJournalEntries.length > 0 ? ['journal' as const] : []),
   ]
 
   const currentTabIndex = allTabs.indexOf(activeDay as number | 'journal')
@@ -186,7 +185,7 @@ function ReflectionsInner() {
           </Link>
           <span style={{ color: 'var(--line-md)', fontSize: '12px' }}>/</span>
           <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
-            Reflections
+            Daily Journal
           </span>
         </div>
 
@@ -201,10 +200,10 @@ function ReflectionsInner() {
               </span>
             </div>
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '30px', fontWeight: 300, color: 'var(--ink)', margin: '0 0 6px' }}>
-              Reflections
+              Daily Journal
             </h1>
             <p style={{ fontSize: '13px', color: 'var(--text-soft)', fontFamily: 'var(--font-body)', margin: 0, lineHeight: 1.6 }}>
-              Your journal entries and reflection prompts across the program.
+              Your daily journal entries across the program.
             </p>
           </div>
 
@@ -230,7 +229,7 @@ function ReflectionsInner() {
           >
             Review my sessions →
           </Link>
-          <DownloadAllButton routeId={routeId} route={route} currentDay={currentDay} journalEntries={journalEntries} />
+          <DownloadAllButton routeId={routeId} route={route} currentDay={currentDay} journalEntries={programJournalEntries} />
         </div>
       </div>
 
@@ -241,10 +240,10 @@ function ReflectionsInner() {
           padding: '64px 24px', textAlign: 'center', background: 'var(--paper2)',
         }}>
           <p style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: 300, color: 'var(--ink)', margin: '0 0 8px' }}>
-            No reflections yet
+            No entries yet
           </p>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 20px' }}>
-            Complete a day&apos;s session or write in your journal to see entries here.
+            Complete a day&apos;s session to see your daily journal here.
           </p>
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link
@@ -255,16 +254,6 @@ function ReflectionsInner() {
               }}
             >
               Go to Today&apos;s Session →
-            </Link>
-            <Link
-              href="/journal"
-              style={{
-                padding: '9px 18px', borderRadius: '8px', background: 'white', color: route.color,
-                border: `1px solid ${route.color}30`, fontSize: '13px', fontWeight: 500,
-                fontFamily: 'var(--font-body)', textDecoration: 'none',
-              }}
-            >
-              Open Journal
             </Link>
           </div>
         </div>
@@ -283,7 +272,7 @@ function ReflectionsInner() {
                     Program prompts
                   </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    {route.days.filter(d => isAdminMode || d.day <= currentDay).map((d) => {
+                    {route.days.filter(d => d.day <= currentDay).map((d) => {
                       const hasEntries = promptEntries.some(e => e.day === d.day)
                       const isActive = activeDay === d.day
                       return (
@@ -328,8 +317,8 @@ function ReflectionsInner() {
               </div>
             )}
 
-            {/* Journal entries tab */}
-            {journalEntries.length > 0 && (
+            {/* Daily Journal entries tab */}
+            {programJournalEntries.length > 0 && (
               <button
                 onClick={() => setActiveDay('journal')}
                 style={{
@@ -341,10 +330,10 @@ function ReflectionsInner() {
               >
                 <div>
                   <p style={{ fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.1em', color: activeDay === 'journal' ? '#3D3080' : 'var(--text-muted)', margin: '0 0 2px', fontFamily: 'var(--font-body)' }}>
-                    Journal entries
+                    Daily Journal
                   </p>
                   <p style={{ fontSize: '12px', color: 'var(--text-soft)', margin: 0, fontFamily: 'var(--font-body)' }}>
-                    {journalEntries.length} {journalEntries.length === 1 ? 'entry' : 'entries'}
+                    {programJournalEntries.length} {programJournalEntries.length === 1 ? 'entry' : 'entries'}
                   </p>
                 </div>
                 <span style={{ fontSize: '14px', color: activeDay === 'journal' ? '#3D3080' : 'var(--text-muted)', opacity: 0.7 }}>✏</span>
@@ -371,7 +360,7 @@ function ReflectionsInner() {
                   const isDot = typeof tab === 'number'
                   const hasData = isDot
                     ? promptEntries.some(e => e.day === tab)
-                    : journalEntries.length > 0
+                    : programJournalEntries.length > 0
                   return (
                     <button
                       key={String(tab)}
@@ -495,90 +484,34 @@ function ReflectionsInner() {
             {activeDay === 'journal' && (
               <div>
                 <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', fontWeight: 300, color: 'var(--ink)', margin: '0 0 20px' }}>
-                  Journal entries
+                  Daily Journal
                 </h2>
 
-                {/* Program reflection journal entries */}
                 {programJournalEntries.length > 0 && (
-                  <div style={{ marginBottom: '32px' }}>
-                    <p style={{ fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#3D3080', fontFamily: 'var(--font-body)', margin: '0 0 12px' }}>
-                      Program reflections
-                    </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      {programJournalEntries.map(entry => {
-                        const parsed = parseEntry(entry.content)
-                        return (
-                          <div key={entry.id} style={{ background: 'white', border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden' }}>
-                            <div style={{ height: '3px', background: '#3D3080' }} />
-                            <div style={{ padding: '18px 20px' }}>
-                              <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 6px' }}>
-                                Day {entry.dayNumber} · {entry.createdAt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {programJournalEntries.map(entry => {
+                      const parsed = parseEntry(entry.content)
+                      return (
+                        <div key={entry.id} style={{ background: 'white', border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden' }}>
+                          <div style={{ height: '3px', background: '#3D3080' }} />
+                          <div style={{ padding: '18px 20px' }}>
+                            <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 6px' }}>
+                              Day {entry.dayNumber} · {entry.createdAt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                            </p>
+                            {parsed.topic && (
+                              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--ink)', fontFamily: 'var(--font-body)', margin: '0 0 8px' }}>
+                                {parsed.topic}
                               </p>
-                              {parsed.topic && (
-                                <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--ink)', fontFamily: 'var(--font-body)', margin: '0 0 8px' }}>
-                                  {parsed.topic}
-                                </p>
-                              )}
-                              <p style={{ fontSize: '13px', color: 'var(--ink)', fontFamily: 'var(--font-body)', lineHeight: 1.8, margin: 0, whiteSpace: 'pre-wrap' }}>
-                                {parsed.body}
-                              </p>
-                            </div>
+                            )}
+                            <p style={{ fontSize: '13px', color: 'var(--ink)', fontFamily: 'var(--font-body)', lineHeight: 1.8, margin: 0, whiteSpace: 'pre-wrap' }}>
+                              {parsed.body}
+                            </p>
                           </div>
-                        )
-                      })}
-                    </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
-
-                {/* Card / free-write journal entries */}
-                {cardJournalEntries.length > 0 && (
-                  <div>
-                    <p style={{ fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--green)', fontFamily: 'var(--font-body)', margin: '0 0 12px' }}>
-                      Daily card reflections
-                    </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      {cardJournalEntries.map(entry => {
-                        const parsed = parseEntry(entry.content)
-                        return (
-                          <div key={entry.id} style={{ background: 'white', border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden' }}>
-                            <div style={{ height: '3px', background: 'var(--green)' }} />
-                            <div style={{ padding: '18px 20px' }}>
-                              <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 6px' }}>
-                                Day {entry.dayNumber} · {entry.createdAt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                              </p>
-                              {parsed.topic && (
-                                <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--ink)', fontFamily: 'var(--font-body)', margin: '0 0 8px' }}>
-                                  {parsed.topic}
-                                </p>
-                              )}
-                              <p style={{ fontSize: '13px', color: 'var(--ink)', fontFamily: 'var(--font-body)', lineHeight: 1.8, margin: 0, whiteSpace: 'pre-wrap' }}>
-                                {parsed.body}
-                              </p>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                <div style={{ marginTop: '20px' }}>
-                  <Link
-                    href={`/journal?day=${currentDay}`}
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: '6px',
-                      fontSize: '12px', fontWeight: 500, color: '#3D3080',
-                      fontFamily: 'var(--font-body)', textDecoration: 'none',
-                      padding: '7px 14px', borderRadius: '6px',
-                      border: '1px solid rgba(61,48,128,0.25)', background: 'rgba(61,48,128,0.05)',
-                      transition: 'opacity 0.15s',
-                    }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = '0.75' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = '1' }}
-                  >
-                    ✏ Write a new entry
-                  </Link>
-                </div>
               </div>
             )}
 

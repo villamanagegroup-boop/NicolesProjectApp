@@ -15,14 +15,6 @@ import {
   type WeeklyContent,
   type LiveCall,
 } from '@/lib/circle'
-import {
-  MOCK_COHORT,
-  MOCK_MEMBER,
-  MOCK_PARTNER,
-  MOCK_WEEKS_OVERVIEW,
-  MOCK_PROGRESS,
-  MOCK_CALLS,
-} from '@/data/mockCircle'
 
 const ORANGE      = '#C97D3A'
 const ORANGE_DEEP = '#a66128'
@@ -43,7 +35,7 @@ type LoadState =
 
 export default function CirclePage() {
   const router = useRouter()
-  const { authUser, loading, isAuthed, effectiveIsAdmin, effectivePath, user } = useApp()
+  const { authUser, loading, isAuthed, user } = useApp()
 
   const [state, setState]         = useState<LoadState>({ kind: 'loading' })
   const [partner, setPartner]     = useState<any>(null)
@@ -54,25 +46,11 @@ export default function CirclePage() {
 
   useEffect(() => {
     if (loading) return
+    if (!isAuthed) { router.replace('/login'); return }
 
-    // Helper — populate state from the mock cohort.
-    const loadMock = () => {
-      setState({ kind: 'ready', member: MOCK_MEMBER })
-      setPartner(MOCK_PARTNER)
-      setWeeks(MOCK_WEEKS_OVERVIEW)
-      setProgress(MOCK_PROGRESS)
-      setCalls(MOCK_CALLS)
-      setCurrentWeek(getCurrentWeekNumber(MOCK_COHORT.starts_at))
-    }
-
-    // Unauthed preview — render the full Circle experience from mock data.
-    if (!isAuthed) { loadMock(); return }
-
-    // Admin preview with no real Circle data — drop straight to mocks.
-    // Avoids a "no-cohort" dead end while the backend is still empty.
-    if (effectiveIsAdmin) { loadMock(); return }
-
-    if (effectivePath !== 'C') return // layout will redirect
+    // Non-Path-C non-admin users — layout redirects to /upgrade.
+    // Admins always proceed so they can preview/walkthrough the Circle.
+    if (user.selectedPath !== 'C' && !user.isAdmin) return
 
     (async () => {
       let member = await getMyCircleMember()
@@ -115,7 +93,7 @@ export default function CirclePage() {
       // Gate: any required field missing → route to intake.
       const missing = !member.enneagram_type || !member.attachment_style
                    || !member.feedback_pref  || !member.goal_90day
-      if (missing && !effectiveIsAdmin) {
+      if (missing && !user.isAdmin) {
         router.replace('/circle/intake')
         return
       }
@@ -135,7 +113,7 @@ export default function CirclePage() {
       setCalls(callsData)
       if (cohortRow.data) setCurrentWeek(getCurrentWeekNumber(cohortRow.data.starts_at))
     })()
-  }, [loading, isAuthed, authUser, effectivePath, effectiveIsAdmin, router])
+  }, [loading, isAuthed, authUser, user.selectedPath, user.isAdmin, router])
 
   if (state.kind === 'loading') {
     return <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading your Circle…</p>

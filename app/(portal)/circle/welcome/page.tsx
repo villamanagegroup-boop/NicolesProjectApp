@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { supabaseClient } from '@/lib/supabase/client'
 import { useApp } from '@/context/AppContext'
 import { getMyCircleMember, getLiveCalls, type CircleMember, type LiveCall } from '@/lib/circle'
-import { MOCK_COHORT, MOCK_MEMBER, MOCK_CALLS, MOCK_MEMBER_COUNT } from '@/data/mockCircle'
 
 const ORANGE      = '#C97D3A'
 const ORANGE_PALE = '#fdf6f2'
@@ -21,7 +20,7 @@ type CohortRow = { name: string; starts_at: string; ends_at: string }
 
 export default function CircleWelcomePage() {
   const router = useRouter()
-  const { loading, isAuthed, user, effectiveIsAdmin, effectivePath } = useApp()
+  const { loading, isAuthed, user } = useApp()
   const [member, setMember] = useState<CircleMember | null>(null)
   const [cohort, setCohort] = useState<CohortRow | null>(null)
   const [nextCall, setNextCall] = useState<LiveCall | null>(null)
@@ -30,18 +29,12 @@ export default function CircleWelcomePage() {
 
   useEffect(() => {
     if (loading) return
+    if (!isAuthed) { router.replace('/login'); return }
 
-    // Unauthed or admin preview — render from mock cohort.
-    if (!isAuthed || effectiveIsAdmin) {
-      setMember(MOCK_MEMBER)
-      setCohort({ name: MOCK_COHORT.name, starts_at: MOCK_COHORT.starts_at, ends_at: MOCK_COHORT.ends_at })
-      setNextCall(MOCK_CALLS.find(c => new Date(c.scheduled_at) > new Date()) ?? null)
-      setMemberCount(MOCK_MEMBER_COUNT)
-      setHydrating(false)
-      return
-    }
-
-    if (effectivePath !== 'C') { router.replace('/dashboard'); return }
+    // Non-Path-C non-admin → bounce to dashboard.
+    // Admins always proceed; if they have no member row, getMyCircleMember
+    // returns null and we redirect them to /circle for the intake flow.
+    if (user.selectedPath !== 'C' && !user.isAdmin) { router.replace('/dashboard'); return }
 
     (async () => {
       const m = await getMyCircleMember()
@@ -58,7 +51,7 @@ export default function CircleWelcomePage() {
       setMemberCount(countRes.count ?? 0)
       setHydrating(false)
     })()
-  }, [loading, isAuthed, effectiveIsAdmin, effectivePath, router])
+  }, [loading, isAuthed, user.selectedPath, user.isAdmin, router])
 
   if (loading || hydrating) {
     return <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading…</p>

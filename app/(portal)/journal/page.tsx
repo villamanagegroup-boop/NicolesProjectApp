@@ -1,14 +1,8 @@
 'use client'
 import React, { useState, useRef, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
-import { programRoutes, archetypeToRoute } from '@/data/sealTheLeakProgram'
 import EyebrowLabel from '@/components/ui/EyebrowLabel'
 import Button from '@/components/ui/Button'
-
-const PURPLE = '#3D3080'
-const PURPLE_PALE = 'rgba(61,48,128,0.07)'
-const PURPLE_BORDER = 'rgba(61,48,128,0.18)'
 
 function parseEntry(content: string) {
   const parts = content.split('\n\n')
@@ -19,51 +13,30 @@ function parseEntry(content: string) {
 }
 
 function JournalInner() {
-  const searchParams = useSearchParams()
   const {
     user, dayNumber, todayCard,
     journalEntries, addJournalEntry, updateJournalEntry, deleteJournalEntry,
-    sidebarMode,
   } = useApp()
 
-  const isWorkMode = sidebarMode === 'work'
+  // Only card-bound entries belong on this page (Reflection lives with the card).
+  const cardJournalEntries = journalEntries.filter(e => !!e.cardId)
 
-  // ── Work mode: derive program prompt, respecting ?day= param ──
-  const routeId    = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
-  const route      = programRoutes[routeId]
-  const currentDay = Math.min(dayNumber, 7)
-
-  // If a valid past (or current) day was passed via query param, use it
-  const dayParam  = isWorkMode ? (Number(searchParams?.get('day')) || 0) : 0
-  const targetDay = dayParam >= 1 && dayParam <= 7 && dayParam <= currentDay ? dayParam : currentDay
-  const isViewingPastDay = isWorkMode && targetDay < currentDay
-
-  const programDay = route.days[targetDay - 1]
-
-  // ── Cards mode state ──
   const todayCardEntry = todayCard
     ? journalEntries.find(e => e.cardId === todayCard.id)
     : undefined
   const [isEditingJournal, setIsEditingJournal] = useState(false)
 
-  // ── Shared editor state ──
   const [entryContent, setEntryContent] = useState('')
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState('')
 
-  // Pre-populate for cards mode only
+  // Pre-populate from today's card entry if one exists
   React.useEffect(() => {
-    if (!isWorkMode && todayCardEntry && !isEditingJournal) {
+    if (todayCardEntry && !isEditingJournal) {
       setEntryContent(todayCardEntry.content)
     }
-  }, [todayCardEntry?.id, isWorkMode])
-
-  // Reset editor when switching modes
-  React.useEffect(() => {
-    setEntryContent('')
-    setIsEditingJournal(false)
-  }, [isWorkMode])
+  }, [todayCardEntry?.id])
 
   // ── Voice recording ──
   const [isRecording, setIsRecording] = useState(false)
@@ -113,23 +86,18 @@ function JournalInner() {
     URL.revokeObjectURL(url)
   }
 
-  // ── Prompt strings ──
   const cardsPrompt = todayCard?.journalPrompt ?? 'What is calling for your attention today?'
-  const workPromptTitle = programDay?.prompt.title ?? 'Reflection'
-  const workPromptBody  = programDay?.prompt.body  ?? 'What is this day bringing up for you?'
 
-  // ── Save logic ──
-  const isReadOnly = !isWorkMode && !!todayCardEntry && !isEditingJournal
+  const isReadOnly = !!todayCardEntry && !isEditingJournal
 
   function handleSave() {
-    if (!entryContent.trim()) return
+    if (!entryContent.trim() || !todayCard) return
     addJournalEntry({
       userId:    user.id,
-      cardId:    isWorkMode ? '' : (todayCard?.id ?? ''),
-      dayNumber: isWorkMode ? targetDay : dayNumber,
+      cardId:    todayCard.id,
+      dayNumber,
       content:   entryContent,
     })
-    if (isWorkMode) setEntryContent('')
   }
 
   function handleSaveChanges() {
@@ -138,139 +106,51 @@ function JournalInner() {
     setIsEditingJournal(false)
   }
 
-  // ── Accent colors by mode ──
-  const accent      = isWorkMode ? PURPLE : 'var(--green)'
-  const accentPale  = isWorkMode ? PURPLE_PALE : 'rgba(31,92,58,0.06)'
-  const accentBorder = isWorkMode ? PURPLE_BORDER : 'rgba(31,92,58,0.15)'
-  const accentDim   = isWorkMode ? PURPLE : 'var(--green)'
-
   return (
     <div className="two-col-grid" style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
 
       {/* ── LEFT — Editor ── */}
       <div style={{ flex: 1 }}>
         <div style={{ marginBottom: '24px' }}>
-          <EyebrowLabel color="muted">
-            {isWorkMode ? 'Program Reflection' : 'Your Reflections'}
-          </EyebrowLabel>
-          {isWorkMode && (
-            <p style={{
-              fontSize: '12px',
-              color: 'var(--text-muted)',
-              fontFamily: 'var(--font-body)',
-              margin: '4px 0 0',
-              lineHeight: 1.5,
-            }}>
-              {route.name} · Day {currentDay} of 7
-            </p>
-          )}
+          <EyebrowLabel color="muted">Your Reflections</EyebrowLabel>
         </div>
 
-        {/* Past-day review banner */}
-        {isViewingPastDay && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '10px',
-            background: `${PURPLE}08`,
-            border: `1px solid ${PURPLE}20`,
-            borderRadius: '8px',
-            padding: '10px 14px',
-            marginBottom: '18px',
+        {/* Prompt block — daily card prompt */}
+        <div style={{
+          backgroundColor: 'var(--paper2)',
+          borderRadius: '0 10px 10px 0',
+          padding: '16px',
+          borderLeft: '2px solid var(--green)',
+          marginBottom: '24px',
+        }}>
+          <p style={{
+            fontSize: '10px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.12em',
+            color: 'var(--green)',
+            fontFamily: 'var(--font-body)',
+            margin: '0 0 8px',
           }}>
-            <span style={{ fontSize: '14px', flexShrink: 0, marginTop: '1px' }}>↩</span>
-            <div>
-              <p style={{ fontSize: '12px', fontWeight: 600, color: PURPLE, fontFamily: 'var(--font-body)', margin: '0 0 2px' }}>
-                Reviewing Day {targetDay} — {route.days[targetDay - 1]?.title}
-              </p>
-              <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: 0, lineHeight: 1.5 }}>
-                You&apos;re on Day {currentDay} today. Any reflection you save here will be added to Day {targetDay}&apos;s entries — your previous work is preserved in the log below.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Prompt block */}
-        {isWorkMode ? (
-          // Work mode: program prompt (two-part — title + full body)
-          <div style={{
-            background: PURPLE_PALE,
-            borderLeft: `3px solid ${PURPLE}`,
-            borderRadius: '0 10px 10px 0',
-            padding: '16px 18px',
-            marginBottom: '24px',
+            Today&apos;s Prompt — Day {dayNumber}
+          </p>
+          <p style={{
+            fontFamily: 'var(--font-display)',
+            fontStyle: 'italic',
+            fontSize: '17px',
+            color: 'rgba(18,18,18,0.8)',
+            margin: 0,
+            lineHeight: 1.6,
           }}>
-            <p style={{
-              fontSize: '10px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.12em',
-              color: PURPLE,
-              fontFamily: 'var(--font-body)',
-              margin: '0 0 6px',
-              fontWeight: 500,
-            }}>
-              Day {targetDay} Prompt — {route.name}
-            </p>
-            <p style={{
-              fontFamily: 'var(--font-display)',
-              fontStyle: 'italic',
-              fontSize: '17px',
-              color: 'var(--ink)',
-              margin: '0 0 10px',
-              lineHeight: 1.5,
-            }}>
-              {workPromptTitle}
-            </p>
-            <p style={{
-              fontSize: '13px',
-              color: 'var(--text-soft)',
-              fontFamily: 'var(--font-body)',
-              lineHeight: 1.8,
-              margin: 0,
-            }}>
-              {workPromptBody}
-            </p>
-          </div>
-        ) : (
-          // Cards mode: daily card prompt
-          <div style={{
-            backgroundColor: 'var(--paper2)',
-            borderRadius: '0 10px 10px 0',
-            padding: '16px',
-            borderLeft: '2px solid var(--green)',
-            marginBottom: '24px',
-          }}>
-            <p style={{
-              fontSize: '10px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.12em',
-              color: 'var(--green)',
-              fontFamily: 'var(--font-body)',
-              margin: '0 0 8px',
-            }}>
-              Today&apos;s Prompt — Day {dayNumber}
-            </p>
-            <p style={{
-              fontFamily: 'var(--font-display)',
-              fontStyle: 'italic',
-              fontSize: '17px',
-              color: 'rgba(18,18,18,0.8)',
-              margin: 0,
-              lineHeight: 1.6,
-            }}>
-              {cardsPrompt}
-            </p>
-          </div>
-        )}
+            {cardsPrompt}
+          </p>
+        </div>
 
         {/* Textarea */}
         <textarea
           value={entryContent}
           onChange={isReadOnly ? undefined : (e) => setEntryContent(e.target.value)}
           readOnly={isReadOnly}
-          placeholder={isWorkMode
-            ? 'Write your reflection on today\'s prompt...'
-            : 'Begin your reflection here...'}
+          placeholder="Begin your reflection here..."
           style={{
             width: '100%',
             minHeight: '280px',
@@ -290,7 +170,7 @@ function JournalInner() {
             borderRadius: isReadOnly ? '8px' : '0',
           }}
           onFocus={(e) => {
-            if (!isReadOnly) e.currentTarget.style.borderBottomColor = accent
+            if (!isReadOnly) e.currentTarget.style.borderBottomColor = 'var(--green)'
           }}
           onBlur={(e) => {
             if (!isReadOnly) e.currentTarget.style.borderBottomColor = 'var(--line-md)'
@@ -301,9 +181,9 @@ function JournalInner() {
         <div style={{
           marginTop: '16px',
           padding: '16px',
-          border: `1px solid ${accentBorder}`,
+          border: '1px solid rgba(31,92,58,0.15)',
           borderRadius: '10px',
-          background: accentPale,
+          background: 'rgba(31,92,58,0.06)',
         }}>
           <div style={{
             display: 'flex',
@@ -367,47 +247,22 @@ function JournalInner() {
           <div style={{ display: 'flex', gap: '8px' }}>
             <Button variant="outline" size="sm" onClick={handleDownload}>Download</Button>
 
-            {/* Work mode: always show Save */}
-            {isWorkMode ? (
+            {!todayCardEntry ? (
               <button
                 onClick={handleSave}
-                disabled={!entryContent.trim()}
+                disabled={!entryContent.trim() || !todayCard}
                 style={{
                   padding: '6px 16px',
                   border: 'none',
                   borderRadius: '8px',
-                  background: PURPLE,
+                  background: 'var(--green)',
                   color: 'white',
                   fontSize: '13px',
                   fontFamily: 'var(--font-body)',
                   fontWeight: 500,
-                  opacity: !entryContent.trim() ? 0.45 : 1,
-                  cursor: entryContent.trim() ? 'pointer' : 'not-allowed',
-                  transition: 'opacity 0.15s',
+                  opacity: !entryContent.trim() || !todayCard ? 0.5 : 1,
+                  cursor: entryContent.trim() && todayCard ? 'pointer' : 'not-allowed',
                 }}
-                onMouseOver={(e) => { if (entryContent.trim()) e.currentTarget.style.opacity = '0.82' }}
-                onMouseOut={(e) => { e.currentTarget.style.opacity = entryContent.trim() ? '1' : '0.45' }}
-              >
-                Save Entry →
-              </button>
-            ) : !todayCardEntry ? (
-              <button
-                onClick={handleSave}
-                disabled={!entryContent.trim()}
-                style={{
-                  padding: '6px 16px',
-                  border: 'none',
-                  borderRadius: '8px',
-                  background: '#6b21a8',
-                  color: 'white',
-                  fontSize: '13px',
-                  fontFamily: 'var(--font-body)',
-                  fontWeight: 500,
-                  opacity: !entryContent.trim() ? 0.5 : 1,
-                  cursor: entryContent.trim() ? 'pointer' : 'not-allowed',
-                }}
-                onMouseOver={(e) => { if (entryContent.trim()) e.currentTarget.style.background = '#581c87' }}
-                onMouseOut={(e) => { e.currentTarget.style.background = '#6b21a8' }}
               >
                 Save Entry →
               </button>
@@ -469,7 +324,7 @@ function JournalInner() {
         </div>
       </div>
 
-      {/* ── RIGHT — Past entries (shared across both modes) ── */}
+      {/* ── RIGHT — Past entries ── */}
       <div
         className="journal-sidebar"
         style={{
@@ -477,8 +332,8 @@ function JournalInner() {
           flexShrink: 0,
           position: 'sticky',
           top: '92px',
-          backgroundColor: isWorkMode ? PURPLE_PALE : 'rgba(120,80,180,0.06)',
-          border: `1px solid ${isWorkMode ? PURPLE_BORDER : 'rgba(120,80,180,0.12)'}`,
+          backgroundColor: 'rgba(31,92,58,0.04)',
+          border: '1px solid rgba(31,92,58,0.12)',
           borderRadius: '12px',
           padding: '20px',
         }}
@@ -486,24 +341,14 @@ function JournalInner() {
         <EyebrowLabel color="muted">Past Entries</EyebrowLabel>
 
         <div style={{ display: 'flex', flexDirection: 'column', marginTop: '16px' }}>
-          {journalEntries.length === 0 ? (
+          {cardJournalEntries.length === 0 ? (
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', fontFamily: 'var(--font-body)', margin: 0 }}>
               No entries yet. Start writing today.
             </p>
           ) : (
-            // When reviewing a past day, show that day's entries pinned at the top
-            [...journalEntries].sort((a, b) => {
-              if (isViewingPastDay) {
-                const aMatch = (a.cardId === '' || !a.cardId) && a.dayNumber === targetDay
-                const bMatch = (b.cardId === '' || !b.cardId) && b.dayNumber === targetDay
-                if (aMatch && !bMatch) return -1
-                if (!aMatch && bMatch) return 1
-              }
-              return 0
-            }).map((entry) => {
+            cardJournalEntries.map((entry) => {
               const isSelected = selectedEntryId === entry.id
               const parsed = parseEntry(entry.content)
-              const isProgramEntry = entry.cardId === '' && !entry.cardId
 
               return (
                 <div key={entry.id} style={{ paddingTop: '16px', paddingBottom: '16px', borderTop: '1px solid var(--line)' }}>
@@ -523,7 +368,7 @@ function JournalInner() {
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button
                           onClick={() => { updateJournalEntry(entry.id, editContent); setEditingId(null) }}
-                          style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, background: accentDim, color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+                          style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, background: 'var(--green)', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
                         >Save</button>
                         <button
                           onClick={() => setEditingId(null)}
@@ -538,16 +383,6 @@ function JournalInner() {
                         style={{ cursor: 'pointer' }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
-                          {isViewingPastDay && isProgramEntry && entry.dayNumber === targetDay && (
-                            <span style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: PURPLE, background: `${PURPLE}12`, borderRadius: '3px', padding: '1px 5px', fontFamily: 'var(--font-body)', flexShrink: 0 }}>
-                              Day {targetDay}
-                            </span>
-                          )}
-                          {isProgramEntry && !(isViewingPastDay && entry.dayNumber === targetDay) && (
-                            <span style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: PURPLE, fontFamily: 'var(--font-body)' }}>
-                              The Work ·{' '}
-                            </span>
-                          )}
                           <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'var(--font-body)' }}>
                             Day {entry.dayNumber} · {entry.createdAt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                           </span>

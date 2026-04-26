@@ -12,7 +12,7 @@ import { useApp } from '@/context/AppContext'
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const { sidebarMode, setSidebarMode, loading, isAuthed, user, effectivePath, effectiveIsAdmin } = useApp()
+  const { sidebarMode, setSidebarMode, loading, isAuthed, user } = useApp()
   const router = useRouter()
   const pathname = usePathname()
 
@@ -23,29 +23,30 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   // Locked paths now route to /upgrade so the user sees what to buy next.
   // Admins bypass.
   useEffect(() => {
-    if (loading || !isAuthed || effectiveIsAdmin || !pathname) return
+    if (loading || !isAuthed || user.isAdmin || !pathname) return
     const CARDS_PREFIXES = ['/dashboard', '/card', '/past', '/vault', '/wins', '/journal']
     const inCards  = CARDS_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))
     const inWork   = pathname.startsWith('/program')
     const inCircle = pathname.startsWith('/circle')
-    if (effectivePath === 'A' && inCircle)             { router.replace('/upgrade'); return }
-    if (effectivePath === 'B' && (inWork || inCircle)) { router.replace('/upgrade'); return }
-    if (effectivePath === 'C' && (inWork || inCards))  { router.replace('/upgrade'); return }
-  }, [loading, isAuthed, effectiveIsAdmin, effectivePath, pathname, router])
+    if (user.selectedPath === 'A' && inCircle)             { router.replace('/upgrade'); return }
+    if (user.selectedPath === 'B' && (inWork || inCircle)) { router.replace('/upgrade'); return }
+    if (user.selectedPath === 'C' && (inWork || inCards))  { router.replace('/upgrade'); return }
+  }, [loading, isAuthed, user.isAdmin, user.selectedPath, pathname, router])
 
   // Flow guard: signed-in users who haven't finished setup get bounced back.
   // Onboarding (Enneagram quiz) is only required for Path C — A/B skip it.
-  // Admins skip the guard (unless they're previewing as a user via the
-  // top-right dropdown — then effectiveIsAdmin goes false and the real
-  // flow applies so they see exactly what a user would).
+  // Admins always skip this guard, even when previewing as a user — the
+  // path-isolation guard above already gates them to the previewed path's
+  // routes, so we don't also want to push them through the quiz/path-chooser
+  // flow they may not have personally completed.
   useEffect(() => {
-    if (loading || !isAuthed || effectiveIsAdmin) return
+    if (loading || !isAuthed || user.isAdmin) return
     if (!user.quizResult)   { router.replace('/quiz'); return }
     if (!user.selectedPath) { router.replace('/quiz/paths'); return }
     if (user.selectedPath === 'C' && !user.onboardingComplete) {
       router.replace('/onboarding'); return
     }
-  }, [loading, isAuthed, effectiveIsAdmin, user.quizResult, user.selectedPath, user.onboardingComplete, router])
+  }, [loading, isAuthed, user.isAdmin, user.quizResult, user.selectedPath, user.onboardingComplete, router])
 
   // One-time init: on first load with a known path, set the sidebar mode
   // to the user's natural home so direct /settings (or any shared route)

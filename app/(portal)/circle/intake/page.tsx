@@ -45,7 +45,7 @@ const FEEDBACK_OPTS: [Feedback, string, string][] = [
 
 export default function CircleIntakePage() {
   const router = useRouter()
-  const { authUser, user, loading, isAuthed, effectiveIsAdmin, effectivePath } = useApp()
+  const { authUser, user, loading, isAuthed } = useApp()
 
   const [step, setStep] = useState(1)
   const [ennea, setEnnea] = useState<Ennea | null>(null)
@@ -60,12 +60,12 @@ export default function CircleIntakePage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Gate: only Path C (or admin previewing C) should be here.
+  // Gate: only Path C (or admin) should be here.
   useEffect(() => {
     if (loading || !isAuthed) return
-    if (effectiveIsAdmin) return
-    if (effectivePath !== 'C') router.replace('/circle')
-  }, [loading, isAuthed, effectiveIsAdmin, effectivePath, router])
+    if (user.isAdmin) return
+    if (user.selectedPath !== 'C') router.replace('/circle')
+  }, [loading, isAuthed, user.isAdmin, user.selectedPath, router])
 
   // Load existing circle_member row so we can prefill any already-saved fields.
   // If there's no row yet, we'll need a cohort_id to create one on submit.

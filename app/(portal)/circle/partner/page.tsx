@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { supabaseClient } from '@/lib/supabase/client'
 import { useApp } from '@/context/AppContext'
 import {
@@ -12,14 +13,6 @@ import {
   getWeekContent,
   type PartnerMessage,
 } from '@/lib/circle'
-import {
-  MOCK_COHORT,
-  MOCK_MEMBER,
-  MOCK_PARTNER,
-  MOCK_PARTNER_USER_ID,
-  MOCK_PARTNER_THREAD,
-} from '@/data/mockCircle'
-import { CIRCLE_STARTER_CONTENT } from '@/data/circleStarterContent'
 
 const ORANGE      = '#C97D3A'
 const ORANGE_PALE = '#fdf6f2'
@@ -32,7 +25,8 @@ const ARCHETYPE_LABELS: Record<string, string> = {
 }
 
 export default function PartnerPage() {
-  const { loading, isAuthed, effectiveIsAdmin, user } = useApp()
+  const router = useRouter()
+  const { loading, isAuthed, user } = useApp()
 
   const [messages, setMessages]   = useState<PartnerMessage[]>([])
   const [partner, setPartner]     = useState<any>(null)
@@ -46,26 +40,9 @@ export default function PartnerPage() {
   const [hydrating, setHydrating] = useState(true)
   const bottomRef = useRef<HTMLDivElement>(null)
 
-  const useMock = !loading && (!isAuthed || effectiveIsAdmin)
-
   useEffect(() => {
     if (loading) return
-
-    if (useMock) {
-      setMessages(MOCK_PARTNER_THREAD)
-      setPartner(MOCK_PARTNER)
-      setMyUserId(MOCK_MEMBER.user_id)
-      setPartnerUserId(MOCK_PARTNER_USER_ID)
-      setCohortId(MOCK_COHORT.id)
-      const wn = getCurrentWeekNumber(MOCK_COHORT.starts_at)
-      if (wn) {
-        setWeekNumber(wn)
-        const row = CIRCLE_STARTER_CONTENT.find(r => r.week_number === wn && r.archetype === 'universal')
-        if (row?.wednesday_prompt) setWeekPrompt(row.wednesday_prompt)
-      }
-      setHydrating(false)
-      return
-    }
+    if (!isAuthed) { router.replace('/login'); return }
 
     (async () => {
       const member = await getMyCircleMember()
@@ -102,7 +79,7 @@ export default function PartnerPage() {
       }
       setHydrating(false)
     })()
-  }, [loading, useMock])
+  }, [loading, isAuthed, router])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -111,21 +88,6 @@ export default function PartnerPage() {
   async function handleSend() {
     if (!body.trim()) return
     setSending(true)
-
-    if (useMock) {
-      const local: PartnerMessage = {
-        id: `local-${Date.now()}`,
-        sender_id: myUserId,
-        receiver_id: partnerUserId,
-        body: body.trim(),
-        audio_url: null,
-        read_at: null,
-        created_at: new Date().toISOString(),
-      }
-      setMessages(prev => [...prev, local])
-      setBody(''); setSending(false)
-      return
-    }
 
     if (!partnerUserId || !cohortId) { setSending(false); return }
     const ok = await sendPartnerMessage(partnerUserId, cohortId, body.trim())

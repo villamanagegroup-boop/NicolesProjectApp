@@ -2,13 +2,12 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useApp } from '@/context/AppContext'
-import QuoteStrip from '@/components/dashboard/QuoteStrip'
 import StatsRow from '@/components/dashboard/StatsRow'
 import IntentionsPanel from '@/components/dashboard/IntentionsPanel'
 import HeroCard from '@/components/cards/HeroCard'
 
 export default function DashboardPage() {
-  const { user, dayNumber, todayCard, pastCards, journalEntries, currentQuote, streakCount, wins, cardsAccess } = useApp()
+  const { user, dayNumber, todayCard, pastCards, journalEntries, streakCount, wins, cardsAccess } = useApp()
 
   const cardsUnlocked = pastCards.length + 1
   const recentPastCards = pastCards.slice(0, 5)
@@ -43,10 +42,6 @@ export default function DashboardPage() {
           Your path is clear today.
         </h1>
       </div>
-
-      {/* Quote strip */}
-      <QuoteStrip text={currentQuote.text} source={currentQuote.source} />
-
 
       {/* Main two-column grid */}
       <div

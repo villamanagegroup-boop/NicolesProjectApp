@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import { useApp } from '@/context/AppContext'
 import { programRoutes, archetypeToRoute, PHASE_DAYS } from '@/data/sealTheLeakProgram'
@@ -291,28 +291,21 @@ function DayCard({ dayData, color, isCompleted }: { dayData: ProgramDay; color: 
 }
 
 export default function MyProgressPage() {
-  const { user, dayNumber, adminProgramDay, adminArchetype } = useApp()
+  const { user, dayNumber } = useApp()
 
-  const routeId = adminArchetype ?? (archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door')
+  const routeId = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
   const route   = programRoutes[routeId]
 
-  // In admin mode all 7 days are fully unlocked
-  const isAdminMode = adminProgramDay !== null || adminArchetype !== null
-  const { completedDays, currentDay } = useWorkProgress(isAdminMode ? 7 : dayNumber)
+  const { completedDays, currentDay } = useWorkProgress(dayNumber)
 
-  const [viewingDay, setViewingDay] = useState(adminProgramDay ?? currentDay)
-
-  // Sync when admin picks a day
-  useEffect(() => {
-    if (adminProgramDay !== null) setViewingDay(adminProgramDay)
-  }, [adminProgramDay])
+  const [viewingDay, setViewingDay] = useState(currentDay)
 
   const viewingDayData     = route.days.find(d => d.day === viewingDay) ?? route.days[0]
-  const isViewingCompleted = isAdminMode || viewingDay < currentDay
+  const isViewingCompleted = viewingDay < currentDay
 
   const currentPhaseEntry = Object.entries(PHASE_DAYS).find(([, days]) => days.includes(currentDay))
   const currentPhase      = currentPhaseEntry?.[0] ?? 'Awareness'
-  const progressPercent   = isAdminMode ? 100 : Math.round((completedDays / 7) * 100)
+  const progressPercent   = Math.round((completedDays / 7) * 100)
 
   return (
     <div style={{ maxWidth: '1080px', margin: '0 auto' }}>

@@ -42,8 +42,10 @@ function CardPageInner() {
   // Effective day the user can view up to. For Path A this is clamped by
   // their program progress (see lib/utils/pathAccess.ts).
   const visibleMaxDay = cardsAccess.maxDay
-  const displayDayNumber = dayParam ? parseInt(dayParam) : visibleMaxDay
-  const isHistoricalView = !!dayParam && parseInt(dayParam) !== visibleMaxDay
+  // "Today" for this user — clamped to what their plan has unlocked.
+  const todayDay = Math.min(dayNumber, visibleMaxDay)
+  const displayDayNumber = dayParam ? parseInt(dayParam) : todayDay
+  const isHistoricalView = !!dayParam && parseInt(dayParam) !== todayDay
 
   // Prev/next nav clamped to what the user can see
   const canPrev = displayDayNumber > 1
@@ -51,7 +53,7 @@ function CardPageInner() {
 
   function goToDay(target: number) {
     if (target < 1 || target > visibleMaxDay) return
-    if (target === visibleMaxDay) router.push('/card')
+    if (target === todayDay) router.push('/card')
     else router.push(`/card?day=${target}`)
   }
 

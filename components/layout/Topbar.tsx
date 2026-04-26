@@ -2,68 +2,9 @@
 import React, { useState } from 'react'
 import { useApp } from '@/context/AppContext'
 import ProgramSwitcher from './ProgramSwitcher'
-import AdminConsole from './AdminConsole'
 
 interface TopbarProps {
   onMenuOpen?: () => void
-}
-
-function AdminButton({ onOpen }: { onOpen: () => void }) {
-  const { user, loading, viewAsPath, adminCardDay, adminProgramDay, adminArchetype } = useApp()
-  // Wait until the real user row has loaded before deciding admin status —
-  // otherwise the mockUser fallback (isAdmin: true) flashes the button in,
-  // then the signed-in user's actual row flips it back out.
-  if (loading) return null
-  if (!user.isAdmin) return null
-
-  const hasOverrides = viewAsPath !== null
-                    || adminCardDay !== null
-                    || adminProgramDay !== null
-                    || adminArchetype !== null
-
-  const label = viewAsPath ? `Viewing Path ${viewAsPath}` : 'Admin'
-
-  return (
-    <button
-      onClick={onOpen}
-      title="Open admin console"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6,
-        padding: '5px 12px',
-        borderRadius: 6,
-        border: `1px solid ${hasOverrides ? 'var(--gold)' : 'var(--ink)'}`,
-        background: hasOverrides ? 'rgba(184,146,42,0.08)' : 'var(--ink)',
-        color: hasOverrides ? 'var(--gold)' : '#fff',
-        fontSize: 11,
-        fontWeight: 600,
-        fontFamily: 'var(--font-body)',
-        cursor: 'pointer',
-        whiteSpace: 'nowrap',
-      }}
-    >
-      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M8 1l5 2v5c0 3-2.5 5.5-5 7-2.5-1.5-5-4-5-7V3l5-2z" />
-      </svg>
-      <span className="hide-mobile">{label}</span>
-      {hasOverrides && (
-        <span style={{
-          width: 6, height: 6, borderRadius: '50%',
-          background: 'var(--gold)',
-        }} />
-      )}
-    </button>
-  )
-}
-
-function BellIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10 2a6 6 0 016 6v3l1.5 2.5H2.5L4 11V8a6 6 0 016-6z" />
-      <path d="M8 16a2 2 0 004 0" />
-    </svg>
-  )
 }
 
 function GearIcon() {
@@ -78,7 +19,6 @@ function GearIcon() {
 export default function Topbar({ onMenuOpen }: TopbarProps) {
   const { user, avatarUrl } = useApp()
   const [showNotifications, setShowNotifications] = useState(false)
-  const [adminOpen, setAdminOpen] = useState(false)
   const firstInitial = user.name.charAt(0).toUpperCase()
   const photoSrc = avatarUrl ?? null
 
@@ -129,8 +69,6 @@ export default function Topbar({ onMenuOpen }: TopbarProps) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         {/* Program switcher — shows for anyone with 2+ accessible programs */}
         <ProgramSwitcher />
-        {/* Admin console trigger (renders nothing for non-admins) */}
-        <AdminButton onOpen={() => setAdminOpen(true)} />
         {/* Bell */}
         <div style={{ position: 'relative' }}>
           <button
@@ -276,8 +214,6 @@ export default function Topbar({ onMenuOpen }: TopbarProps) {
           )}
         </div>
       </div>
-      {/* Admin console drawer — only mounts for admins; self-gated */}
-      <AdminConsole open={adminOpen} onClose={() => setAdminOpen(false)} />
     </header>
   )
 }

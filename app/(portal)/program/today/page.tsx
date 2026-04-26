@@ -162,36 +162,26 @@ function PromptItems({
 }
 
 function TodaysSessionInner() {
-  const { user, dayNumber, adminProgramDay, adminArchetype, streakCount } = useApp()
+  const { user, dayNumber, streakCount } = useApp()
   const searchParams = useSearchParams()
 
-  const baseRouteId = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
-  const routeId = adminArchetype ?? baseRouteId
+  const routeId = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
   const route   = programRoutes[routeId]
 
-  // In admin mode (any override active) all 7 days are unlocked
-  const isAdminMode = adminProgramDay !== null || adminArchetype !== null
-  const currentDay  = isAdminMode ? 7 : Math.min(dayNumber, 7)
+  const currentDay  = Math.min(dayNumber, 7)
 
   const paramDay   = searchParams ? Number(searchParams.get('day')) : 0
-  const initialDay = isAdminMode && adminProgramDay
-    ? adminProgramDay
-    : paramDay >= 1 && paramDay <= currentDay ? paramDay : currentDay
+  const initialDay = paramDay >= 1 && paramDay <= currentDay ? paramDay : currentDay
 
   const [viewingDay, setViewingDay] = useState(initialDay)
   const [sealedDays, setSealedDays] = useState<Set<number>>(new Set())
   const [celebratingDay, setCelebratingDay] = useState(false)
 
-  // Sync viewingDay when admin picks a specific day
-  useEffect(() => {
-    if (adminProgramDay !== null) setViewingDay(adminProgramDay)
-  }, [adminProgramDay])
-
   const day = route.days[viewingDay - 1]
   if (!day) return null
 
   const isDay7     = day.day === 7
-  const isToday    = !isAdminMode && viewingDay === currentDay
+  const isToday    = viewingDay === currentDay
   const isPast     = viewingDay < currentDay
   const isSealed   = sealedDays.has(viewingDay)
 
@@ -260,7 +250,7 @@ function TodaysSessionInner() {
         <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '4px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 'max-content' }}>
           {route.days.map((d) => {
-            const isAvailable = isAdminMode || d.day <= currentDay
+            const isAvailable = d.day <= currentDay
             const isActive    = viewingDay === d.day
             const isDone      = d.day < currentDay
             return (
@@ -448,7 +438,7 @@ function TodaysSessionInner() {
         <div style={{ background: 'white', border: '1px solid var(--line)', borderRadius: '10px', padding: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '6px' }}>
             <p style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: 0 }}>
-              {isPast ? 'Reflection prompt' : "Today's prompt"}
+              {isPast ? 'Daily Journal' : "Today's prompt"}
             </p>
             <Link
               href={`/journal?day=${viewingDay}`}
@@ -490,7 +480,7 @@ function TodaysSessionInner() {
       </div>
 
       {/* ── Prev / Next day navigation ── */}
-      {(viewingDay > 1 || (isAdminMode ? viewingDay < 7 : viewingDay < currentDay)) && (
+      {(viewingDay > 1 || viewingDay < currentDay) && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '32px', gap: '12px' }}>
           {viewingDay > 1 ? (
             <button
@@ -509,7 +499,7 @@ function TodaysSessionInner() {
             </button>
           ) : <div />}
 
-          {(isAdminMode ? viewingDay < 7 : viewingDay < currentDay) ? (
+          {viewingDay < currentDay ? (
             <button
               onClick={() => { setViewingDay(v => v + 1); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
               style={{

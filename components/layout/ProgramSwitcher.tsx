@@ -55,8 +55,7 @@ export default function ProgramSwitcher() {
   const { loading, sidebarMode, setSidebarMode, hasCardsAccess, hasWorkAccess, hasCircleAccess } = useApp()
   const [open, setOpen] = useState(false)
 
-  // Don't render during load — mockUser grants all access and then
-  // collapses when the real user row arrives, causing a flash.
+  // Don't render during load — access flags are still defaulting and would flash.
   if (loading) return null
 
   const access: Record<Mode, boolean> = {
