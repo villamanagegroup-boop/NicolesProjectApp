@@ -6,12 +6,13 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import {
   fetchCohortById, updateCohort,
   fetchAdminMembers, fetchPairMap, fetchLiveCalls,
   type AdminCohortSummary, type AdminMemberRow, type AdminPairRow, type AdminLiveCall,
 } from '@/lib/admin/hooks'
+import { usePreviewMode } from '@/hooks/usePreviewMode'
 
 const PHASE_COLORS: Record<string, string> = {
   root: 'var(--green)', rebuild: 'var(--gold)', rise: '#3D3080',
@@ -20,6 +21,19 @@ const PHASE_COLORS: Record<string, string> = {
 export default function CohortDetailPage() {
   const params = useParams<{ id: string }>()
   const cohortId = params?.id
+  const router = useRouter()
+  const { setPreview } = usePreviewMode()
+
+  function viewAsCohortMember() {
+    if (!cohort) return
+    setPreview({
+      path: 'C',
+      cohortId: cohort.id,
+      dayOverride: cohort.current_week,
+      startedAt: Date.now(),
+    })
+    router.push('/circle')
+  }
 
   const [cohort, setCohort]   = useState<AdminCohortSummary | null>(null)
   const [members, setMembers] = useState<AdminMemberRow[]>([])
@@ -100,19 +114,32 @@ export default function CohortDetailPage() {
               <DateOnly iso={cohort.start_date} /> – <DateOnly iso={cohort.end_date} /> · {cohort.member_count}/{cohort.max_members} members
             </p>
           </div>
-          <button
-            onClick={toggleActive}
-            disabled={savingStatus}
-            style={{
-              fontSize: 12, fontWeight: 600, padding: '8px 14px', borderRadius: 8,
-              border: '1px solid var(--line-md)',
-              background: cohort.status === 'active' ? '#fff' : 'var(--green)',
-              color: cohort.status === 'active' ? 'var(--text-soft)' : '#fff',
-              cursor: savingStatus ? 'wait' : 'pointer', fontFamily: 'inherit',
-            }}
-          >
-            {savingStatus ? 'Saving…' : cohort.status === 'active' ? 'Mark inactive' : 'Activate cohort'}
-          </button>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              onClick={viewAsCohortMember}
+              style={{
+                fontSize: 12, fontWeight: 600, padding: '8px 14px', borderRadius: 8,
+                border: '1px solid var(--gold-line)',
+                background: 'var(--gold-pale)', color: 'var(--gold)',
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              View as cohort member →
+            </button>
+            <button
+              onClick={toggleActive}
+              disabled={savingStatus}
+              style={{
+                fontSize: 12, fontWeight: 600, padding: '8px 14px', borderRadius: 8,
+                border: '1px solid var(--line-md)',
+                background: cohort.status === 'active' ? '#fff' : 'var(--green)',
+                color: cohort.status === 'active' ? 'var(--text-soft)' : '#fff',
+                cursor: savingStatus ? 'wait' : 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              {savingStatus ? 'Saving…' : cohort.status === 'active' ? 'Mark inactive' : 'Activate cohort'}
+            </button>
+          </div>
         </div>
 
         {/* Stat strip */}
@@ -198,10 +225,18 @@ export default function CohortDetailPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {members.slice(0, 8).map(m => (
-              <div key={m.id} style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '6px 0', borderBottom: '1px solid var(--line)',
-              }}>
+              <Link
+                key={m.id}
+                href={`/admin/members/${m.id}`}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '6px 0', borderBottom: '1px solid var(--line)',
+                  textDecoration: 'none', color: 'inherit',
+                  transition: 'background 0.1s ease',
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--paper)' }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'transparent' }}
+              >
                 <div style={{
                   width: 28, height: 28, borderRadius: '50%',
                   background: 'var(--paper2)', color: 'var(--ink)',
@@ -210,11 +245,11 @@ export default function CohortDetailPage() {
                 }}>
                   {(m.full_name ?? 'M').slice(0, 2).toUpperCase()}
                 </div>
-                <div style={{ flex: 1, fontSize: 13 }}>{m.full_name ?? 'Unknown'}</div>
+                <div style={{ flex: 1, fontSize: 13, color: 'var(--ink)' }}>{m.full_name ?? 'Unknown'}</div>
                 <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                   {m.last_active ? `${m.days_inactive}d ago` : 'never active'}
                 </div>
-              </div>
+              </Link>
             ))}
             {members.length > 8 && (
               <div style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', padding: '8px 0' }}>

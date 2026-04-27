@@ -5,6 +5,9 @@ import { useSearchParams } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 import { programRoutes, archetypeToRoute } from '@/data/sealTheLeakProgram'
 import type { ProgramRoute } from '@/data/sealTheLeakProgram'
+import MediaSlot from '@/components/media/MediaSlot'
+import { upsertReflection } from '@/lib/admin/hooks'
+import { supabaseClient } from '@/lib/supabase/client'
 
 function CheckIcon() {
   return (
@@ -56,10 +59,26 @@ function PromptItem({
     setSaved(false)
   }
 
-  function handleSave() {
+  async function handleSave() {
     localStorage.setItem(key, value)
     setSaved(true)
     setDirty(false)
+    // Mirror to Supabase so admins can read what the user wrote. Failures
+    // here shouldn't block the local save — localStorage already succeeded.
+    try {
+      const { data: { user } } = await supabaseClient.auth.getUser()
+      if (user) {
+        await upsertReflection({
+          user_id: user.id,
+          route_id: routeId,
+          day_number: dayNum,
+          item_index: index,
+          content: value,
+        })
+      }
+    } catch {
+      // Swallow — admin visibility is best-effort, not load-bearing.
+    }
   }
 
   return (
@@ -358,16 +377,25 @@ function TodaysSessionInner() {
         {/* LEFT: context column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-          {/* Opening frame */}
+          {/* Opening frame — admin-curated media slot above the framing copy.
+              Day 1 defaults to a video placeholder; days 2-7 default to voice.
+              Admins can override either choice from /admin/content. */}
           <div style={{
             background: `${route.color}08`,
             borderLeft: `4px solid ${route.color}`,
             borderRadius: '0 10px 10px 0',
             padding: '18px 20px',
           }}>
-            <p style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 8px' }}>
+            <p style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 10px' }}>
               Opening frame
             </p>
+            <div style={{ marginBottom: '14px' }}>
+              <MediaSlot
+                slotKey={`stl_day${viewingDay}_opening`}
+                defaultType={viewingDay === 1 ? 'video' : 'audio'}
+                accent={route.color}
+              />
+            </div>
             <p style={{ fontSize: '13px', fontStyle: 'italic', color: 'var(--ink)', lineHeight: 1.8, margin: 0, fontFamily: 'var(--font-body)' }}>
               {day.openingFrame}
             </p>

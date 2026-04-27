@@ -8,6 +8,7 @@ import Topbar from '@/components/layout/Topbar'
 import MobileNav from '@/components/layout/MobileNav'
 import MobileDrawer from '@/components/layout/MobileDrawer'
 import PageTransition from '@/components/layout/PageTransition'
+import PreviewBanner from '@/components/admin/PreviewBanner'
 import { useApp } from '@/context/AppContext'
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
@@ -95,6 +96,9 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
         {renderSidebar()}
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        {/* Admin preview banner — only renders when an admin has activated
+            "View as member" from /admin/preview or a cohort detail page. */}
+        <PreviewBanner />
         <Topbar onMenuOpen={() => setDrawerOpen(true)} />
         <main
           className="portal-main"

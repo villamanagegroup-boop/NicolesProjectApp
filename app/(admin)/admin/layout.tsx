@@ -13,15 +13,20 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabaseClient } from '@/lib/supabase/client'
 import { signOut } from '@/lib/supabase/auth'
+import RoleBadge from '@/components/layout/RoleBadge'
 
 const NAV_ITEMS = [
   { href: '/admin',         icon: '◎', label: 'Overview', sub: 'Dashboard' },
   { href: '/admin/cohorts', icon: '⬡', label: 'Cohorts',  sub: 'Manage programs' },
-  { href: '/admin/members', icon: '⬡', label: 'Members',  sub: 'Roster + profiles' },
+  { href: '/admin/users',   icon: '⬡', label: 'Users',    sub: 'All paths · 365 + Seal + Circle' },
+  { href: '/admin/members', icon: '⬡', label: 'Members',  sub: 'Cohort roster + profiles' },
   { href: '/admin/pairs',   icon: '⬡', label: 'Pairs',    sub: 'Accountability map' },
+  { href: '/admin/cards',   icon: '⬡', label: 'Daily cards', sub: 'Edit the 365 deck' },
   { href: '/admin/content', icon: '⬡', label: 'Content',  sub: 'Curriculum + calls' },
   { href: '/admin/comms',   icon: '⬡', label: 'Messages', sub: 'Announce + DM' },
+  { href: '/admin/preview', icon: '⬡', label: 'View as',  sub: 'Preview the user portal' },
   { href: '/admin/revenue', icon: '⬡', label: 'Revenue',  sub: 'Tracking + access' },
+  { href: '/admin/support', icon: '⬡', label: 'Support',  sub: 'Bug reports + help' },
 ]
 
 function HamburgerIcon() {
@@ -32,27 +37,57 @@ function HamburgerIcon() {
   )
 }
 
+function GearIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="8" cy="8" r="2.5" />
+      <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" />
+    </svg>
+  )
+}
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const [adminName, setAdminName] = useState<string>('Coach')
   const [alertCount, setAlertCount] = useState(0)
+  const [supportCount, setSupportCount] = useState(0)
   // Desktop: collapse the sidebar to icon-only
   const [sidebarOpen, setSidebarOpen] = useState(true)
   // Mobile: show/hide the slide-in drawer
   const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
-    supabaseClient.auth.getUser().then(({ data }) => {
-      if (data.user?.email) setAdminName(data.user.email.split('@')[0])
-    })
+    let cancelled = false
+    ;(async () => {
+      const { data: { user } } = await supabaseClient.auth.getUser()
+      if (!user || cancelled) return
+      // Prefer the saved name from public.users; fall back to email prefix
+      // so empty saved names don't blank the avatar / label.
+      const { data: profile } = await supabaseClient
+        .from('users')
+        .select('name')
+        .eq('id', user.id)
+        .maybeSingle()
+      if (cancelled) return
+      const fallback = user.email?.split('@')[0] ?? 'Coach'
+      setAdminName(profile?.name?.trim() || fallback)
+    })()
 
     supabaseClient
       .from('circle_engagement_alerts')
       .select('*', { count: 'exact', head: true })
       .eq('is_resolved', false)
-      .then(({ count }) => setAlertCount(count ?? 0))
-  }, [])
+      .then(({ count }) => { if (!cancelled) setAlertCount(count ?? 0) })
+
+    supabaseClient
+      .from('support_messages')
+      .select('*', { count: 'exact', head: true })
+      .neq('status', 'resolved')
+      .then(({ count }) => { if (!cancelled) setSupportCount(count ?? 0) })
+
+    return () => { cancelled = true }
+  }, [pathname])
 
   // Close the mobile drawer on route change so a tap on a nav link
   // dismisses the overlay before the page swap.
@@ -175,7 +210,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             const isActive = item.href === '/admin'
               ? pathname === '/admin'
               : pathname?.startsWith(item.href)
-            const showAlertBadge = item.href === '/admin/members'
+            const showAlertBadge   = item.href === '/admin/members'
+            const showSupportBadge = item.href === '/admin/support'
 
             return (
               <Link
@@ -221,6 +257,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                           {alertCount}
                         </span>
                       )}
+                      {showSupportBadge && supportCount > 0 && (
+                        <span style={{
+                          fontSize: '10px', fontWeight: 700,
+                          background: 'var(--gold-pale)', color: 'var(--gold)',
+                          padding: '1px 6px', borderRadius: '10px',
+                          border: '1px solid var(--gold-line)',
+                        }}>
+                          {supportCount}
+                        </span>
+                      )}
                     </div>
                     <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '1px' }}>
                       {item.sub}
@@ -232,9 +278,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        {/* Bottom — admin user + member-app shortcut + sign out */}
+        {/* Bottom — settings + admin user + member-app shortcut + sign out */}
         {sidebarOpen && (
           <div style={{ padding: '12px 16px 14px', borderTop: '1px solid var(--line)' }}>
+            <Link
+              href="/admin/settings"
+              onClick={() => setMobileOpen(false)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '8px 4px', marginBottom: '10px',
+                fontSize: '12px', color: pathname === '/admin/settings' ? 'var(--gold)' : 'var(--text-soft)',
+                fontFamily: 'var(--font-body)', fontWeight: pathname === '/admin/settings' ? 600 : 500,
+                textDecoration: 'none',
+              }}
+            >
+              <GearIcon />
+              Settings
+            </Link>
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
               <div style={{
                 width: '28px', height: '28px', borderRadius: '50%',
@@ -244,9 +305,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               }}>
                 {adminName.slice(0, 2).toUpperCase()}
               </div>
-              <div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink)' }}>{adminName}</div>
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Owner</div>
+                <RoleBadge role="admin" />
               </div>
             </div>
             <Link
@@ -258,7 +319,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 border: '1px solid rgba(31,92,58,0.2)',
               }}
             >
-              Open Circle dashboard →
+              Open user portal →
             </Link>
             <button
               onClick={async () => { await signOut(); router.push('/') }}

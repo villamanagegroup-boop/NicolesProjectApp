@@ -3,6 +3,7 @@ import React from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import AdminPortalLink from './AdminPortalLink'
+import ReportBugButton from '@/components/support/ReportBugButton'
 
 // Deep purple accent — stays consistent throughout this sidebar
 const PURPLE = '#3D3080'
@@ -185,8 +186,8 @@ export default function SidebarWork() {
 
       {/* Bottom — shared */}
       <div style={{ padding: '12px 20px 24px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {/* Admin shortcut — only renders when the user is in admin_roles */}
-        <AdminPortalLink />
+        {/* Divider — separates account/admin block from nav above */}
+        <div style={{ height: 1, background: 'var(--line)' }} />
 
         {/* Settings */}
         <Link
@@ -209,6 +210,9 @@ export default function SidebarWork() {
           Settings
         </Link>
 
+        {/* Admin shortcut — only renders when the user is in admin_roles */}
+        <AdminPortalLink />
+
         {/* Sign Out */}
         <button
           onClick={() => router.push('/')}
@@ -219,14 +223,18 @@ export default function SidebarWork() {
             fontSize: '12px',
             color: 'var(--text-muted)',
             fontFamily: 'var(--font-body)',
-            padding: '0',
-            textAlign: 'left',
+            padding: '4px',
+            width: '100%',
+            textAlign: 'center',
           }}
           onMouseOver={(e) => { e.currentTarget.style.color = 'var(--red)' }}
           onMouseOut={(e) => { e.currentTarget.style.color = 'var(--text-muted)' }}
         >
           Sign Out
         </button>
+
+        {/* Report a bug — anchored at the very bottom of every sidebar */}
+        <ReportBugButton />
       </div>
     </aside>
   )

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 import { signOut } from '@/lib/supabase/auth'
 import AdminPortalLink from './AdminPortalLink'
+import ReportBugButton from '@/components/support/ReportBugButton'
 
 // Deep green accent — stays consistent throughout this sidebar
 const GREEN = '#1A5230'
@@ -207,9 +208,6 @@ export default function Sidebar() {
 
       {/* Bottom section */}
       <div style={{ padding: '0 20px 24px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {/* Admin shortcut — only renders when the user is in admin_roles */}
-        <AdminPortalLink />
-
         {/* Vault */}
         {vaultUnlocked ? (
           <Link
@@ -236,6 +234,9 @@ export default function Sidebar() {
           </div>
         )}
 
+        {/* Divider — separates account/admin block from feature links above */}
+        <div style={{ height: 1, background: 'var(--line)' }} />
+
         {/* Settings */}
         <Link
           href="/settings"
@@ -257,6 +258,9 @@ export default function Sidebar() {
           Settings
         </Link>
 
+        {/* Admin shortcut — only renders when the user is in admin_roles */}
+        <AdminPortalLink />
+
         {/* Sign Out */}
         <button
           onClick={async () => { await signOut(); router.push('/') }}
@@ -267,14 +271,18 @@ export default function Sidebar() {
             fontSize: '12px',
             color: 'var(--text-muted)',
             fontFamily: 'var(--font-body)',
-            padding: '0',
-            textAlign: 'left',
+            padding: '4px',
+            width: '100%',
+            textAlign: 'center',
           }}
           onMouseOver={(e) => { e.currentTarget.style.color = 'var(--red)' }}
           onMouseOut={(e) => { e.currentTarget.style.color = 'var(--text-muted)' }}
         >
           Sign Out
         </button>
+
+        {/* Report a bug — anchored at the very bottom of every sidebar */}
+        <ReportBugButton />
       </div>
     </aside>
   )

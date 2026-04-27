@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 import { signOut } from '@/lib/supabase/auth'
+import AdminPortalLink from './AdminPortalLink'
+import ReportBugButton from '@/components/support/ReportBugButton'
 
 const GREEN  = '#1A5230'
 const GREEN_PALE = 'rgba(26,82,48,0.07)'
@@ -264,6 +266,9 @@ export default function MobileDrawer({ open, onClose }: Props) {
             )
           )}
 
+          {/* Divider — separates account/admin block from nav above */}
+          <div style={{ height: 1, background: 'var(--line)' }} />
+
           {/* Settings */}
           <Link
             href="/settings"
@@ -274,13 +279,19 @@ export default function MobileDrawer({ open, onClose }: Props) {
             Settings
           </Link>
 
+          {/* Admin shortcut — only renders when the user is in admin_roles */}
+          <AdminPortalLink onNavigate={onClose} />
+
           {/* Sign Out */}
           <button
             onClick={async () => { onClose(); await signOut(); router.push('/') }}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', padding: '0', textAlign: 'left' }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', padding: '4px', width: '100%', textAlign: 'center' }}
           >
             Sign Out
           </button>
+
+          {/* Report a bug — anchored at the very bottom of every sidebar */}
+          <ReportBugButton onOpenChange={(o) => { if (o) onClose() }} />
         </div>
       </div>
     </>

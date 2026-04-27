@@ -4,6 +4,7 @@
 'use client'
 
 import { Suspense, useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { supabaseClient } from '@/lib/supabase/client'
 import {
@@ -402,10 +403,24 @@ function MembersInner() {
                   background: ALERT_COLORS[selectedMember.alert_level].bg,
                   color: ALERT_COLORS[selectedMember.alert_level].text,
                   fontSize: '12px', fontWeight: 600,
+                  marginBottom: '10px',
                 }}>
                   {selectedMember.days_inactive} days inactive — needs attention
                 </div>
               )}
+
+              <Link
+                href={`/admin/members/${selectedMember.id}`}
+                style={{
+                  display: 'block', textAlign: 'center',
+                  padding: '8px 12px', borderRadius: '8px',
+                  background: 'var(--gold)', color: '#fff',
+                  fontSize: '12px', fontWeight: 600,
+                  textDecoration: 'none', fontFamily: 'inherit',
+                }}
+              >
+                Open full profile →
+              </Link>
             </div>
 
             <div style={S.drawerTabs}>

@@ -320,7 +320,10 @@ export async function fetchAdminMembers(cohortId: string, currentWeek: number): 
       msgsRes.data?.[0]?.created_at,
     ].filter(Boolean) as string[]
 
-    const lastActive = dates.length > 0 ? dates.sort().reverse()[0] : null
+    // Fall back to joined_at when there's no recorded activity yet — a member
+    // who signed up today shouldn't read as 999 days inactive (which trips
+    // the red-alert threshold). For new members this gives 0–1 days.
+    const lastActive = dates.length > 0 ? dates.sort().reverse()[0] : (m.joined_at as string | null)
     const inactive = daysInactive(lastActive)
     const alert = alertFromDays(inactive)
 
@@ -535,6 +538,38 @@ export async function fetchContentSchedule(cohortId: string | null): Promise<Con
 
 export async function updateContent(id: string, updates: Partial<ContentRow>) {
   return supabase.from('circle_weekly_content').update(updates).eq('id', id)
+}
+
+export async function insertContent(input: {
+  cohort_id: string | null
+  week_number: number
+  archetype: ContentRow['archetype']
+  month_name: ContentRow['month_name']
+  week_title: string
+  teaching?: string | null
+  journal_prompt?: string | null
+  weekly_action?: string | null
+  monday_prompt?: string | null
+  wednesday_prompt?: string | null
+  friday_prompt?: string | null
+  video_url?: string | null
+  live_call_week?: boolean
+}) {
+  return supabase.from('circle_weekly_content').insert({
+    cohort_id:        input.cohort_id,
+    week_number:      input.week_number,
+    archetype:        input.archetype,
+    month_name:       input.month_name,
+    week_title:       input.week_title,
+    teaching:         input.teaching        ?? null,
+    journal_prompt:   input.journal_prompt  ?? null,
+    weekly_action:    input.weekly_action   ?? null,
+    monday_prompt:    input.monday_prompt   ?? null,
+    wednesday_prompt: input.wednesday_prompt?? null,
+    friday_prompt:    input.friday_prompt   ?? null,
+    video_url:        input.video_url       ?? null,
+    live_call_week:   input.live_call_week  ?? false,
+  }).select().single()
 }
 
 export async function fetchLiveCalls(cohortId: string): Promise<AdminLiveCall[]> {
@@ -848,6 +883,341 @@ export async function uploadCircleFile(file: File): Promise<string | null> {
 
   const { data } = supabase.storage.from('circle-uploads').getPublicUrl(path)
   return data.publicUrl
+}
+
+// ─── Daily cards editor (admin) ───────────────────────────────────────────────
+
+export interface DailyCardRow {
+  id: string
+  day_number: number
+  theme: string
+  title: string
+  body_text: string | null
+  affirmation: string | null
+  journal_prompt: string | null
+  image_url: string | null
+  card_color: string | null
+  emoji: string | null
+}
+
+export async function fetchDailyCards(): Promise<DailyCardRow[]> {
+  const { data } = await supabase
+    .from('daily_cards')
+    .select('*')
+    .order('day_number')
+  return (data ?? []) as DailyCardRow[]
+}
+
+export async function updateDailyCard(id: string, updates: Partial<DailyCardRow>) {
+  return supabase.from('daily_cards').update(updates).eq('id', id)
+}
+
+// ─── All-users roster (across all programs) ───────────────────────────────────
+
+export interface AdminUserRow {
+  id: string
+  name: string | null
+  email: string | null
+  selected_path: 'A' | 'B' | 'C' | null
+  quiz_result: string | null
+  has_paid: boolean
+  is_admin: boolean
+  signup_date: string | null
+  cards_addon_started_at: string | null
+  member_id: string | null   // populated when the user has a circle_members row
+  cohort_id: string | null
+  archetype: string | null
+  last_active: string | null
+}
+
+export async function fetchAllUsersAdmin(): Promise<AdminUserRow[]> {
+  const { data: users } = await supabase
+    .from('users')
+    .select('id, name, email, selected_path, quiz_result, has_paid, is_admin, signup_date, cards_addon_started_at')
+    .order('signup_date', { ascending: false })
+  if (!users) return []
+
+  const userIds = users.map(u => u.id)
+  const [{ data: members }, { data: progress }, { data: posts }, { data: msgs }] = await Promise.all([
+    supabase.from('circle_members')
+      .select('id, user_id, cohort_id, archetype')
+      .in('user_id', userIds),
+    supabase.from('journal_entries')
+      .select('user_id, created_at')
+      .in('user_id', userIds)
+      .order('created_at', { ascending: false }),
+    supabase.from('wins')
+      .select('user_id, created_at')
+      .in('user_id', userIds)
+      .order('created_at', { ascending: false }),
+    supabase.from('daily_check_ins')
+      .select('user_id, check_in_date')
+      .in('user_id', userIds)
+      .order('check_in_date', { ascending: false }),
+  ])
+
+  const memberByUser = new Map<string, { id: string; cohort_id: string; archetype: string }>()
+  for (const m of (members ?? []) as { id: string; user_id: string; cohort_id: string; archetype: string }[]) {
+    memberByUser.set(m.user_id, m)
+  }
+  // First-seen wins for each kind of activity = newest, since arrays are sorted desc
+  const lastByUser = new Map<string, string>()
+  function record(rows: { user_id: string; created_at?: string; check_in_date?: string }[] | null | undefined) {
+    if (!rows) return
+    for (const r of rows) {
+      const ts = r.created_at ?? r.check_in_date ?? null
+      if (!ts) continue
+      const cur = lastByUser.get(r.user_id)
+      if (!cur || cur < ts) lastByUser.set(r.user_id, ts)
+    }
+  }
+  record(progress as { user_id: string; created_at: string }[] | null)
+  record(posts    as { user_id: string; created_at: string }[] | null)
+  record(msgs     as { user_id: string; check_in_date: string }[] | null)
+
+  return users.map(u => {
+    const m = memberByUser.get(u.id)
+    return {
+      id: u.id,
+      name: u.name as string | null,
+      email: u.email as string | null,
+      selected_path: u.selected_path as 'A' | 'B' | 'C' | null,
+      quiz_result: u.quiz_result as string | null,
+      has_paid: !!u.has_paid,
+      is_admin: !!u.is_admin,
+      signup_date: u.signup_date as string | null,
+      cards_addon_started_at: u.cards_addon_started_at as string | null,
+      member_id: m?.id ?? null,
+      cohort_id: m?.cohort_id ?? null,
+      archetype: m?.archetype ?? null,
+      last_active: lastByUser.get(u.id) ?? u.signup_date ?? null,
+    }
+  })
+}
+
+// ─── Seal-the-Leak reflections (read on admin profile, write from portal) ────
+
+export interface ReflectionRow {
+  id: string
+  user_id: string
+  route_id: string
+  day_number: number
+  item_index: number
+  content: string
+  updated_at: string
+  created_at: string
+}
+
+export async function fetchUserReflections(userId: string): Promise<ReflectionRow[]> {
+  const { data } = await supabase
+    .from('stl_reflections')
+    .select('*')
+    .eq('user_id', userId)
+    .order('day_number')
+    .order('item_index')
+  return (data ?? []) as ReflectionRow[]
+}
+
+export async function upsertReflection(input: {
+  user_id: string
+  route_id: string
+  day_number: number
+  item_index: number
+  content: string
+}) {
+  return supabase.from('stl_reflections').upsert({
+    user_id: input.user_id,
+    route_id: input.route_id,
+    day_number: input.day_number,
+    item_index: input.item_index,
+    content: input.content,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'user_id,route_id,day_number,item_index' })
+}
+
+// ─── Admin user / member edits ────────────────────────────────────────────────
+
+/** Update editable fields on public.users for any user. Admin-only via RLS. */
+export async function adminUpdateUser(userId: string, updates: {
+  name?: string | null
+  email?: string | null
+  avatar_url?: string | null
+  has_paid?: boolean
+  is_admin?: boolean
+  onboarding_complete?: boolean
+  selected_path?: 'A' | 'B' | null
+}) {
+  return supabase.from('users').update(updates).eq('id', userId)
+}
+
+/** Update editable fields on circle_members for a given member row. */
+export async function adminUpdateMember(memberId: string, updates: {
+  archetype?: 'door' | 'throne' | 'engine' | 'push'
+  enneagram_type?: string | null
+  attachment_style?: 'secure' | 'anxious' | 'avoidant' | 'disorganized' | null
+  feedback_pref?: 'straight' | 'context' | 'written' | 'example' | null
+  goal_90day?: string | null
+}) {
+  return supabase.from('circle_members').update(updates).eq('id', memberId)
+}
+
+// ─── Support / bug reports ────────────────────────────────────────────────────
+
+export interface SupportMessage {
+  id: string
+  user_id: string
+  body: string
+  page_path: string | null
+  user_agent: string | null
+  status: 'open' | 'in_progress' | 'resolved'
+  created_at: string
+  resolved_at: string | null
+  user_name: string | null
+  user_email: string | null
+}
+
+export async function submitSupportMessage(input: {
+  body: string
+  page_path?: string | null
+  user_agent?: string | null
+}) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: { message: 'Not signed in.' } as const }
+  return supabase.from('support_messages').insert({
+    user_id:    user.id,
+    body:       input.body,
+    page_path:  input.page_path  ?? null,
+    user_agent: input.user_agent ?? null,
+  })
+}
+
+export async function fetchSupportMessages(filter?: {
+  status?: SupportMessage['status']
+}): Promise<SupportMessage[]> {
+  // support_messages.user_id references auth.users(id), which PostgREST
+  // doesn't expose for embedded selects — so we can't `select(user:user_id…)`.
+  // Pull the rows first, then look up names/emails from public.users in a
+  // second query and merge in JS. The handle_new_user trigger guarantees a
+  // public.users row for every authed account, so this is reliable.
+  let q = supabase
+    .from('support_messages')
+    .select('id, user_id, body, page_path, user_agent, status, created_at, resolved_at')
+    .order('created_at', { ascending: false })
+  if (filter?.status) q = q.eq('status', filter.status)
+  const { data: rowsRaw, error } = await q
+  if (error) {
+    // Most common cause here: the 010 migration hasn't been applied.
+    if (typeof console !== 'undefined') console.warn('fetchSupportMessages:', error.message)
+    return []
+  }
+  const rows = (rowsRaw ?? []) as Array<{
+    id: string; user_id: string; body: string;
+    page_path: string | null; user_agent: string | null;
+    status: SupportMessage['status'];
+    created_at: string; resolved_at: string | null;
+  }>
+
+  if (rows.length === 0) return []
+
+  const userIds = Array.from(new Set(rows.map(r => r.user_id)))
+  const { data: profilesRaw } = await supabase
+    .from('users')
+    .select('id, name, email')
+    .in('id', userIds)
+  const profiles = (profilesRaw ?? []) as Array<{ id: string; name: string | null; email: string | null }>
+  const profileById = new Map(profiles.map(p => [p.id, p] as const))
+
+  return rows.map(r => {
+    const p = profileById.get(r.user_id)
+    return {
+      id: r.id,
+      user_id: r.user_id,
+      body: r.body,
+      page_path: r.page_path,
+      user_agent: r.user_agent,
+      status: r.status,
+      created_at: r.created_at,
+      resolved_at: r.resolved_at,
+      user_name:  p?.name  ?? null,
+      user_email: p?.email ?? null,
+    }
+  })
+}
+
+export async function fetchOpenSupportCount(): Promise<number> {
+  const { count } = await supabase
+    .from('support_messages')
+    .select('*', { count: 'exact', head: true })
+    .neq('status', 'resolved')
+  return count ?? 0
+}
+
+export async function updateSupportMessageStatus(id: string, status: SupportMessage['status']) {
+  const { data: { user } } = await supabase.auth.getUser()
+  return supabase.from('support_messages').update({
+    status,
+    resolved_at: status === 'resolved' ? new Date().toISOString() : null,
+    resolved_by: status === 'resolved' ? user?.id ?? null : null,
+  }).eq('id', id)
+}
+
+// ─── Admin media slots (curated media in fixed user-portal positions) ────────
+
+export type MediaSlotProgram = 'cards' | 'work' | 'circle'
+export type MediaSlotType    = 'video' | 'audio' | 'image'
+
+export interface MediaSlot {
+  id: string
+  slot_key: string
+  program: MediaSlotProgram
+  media_type: MediaSlotType
+  media_url: string
+  title: string | null
+  caption: string | null
+  updated_at: string
+}
+
+export async function fetchMediaSlots(slotKeys: string[]): Promise<MediaSlot[]> {
+  if (slotKeys.length === 0) return []
+  const { data } = await supabase
+    .from('admin_media_slots')
+    .select('id, slot_key, program, media_type, media_url, title, caption, updated_at')
+    .in('slot_key', slotKeys)
+  return (data ?? []) as MediaSlot[]
+}
+
+export async function fetchMediaSlot(slotKey: string): Promise<MediaSlot | null> {
+  const { data } = await supabase
+    .from('admin_media_slots')
+    .select('id, slot_key, program, media_type, media_url, title, caption, updated_at')
+    .eq('slot_key', slotKey)
+    .maybeSingle()
+  return (data as MediaSlot | null) ?? null
+}
+
+export async function upsertMediaSlot(input: {
+  slot_key: string
+  program: MediaSlotProgram
+  media_type: MediaSlotType
+  media_url: string
+  title?: string | null
+  caption?: string | null
+}) {
+  const { data: { user } } = await supabase.auth.getUser()
+  return supabase.from('admin_media_slots').upsert({
+    slot_key:   input.slot_key,
+    program:    input.program,
+    media_type: input.media_type,
+    media_url:  input.media_url,
+    title:      input.title ?? null,
+    caption:    input.caption ?? null,
+    created_by: user?.id ?? null,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'slot_key' })
+}
+
+export async function deleteMediaSlot(slotKey: string) {
+  return supabase.from('admin_media_slots').delete().eq('slot_key', slotKey)
 }
 
 // ─── Admin role helpers ───────────────────────────────────────────────────────

@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabaseClient } from '@/lib/supabase/client'
-import { fetchPairMap, fetchRepairRequests, fetchAdminCohorts, fetchUnpairedMembers, pairMembers, fetchPartnerThread, type AdminPairRow, type RepairRequest, type PartnerThreadMessage } from '@/lib/admin/hooks'
+import { fetchPairMap, fetchRepairRequests, fetchAdminCohorts, fetchUnpairedMembers, pairMembers, unpairMember, fetchPartnerThread, type AdminPairRow, type RepairRequest, type PartnerThreadMessage } from '@/lib/admin/hooks'
 
 const ARCHETYPE_COLORS: Record<string, string> = {
   door: 'var(--green)', throne: '#1a1a2e', engine: 'var(--red)', push: '#3d2c0e',
@@ -34,6 +34,65 @@ function PairHealthBadge({ health }: { health: string }) {
 
 type Unpaired = { id: string; name: string | null; archetype: string }
 
+// Inline unpair action: collapsed → "Unpair" link; confirming → Confirm / Cancel.
+// Click handlers stop propagation so the surrounding card's onClick (open thread)
+// doesn't fire when you reach for the action.
+function UnpairAction({
+  pair, confirming, busy, onAsk, onCancel, onConfirm,
+}: {
+  pair: AdminPairRow
+  confirming: boolean
+  busy: boolean
+  onAsk: () => void
+  onCancel: () => void
+  onConfirm: () => void
+}) {
+  const stop = (e: React.MouseEvent) => e.stopPropagation()
+  if (busy) {
+    return <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Unpairing…</span>
+  }
+  if (confirming) {
+    return (
+      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }} onClick={stop}>
+        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Unpair {pair.member_a_name ?? 'A'} & {pair.member_b_name ?? 'B'}?</span>
+        <button
+          onClick={(e) => { stop(e); onConfirm() }}
+          style={{
+            fontSize: '11px', fontWeight: 600, padding: '4px 10px',
+            borderRadius: '6px', border: 'none', cursor: 'pointer',
+            background: 'rgba(139,31,47,.85)', color: '#fff',
+          }}
+        >
+          Confirm
+        </button>
+        <button
+          onClick={(e) => { stop(e); onCancel() }}
+          style={{
+            fontSize: '11px', fontWeight: 500, padding: '4px 10px',
+            borderRadius: '6px', border: '1px solid var(--line)', cursor: 'pointer',
+            background: '#fff', color: 'var(--text-soft)',
+          }}
+        >
+          Cancel
+        </button>
+      </div>
+    )
+  }
+  return (
+    <button
+      onClick={(e) => { stop(e); onAsk() }}
+      style={{
+        fontSize: '11px', fontWeight: 500, padding: '4px 8px',
+        borderRadius: '6px', border: 'none', cursor: 'pointer',
+        background: 'transparent', color: 'var(--red)',
+        fontFamily: 'inherit',
+      }}
+    >
+      × Unpair
+    </button>
+  )
+}
+
 export default function PairsPage() {
   const [cohortId, setCohortId] = useState('')
   const [cohorts, setCohorts] = useState<{ id: string; name: string }[]>([])
@@ -47,6 +106,10 @@ export default function PairsPage() {
   const [pickB, setPickB] = useState<string>('')
   const [pairing, setPairing] = useState(false)
   const [pairError, setPairError] = useState<string | null>(null)
+
+  // Unpair confirmation — keyed by member_a_id so each card has its own state
+  const [unpairingId, setUnpairingId] = useState<string | null>(null)
+  const [confirmUnpair, setConfirmUnpair] = useState<string | null>(null)
 
   // Thread viewer state
   const [openThread, setOpenThread] = useState<{ pair: AdminPairRow; messages: PartnerThreadMessage[] } | null>(null)
@@ -88,6 +151,14 @@ export default function PairsPage() {
       return
     }
     setPickA(''); setPickB('')
+    await refreshAll()
+  }
+
+  async function handleUnpair(memberAId: string) {
+    setUnpairingId(memberAId)
+    await unpairMember(memberAId)
+    setConfirmUnpair(null)
+    setUnpairingId(null)
     await refreshAll()
   }
 
@@ -278,6 +349,14 @@ export default function PairsPage() {
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                     {pair.message_count} msgs · {pair.days_since_message === 999 ? 'never messaged' : `${pair.days_since_message}d silent`}
                   </div>
+                  <UnpairAction
+                    pair={pair}
+                    confirming={confirmUnpair === pair.member_a_id}
+                    busy={unpairingId === pair.member_a_id}
+                    onAsk={() => setConfirmUnpair(pair.member_a_id)}
+                    onCancel={() => setConfirmUnpair(null)}
+                    onConfirm={() => handleUnpair(pair.member_a_id)}
+                  />
                 </div>
               </div>
             </div>
@@ -309,6 +388,14 @@ export default function PairsPage() {
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', minWidth: '80px', textAlign: 'right' }}>
               {pair.message_count} msgs · view thread →
             </div>
+            <UnpairAction
+              pair={pair}
+              confirming={confirmUnpair === pair.member_a_id}
+              busy={unpairingId === pair.member_a_id}
+              onAsk={() => setConfirmUnpair(pair.member_a_id)}
+              onCancel={() => setConfirmUnpair(null)}
+              onConfirm={() => handleUnpair(pair.member_a_id)}
+            />
           </div>
         ))}
 
