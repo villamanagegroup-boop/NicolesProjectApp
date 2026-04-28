@@ -1,6 +1,7 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 import { programRoutes, archetypeToRoute, PHASE_DAYS, PHASE_ORDER } from '@/data/sealTheLeakProgram'
 
@@ -21,10 +22,22 @@ function getFirstReflectionSnippet(routeId: string, dayNum: number, itemCount: n
 }
 
 export default function ProgramOverviewPage() {
-  const { user, dayNumber } = useApp()
+  return (
+    <Suspense fallback={null}>
+      <ProgramOverviewInner />
+    </Suspense>
+  )
+}
 
-  const routeId     = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
-  const route       = programRoutes[routeId]
+function ProgramOverviewInner() {
+  const { user, dayNumber } = useApp()
+  const searchParams = useSearchParams()
+
+  const ownRouteId = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
+  const paramPath  = searchParams?.get('path') ?? null
+  const routeId    = (paramPath && programRoutes[paramPath]) ? paramPath : ownRouteId
+  const route      = programRoutes[routeId]
+  const isOwnPath  = routeId === ownRouteId
   const currentDay    = Math.min(dayNumber, 7)
   const completedDays = currentDay - 1
   const isFirstDay    = currentDay === 1
@@ -40,8 +53,63 @@ export default function ProgramOverviewPage() {
     setSnippets(result)
   }, [routeId, route.days])
 
+  // Build day-link hrefs that preserve the current path query.
+  const dayHref = (d: number) =>
+    isOwnPath ? `/program/today?day=${d}` : `/program/today?path=${routeId}&day=${d}`
+
   return (
     <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
+
+      {/* Path selector — 4 archetype tracks */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap',
+        marginBottom: '20px',
+      }}>
+        <span style={{
+          fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em',
+          textTransform: 'uppercase', color: 'var(--text-muted)',
+          fontFamily: 'var(--font-body)', marginRight: '4px',
+        }}>
+          Path
+        </span>
+        {(['door', 'throne', 'engine', 'push'] as const).map(rid => {
+          const r = programRoutes[rid]
+          const active = rid === routeId
+          const own = rid === ownRouteId
+          return (
+            <Link
+              key={rid}
+              href={rid === ownRouteId ? '/program' : `/program?path=${rid}`}
+              style={{
+                padding: '6px 13px', borderRadius: '999px',
+                border: active ? `1.5px solid ${r.color}` : '1px solid var(--line)',
+                background: active ? r.color : 'white',
+                color: active ? 'white' : 'var(--text-soft)',
+                fontSize: '11px', fontWeight: 500,
+                fontFamily: 'var(--font-body)', textDecoration: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {r.name}{own && !active ? ' · yours' : ''}
+            </Link>
+          )
+        })}
+      </div>
+
+      {!isOwnPath && (
+        <div style={{
+          background: `${route.color}10`,
+          border: `1px solid ${route.color}30`,
+          borderRadius: '8px',
+          padding: '10px 14px',
+          marginBottom: '20px',
+          fontSize: '12px',
+          color: 'var(--text-soft)',
+          fontFamily: 'var(--font-body)',
+        }}>
+          You&apos;re previewing <strong style={{ color: route.color }}>{route.name}</strong>. Reflections won&apos;t save here. <Link href="/program" style={{ color: route.color, textDecoration: 'underline' }}>Return to your path</Link>.
+        </div>
+      )}
 
       {/* Two-column grid */}
       <div className="two-col-grid" style={{
@@ -105,9 +173,9 @@ export default function ProgramOverviewPage() {
             </p>
           </div>
 
-          {/* CTA to today */}
+          {/* CTA to today (or day 1 of preview path) */}
           <Link
-            href="/program/today"
+            href={isOwnPath ? '/program/today' : `/program/today?path=${routeId}&day=1`}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -124,10 +192,13 @@ export default function ProgramOverviewPage() {
           >
             <div>
               <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.7)', fontFamily: 'var(--font-body)', margin: '0 0 4px' }}>
-                Continue now
+                {isOwnPath ? 'Continue now' : 'Preview Day 1'}
               </p>
               <p style={{ fontSize: '15px', fontWeight: 500, fontFamily: 'var(--font-body)', margin: 0 }}>
-                Day {currentDay} — {route.days[currentDay - 1]?.title}
+                {isOwnPath
+                  ? <>Day {currentDay} — {route.days[currentDay - 1]?.title}</>
+                  : <>Day 1 — {route.days[0]?.title}</>
+                }
               </p>
             </div>
             <span style={{ fontSize: '20px' }}>→</span>
@@ -224,8 +295,8 @@ export default function ProgramOverviewPage() {
         {/* ── RIGHT: Day journey ── */}
         <div>
 
-          {/* Day 1 — preview all days */}
-          {isFirstDay && (
+          {/* Day 1 — or any non-own preview path: clickable list of all 7 days */}
+          {(isFirstDay || !isOwnPath) && (
             <div>
               <div style={{ marginBottom: '16px' }}>
                 <h2 style={{
@@ -235,20 +306,24 @@ export default function ProgramOverviewPage() {
                   color: 'var(--ink)',
                   margin: '0 0 4px',
                 }}>
-                  Your 7-day journey
+                  {isOwnPath ? 'Your 7-day journey' : `Browse ${route.name}`}
                 </h2>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: 0, lineHeight: 1.6 }}>
-                  Each day builds on the last. Here&apos;s where you&apos;re headed.
+                  {isOwnPath
+                    ? <>Each day builds on the last. Here&apos;s where you&apos;re headed.</>
+                    : <>Tap any day to read the full session.</>
+                  }
                 </p>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 {route.days.map((day, i) => {
                   const phaseColor = PHASE_COLOR[day.phase] ?? 'var(--ink)'
-                  const isToday = day.day === 1
+                  const isToday = isOwnPath && day.day === 1
                   return (
-                    <div
+                    <Link
                       key={day.day}
+                      href={dayHref(day.day)}
                       style={{
                         display: 'flex',
                         alignItems: 'flex-start',
@@ -257,7 +332,11 @@ export default function ProgramOverviewPage() {
                         borderRadius: '8px',
                         background: isToday ? `${route.color}08` : 'transparent',
                         border: isToday ? `1px solid ${route.color}25` : '1px solid transparent',
+                        textDecoration: 'none',
+                        transition: 'background 0.15s, border-color 0.15s',
                       }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = `${route.color}06` }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = isToday ? `${route.color}08` : 'transparent' }}
                     >
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
                         <div style={{
@@ -299,15 +378,15 @@ export default function ProgramOverviewPage() {
                           {day.phase}
                         </span>
                       </div>
-                    </div>
+                    </Link>
                   )
                 })}
               </div>
             </div>
           )}
 
-          {/* Day 2+: Where you've been */}
-          {!isFirstDay && completedData.length > 0 && (
+          {/* Day 2+: Where you've been (own path only — preview paths use block above) */}
+          {isOwnPath && !isFirstDay && completedData.length > 0 && (
             <div>
               <div style={{ marginBottom: '16px' }}>
                 <h2 style={{
@@ -335,7 +414,7 @@ export default function ProgramOverviewPage() {
 
                   return (
                     <React.Fragment key={day.day}>
-                      <Link href={`/program/today?day=${day.day}`} style={{ textDecoration: 'none' }}>
+                      <Link href={dayHref(day.day)} style={{ textDecoration: 'none' }}>
                         <div
                           style={{
                             display: 'flex',
@@ -444,8 +523,9 @@ export default function ProgramOverviewPage() {
                       const phaseColor = PHASE_COLOR[day.phase] ?? 'var(--ink)'
                       const isToday = day.day === currentDay
                       return (
-                        <div
+                        <Link
                           key={day.day}
+                          href={dayHref(day.day)}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -454,7 +534,10 @@ export default function ProgramOverviewPage() {
                             borderRadius: '8px',
                             background: isToday ? `${route.color}08` : 'transparent',
                             opacity: isToday ? 1 : 0.7,
+                            textDecoration: 'none',
                           }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = '1'; (e.currentTarget as HTMLAnchorElement).style.background = `${route.color}06` }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = isToday ? '1' : '0.7'; (e.currentTarget as HTMLAnchorElement).style.background = isToday ? `${route.color}08` : 'transparent' }}
                         >
                           <div style={{
                             width: 24, height: 24,
@@ -480,7 +563,7 @@ export default function ProgramOverviewPage() {
                           {isToday && (
                             <span style={{ fontSize: '10px', color: route.color, fontFamily: 'var(--font-body)', fontWeight: 500 }}>← today</span>
                           )}
-                        </div>
+                        </Link>
                       )
                     })}
                   </div>

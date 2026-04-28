@@ -21,6 +21,10 @@ import { fetchMediaSlot, type MediaSlot as MediaSlotRow, type MediaSlotType } fr
 
 interface Props {
   slotKey: string
+  /** If `slotKey` returns nothing, try this key instead. Used to keep legacy
+   *  `stl_dayN_opening` uploads visible on per-archetype slots until the admin
+   *  uploads new ones. */
+  fallbackSlotKey?: string
   /** Default media type — controls the aspect ratio of the placeholder
    *  shown before any real media is uploaded. */
   defaultType: MediaSlotType
@@ -36,20 +40,22 @@ const ASPECT: Record<MediaSlotType, string> = {
   image: '1 / 1',
 }
 
-export default function MediaSlot({ slotKey, defaultType, accent, fallbackCaption }: Props) {
+export default function MediaSlot({ slotKey, fallbackSlotKey, defaultType, accent, fallbackCaption }: Props) {
   const [slot, setSlot] = useState<MediaSlotRow | null>(null)
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     let cancelled = false
     setLoaded(false)
-    fetchMediaSlot(slotKey).then(s => {
+    ;(async () => {
+      let s = await fetchMediaSlot(slotKey)
+      if (!s && fallbackSlotKey) s = await fetchMediaSlot(fallbackSlotKey)
       if (cancelled) return
       setSlot(s)
       setLoaded(true)
-    })
+    })()
     return () => { cancelled = true }
-  }, [slotKey])
+  }, [slotKey, fallbackSlotKey])
 
   const type = slot?.media_type ?? defaultType
   const aspect = ASPECT[type]

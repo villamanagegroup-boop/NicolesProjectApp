@@ -353,8 +353,9 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        {/* 5-column grid */}
+        {/* 5-column grid (collapses to 3-then-2 on small screens via globals.css) */}
         <div
+          className="cards-row-5"
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(5, 1fr)',

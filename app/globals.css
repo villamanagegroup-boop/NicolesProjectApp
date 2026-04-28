@@ -115,6 +115,10 @@ html, body {
   .four-col-grid {
     grid-template-columns: 1fr 1fr !important;
   }
+  /* Dashboard "recent cards" grid: collapse 5-up to 3-up on tablet, 2-up on phone */
+  .cards-row-5 {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
   .stats-row {
     flex-direction: column !important;
   }
@@ -174,6 +178,13 @@ html, body {
   /* Mobile drawer never shows on desktop */
   .mobile-drawer-overlay {
     display: none !important;
+  }
+}
+
+/* Narrower phones: 2-up for the dashboard cards row */
+@media (max-width: 480px) {
+  .cards-row-5 {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 }
 

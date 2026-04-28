@@ -12,10 +12,23 @@ export default function AdminCardsPage() {
   const [cards, setCards] = useState<DailyCardRow[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [jumpDay, setJumpDay] = useState<number | null>(null) // null = all days; number = single day view
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draft, setDraft] = useState<Partial<DailyCardRow>>({})
   const [savingId, setSavingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  function jumpTo(day: number) {
+    if (!Number.isFinite(day) || day < 1 || day > 365) return
+    setJumpDay(day)
+    setSearch('')
+    // Auto-open the matching card for editing.
+    const card = cards.find(c => c.day_number === day)
+    if (card) {
+      setEditingId(card.id)
+      setDraft({ ...card })
+    }
+  }
 
   async function refresh() {
     setLoading(true)
@@ -57,7 +70,9 @@ export default function AdminCardsPage() {
     await refresh()
   }
 
-  const filtered = search.trim()
+  const filtered = jumpDay
+    ? cards.filter(c => c.day_number === jumpDay)
+    : search.trim()
     ? cards.filter(c => {
         const q = search.toLowerCase()
         return (
@@ -88,17 +103,66 @@ export default function AdminCardsPage() {
 
   return (
     <div style={{ color: 'var(--ink)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={S.h1}>Daily cards — 365 deck</h1>
-          <p style={S.sub}>{cards.length} cards on file. Click a row to edit.</p>
+          <p style={S.sub}>{cards.length} cards on file. Jump to a day, or search to filter.</p>
         </div>
         <input
           placeholder="Search by title, theme, or day…"
           value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{ ...S.input, width: 280 }}
+          onChange={e => { setSearch(e.target.value); if (jumpDay) setJumpDay(null) }}
+          style={{ ...S.input, width: 280, maxWidth: '100%' }}
         />
+      </div>
+
+      {/* Day-on-demand jump bar */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18,
+        padding: '10px 14px', background: '#fff', border: '1px solid var(--line)',
+        borderRadius: 10, flexWrap: 'wrap',
+      }}>
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+          Jump to day
+        </span>
+        <button
+          onClick={() => jumpTo((jumpDay ?? 1) - 1)}
+          disabled={!jumpDay || jumpDay <= 1}
+          style={{ ...S.btn('ghost'), opacity: !jumpDay || jumpDay <= 1 ? 0.4 : 1 }}
+          aria-label="Previous day"
+        >
+          ←
+        </button>
+        <input
+          type="number"
+          min={1}
+          max={365}
+          value={jumpDay ?? ''}
+          placeholder="1–365"
+          onChange={e => {
+            const v = e.target.value
+            if (v === '') { setJumpDay(null); return }
+            const n = Number(v)
+            if (Number.isFinite(n) && n >= 1 && n <= 365) jumpTo(n)
+          }}
+          style={{ ...S.input, width: 90, textAlign: 'center' as const }}
+        />
+        <button
+          onClick={() => jumpTo((jumpDay ?? 0) + 1)}
+          disabled={!!jumpDay && jumpDay >= 365}
+          style={{ ...S.btn('ghost'), opacity: !!jumpDay && jumpDay >= 365 ? 0.4 : 1 }}
+          aria-label="Next day"
+        >
+          →
+        </button>
+        {jumpDay && (
+          <button onClick={() => { setJumpDay(null); cancel() }} style={S.btn('ghost')}>
+            Show all {cards.length}
+          </button>
+        )}
+        <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>
+          {jumpDay ? `Viewing day ${jumpDay}` : `${filtered.length} of ${cards.length} shown`}
+        </span>
       </div>
 
       {loading ? (

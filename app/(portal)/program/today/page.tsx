@@ -37,6 +37,8 @@ function PromptItem({
   color: string
   readOnly: boolean
 }) {
+  // When readOnly is true, disable input + hide save button. Used for previewing
+  // a non-owned archetype path or a future day.
   const key = storageKey(routeId, dayNum, index)
   const [value, setValue] = useState(() =>
     typeof window !== 'undefined' ? (localStorage.getItem(key) ?? '') : ''
@@ -103,8 +105,9 @@ function PromptItem({
       <div style={{ position: 'relative' }}>
         <textarea
           value={value}
-          onChange={(e) => handleChange(e.target.value)}
-          placeholder={item}
+          onChange={(e) => !readOnly && handleChange(e.target.value)}
+          placeholder={readOnly ? '' : item}
+          readOnly={readOnly}
           rows={3}
           style={{
             display: 'block', width: '100%', boxSizing: 'border-box',
@@ -121,42 +124,45 @@ function PromptItem({
             e.currentTarget.style.background = value ? `${color}04` : 'var(--paper2)'
           }}
         />
-        <button
-          onClick={handleSave}
-          disabled={!dirty && saved}
-          style={{
-            position: 'absolute',
-            bottom: '10px',
-            right: '10px',
-            background: saved && !dirty ? 'transparent' : color,
-            color: saved && !dirty ? 'var(--text-muted)' : 'white',
-            border: saved && !dirty ? '1px solid var(--line)' : 'none',
-            borderRadius: '6px',
-            padding: '5px 14px',
-            fontSize: '12px',
-            fontWeight: 500,
-            fontFamily: 'var(--font-body)',
-            cursor: dirty ? 'pointer' : 'default',
-            transition: 'all 0.15s ease',
-            letterSpacing: '0.02em',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {saved && !dirty ? '✓ Saved' : 'Save'}
-        </button>
+        {!readOnly && (
+          <button
+            onClick={handleSave}
+            disabled={!dirty && saved}
+            style={{
+              position: 'absolute',
+              bottom: '10px',
+              right: '10px',
+              background: saved && !dirty ? 'transparent' : color,
+              color: saved && !dirty ? 'var(--text-muted)' : 'white',
+              border: saved && !dirty ? '1px solid var(--line)' : 'none',
+              borderRadius: '6px',
+              padding: '5px 14px',
+              fontSize: '12px',
+              fontWeight: 500,
+              fontFamily: 'var(--font-body)',
+              cursor: dirty ? 'pointer' : 'default',
+              transition: 'all 0.15s ease',
+              letterSpacing: '0.02em',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {saved && !dirty ? '✓ Saved' : 'Save'}
+          </button>
+        )}
       </div>
     </div>
   )
 }
 
 function PromptItems({
-  items, instruction, routeId, dayNum, color,
+  items, instruction, routeId, dayNum, color, readOnly = false,
 }: {
   items: string[]
   instruction?: string
   routeId: string
   dayNum: number
   color: string
+  readOnly?: boolean
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -173,7 +179,7 @@ function PromptItems({
           routeId={routeId}
           dayNum={dayNum}
           color={color}
-          readOnly={false}
+          readOnly={readOnly}
         />
       ))}
     </div>
@@ -184,13 +190,20 @@ function TodaysSessionInner() {
   const { user, dayNumber, streakCount } = useApp()
   const searchParams = useSearchParams()
 
-  const routeId = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
-  const route   = programRoutes[routeId]
+  // The user's "own" path (assigned by the quiz).
+  const ownRouteId = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
 
-  const currentDay  = Math.min(dayNumber, 7)
+  // ?path= overrides the assigned path so users can browse all 4 archetype tracks.
+  const paramPath = searchParams?.get('path') ?? null
+  const routeId   = (paramPath && programRoutes[paramPath]) ? paramPath : ownRouteId
+  const route     = programRoutes[routeId]
+  const isOwnPath = routeId === ownRouteId
 
+  const currentDay = Math.min(dayNumber, 7)
+
+  // Allow any day 1-7. Future days and other-path days are read-only "preview".
   const paramDay   = searchParams ? Number(searchParams.get('day')) : 0
-  const initialDay = paramDay >= 1 && paramDay <= currentDay ? paramDay : currentDay
+  const initialDay = paramDay >= 1 && paramDay <= 7 ? paramDay : currentDay
 
   const [viewingDay, setViewingDay] = useState(initialDay)
   const [sealedDays, setSealedDays] = useState<Set<number>>(new Set())
@@ -199,10 +212,12 @@ function TodaysSessionInner() {
   const day = route.days[viewingDay - 1]
   if (!day) return null
 
-  const isDay7     = day.day === 7
-  const isToday    = viewingDay === currentDay
-  const isPast     = viewingDay < currentDay
-  const isSealed   = sealedDays.has(viewingDay)
+  const isDay7    = day.day === 7
+  const isToday   = isOwnPath && viewingDay === currentDay
+  const isPast    = isOwnPath && viewingDay < currentDay
+  const isFuture  = isOwnPath && viewingDay > currentDay
+  const isPreview = !isOwnPath || isFuture
+  const isSealed  = sealedDays.has(viewingDay)
 
   function handleSeal() {
     setSealedDays(prev => new Set(prev).add(viewingDay))
@@ -269,28 +284,27 @@ function TodaysSessionInner() {
         <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '4px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 'max-content' }}>
           {route.days.map((d) => {
-            const isAvailable = d.day <= currentDay
-            const isActive    = viewingDay === d.day
-            const isDone      = d.day < currentDay
+            const isActive     = viewingDay === d.day
+            const isDoneOnOwn  = isOwnPath && d.day < currentDay
+            const isTodayOnOwn = isOwnPath && d.day === currentDay
             return (
               <button
                 key={d.day}
-                onClick={() => isAvailable && setViewingDay(d.day)}
-                title={isAvailable ? `Day ${d.day} — ${d.title}` : `Unlocks on Day ${d.day}`}
+                onClick={() => setViewingDay(d.day)}
+                title={`Day ${d.day} — ${d.title}`}
                 style={{
                   width: 32, height: 32, borderRadius: '50%',
-                  border: isActive ? `2px solid ${route.color}` : isDone ? `2px solid ${route.color}` : d.day === currentDay ? `2px dashed ${route.color}` : '2px solid rgba(12,12,10,0.1)',
-                  background: isActive ? route.color : isDone ? `${route.color}18` : 'white',
-                  color: isActive ? 'white' : isDone ? route.color : 'var(--text-muted)',
+                  border: isActive ? `2px solid ${route.color}` : isDoneOnOwn ? `2px solid ${route.color}` : isTodayOnOwn ? `2px dashed ${route.color}` : '2px solid rgba(12,12,10,0.1)',
+                  background: isActive ? route.color : isDoneOnOwn ? `${route.color}18` : 'white',
+                  color: isActive ? 'white' : isDoneOnOwn ? route.color : 'var(--text-muted)',
                   fontSize: '11px', fontWeight: 600, fontFamily: 'var(--font-body)',
-                  cursor: isAvailable ? 'pointer' : 'default',
-                  opacity: isAvailable ? 1 : 0.3,
+                  cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                   outline: isActive ? `3px solid ${route.color}25` : 'none',
                   outlineOffset: '2px', transition: 'all 0.15s ease',
                 }}
               >
-                {isDone && !isActive ? <CheckIcon /> : d.day}
+                {isDoneOnOwn && !isActive ? <CheckIcon /> : d.day}
               </button>
             )
           })}
@@ -315,6 +329,61 @@ function TodaysSessionInner() {
         }} className="dots-fade" />
         </div>{/* end relative wrapper */}
       </div>
+
+      {/* ── Path selector: 4 archetype tracks ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
+        marginBottom: '14px',
+      }}>
+        <span style={{
+          fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em',
+          textTransform: 'uppercase', color: 'var(--text-muted)',
+          fontFamily: 'var(--font-body)', marginRight: 4,
+        }}>
+          Path
+        </span>
+        {(['door', 'throne', 'engine', 'push'] as const).map(rid => {
+          const r = programRoutes[rid]
+          const active = rid === routeId
+          const own = rid === ownRouteId
+          return (
+            <Link
+              key={rid}
+              href={`/program/today?path=${rid}&day=${viewingDay}`}
+              style={{
+                padding: '5px 12px', borderRadius: '999px',
+                border: active ? `1.5px solid ${r.color}` : '1px solid var(--line)',
+                background: active ? r.color : 'white',
+                color: active ? 'white' : 'var(--text-soft)',
+                fontSize: '11px', fontWeight: 500,
+                fontFamily: 'var(--font-body)', textDecoration: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {r.name}{own && !active ? ' · yours' : ''}
+            </Link>
+          )
+        })}
+      </div>
+
+      {/* Preview banner when viewing a non-own path or future day */}
+      {isPreview && (
+        <div style={{
+          background: `${route.color}10`,
+          border: `1px solid ${route.color}30`,
+          borderRadius: '8px',
+          padding: '10px 14px',
+          marginBottom: '14px',
+          fontSize: '12px',
+          color: 'var(--text-soft)',
+          fontFamily: 'var(--font-body)',
+        }}>
+          {!isOwnPath
+            ? <>Previewing <strong style={{ color: route.color }}>{route.name}</strong>. Reflections won&apos;t save while you&apos;re on a different path. <Link href={`/program/today?path=${ownRouteId}&day=${viewingDay}`} style={{ color: route.color, textDecoration: 'underline' }}>Return to your path</Link>.</>
+            : <>Previewing Day {viewingDay} — your work unlocks on Day {viewingDay} (you&apos;re on Day {currentDay}). You can browse but not seal yet.</>
+          }
+        </div>
+      )}
 
       {/* ── Day title row ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
@@ -391,7 +460,8 @@ function TodaysSessionInner() {
             </p>
             <div style={{ marginBottom: '14px' }}>
               <MediaSlot
-                slotKey={`stl_day${viewingDay}_opening`}
+                slotKey={`stl_${routeId}_day${viewingDay}_opening`}
+                fallbackSlotKey={`stl_day${viewingDay}_opening`}
                 defaultType={viewingDay === 1 ? 'video' : 'audio'}
                 accent={route.color}
               />
@@ -414,9 +484,18 @@ function TodaysSessionInner() {
             </p>
           </div>
 
-          {/* Seal */}
+          {/* Seal — claimable only on user's own path, today or past. Preview shows the seal text statically. */}
           {(isPast || isSealed) ? (
             sealContent
+          ) : isPreview ? (
+            <div style={{ background: `${route.color}06`, border: `1px dashed ${route.color}30`, borderRadius: '10px', padding: '18px 20px' }}>
+              <p style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 8px' }}>
+                Day&apos;s seal {!isOwnPath && `· ${route.name}`}
+              </p>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: '15px', fontStyle: 'italic', color: 'var(--ink)', lineHeight: 1.65, margin: 0 }}>
+                &ldquo;{isDay7 && day.sealedIdentity ? day.sealedIdentity : day.seal}&rdquo;
+              </p>
+            </div>
           ) : (
             <div style={{ background: 'white', border: `1px dashed ${route.color}40`, borderRadius: '10px', padding: '18px 20px', textAlign: 'center' }}>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 12px', lineHeight: 1.6 }}>
@@ -502,13 +581,14 @@ function TodaysSessionInner() {
             routeId={routeId}
             dayNum={viewingDay}
             color={route.color}
+            readOnly={isPreview}
           />
         </div>
 
       </div>
 
-      {/* ── Prev / Next day navigation ── */}
-      {(viewingDay > 1 || viewingDay < currentDay) && (
+      {/* ── Prev / Next day navigation (any day 1-7) ── */}
+      {(viewingDay > 1 || viewingDay < 7) && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '32px', gap: '12px' }}>
           {viewingDay > 1 ? (
             <button
@@ -527,7 +607,7 @@ function TodaysSessionInner() {
             </button>
           ) : <div />}
 
-          {viewingDay < currentDay ? (
+          {viewingDay < 7 ? (
             <button
               onClick={() => { setViewingDay(v => v + 1); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
               style={{
@@ -558,11 +638,10 @@ function TodaysSessionInner() {
           from { transform: scale(0.93); opacity: 0; }
           to   { transform: scale(1);    opacity: 1; }
         }
-        @media (max-width: 780px) {
-          .session-grid { grid-template-columns: 1fr !important; }
+        @media (max-width: 768px) {
           .dots-fade { display: none; }
         }
-        @media (min-width: 781px) {
+        @media (min-width: 769px) {
           .dots-fade { display: none; }
         }
       `}</style>
