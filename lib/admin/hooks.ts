@@ -1051,6 +1051,88 @@ export async function adminUpdateUser(userId: string, updates: {
   return supabase.from('users').update(updates).eq('id', userId)
 }
 
+// ─── Single-user admin profile + cohort enrollment ────────────────────────────
+
+export interface AdminUserDetail {
+  id: string
+  name: string | null
+  email: string | null
+  avatar_url: string | null
+  selected_path: 'A' | 'B' | 'C' | null
+  quiz_result: 'seeker' | 'builder' | 'healer' | 'visionary' | null
+  has_paid: boolean
+  is_admin: boolean
+  onboarding_complete: boolean
+  signup_date: string | null
+}
+
+export interface UserCohortMembership {
+  member_id: string
+  cohort_id: string
+  cohort_name: string
+  cohort_active: boolean
+  archetype: string
+  joined_at: string | null
+}
+
+export interface CohortOption {
+  id: string
+  name: string
+  is_active: boolean
+}
+
+/** Load one user's editable profile (works for any user — Path A/B/C/none). */
+export async function fetchAdminUserById(userId: string): Promise<AdminUserDetail | null> {
+  const { data } = await supabase
+    .from('users')
+    .select('id, name, email, avatar_url, selected_path, quiz_result, has_paid, is_admin, onboarding_complete, signup_date')
+    .eq('id', userId)
+    .maybeSingle()
+  return (data as AdminUserDetail | null) ?? null
+}
+
+/** All cohorts this user is enrolled in (zero, one, or many). */
+export async function fetchUserCohorts(userId: string): Promise<UserCohortMembership[]> {
+  const { data } = await supabase
+    .from('circle_members')
+    .select('id, cohort_id, archetype, created_at, circle_cohorts!inner(name, is_active)')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true })
+  if (!data) return []
+  return data.map((row: any) => ({
+    member_id:     row.id,
+    cohort_id:     row.cohort_id,
+    cohort_name:   row.circle_cohorts.name,
+    cohort_active: row.circle_cohorts.is_active,
+    archetype:     row.archetype,
+    joined_at:     row.created_at,
+  }))
+}
+
+/** All cohorts available to add a user to (newest first). */
+export async function fetchAllCohortsForAdmin(): Promise<CohortOption[]> {
+  const { data } = await supabase
+    .from('circle_cohorts')
+    .select('id, name, is_active')
+    .order('starts_at', { ascending: false })
+  return (data as CohortOption[] | null) ?? []
+}
+
+/** Enroll a user as a member of a cohort. archetype defaults to 'door' if
+ *  the user hasn't taken the quiz yet — admin can edit it later from the
+ *  member detail page. */
+export async function adminAddUserToCohort(
+  userId: string,
+  cohortId: string,
+  archetype: 'door' | 'throne' | 'engine' | 'push' = 'door',
+) {
+  return supabase.from('circle_members').upsert({
+    user_id:   userId,
+    cohort_id: cohortId,
+    archetype,
+  }, { onConflict: 'user_id,cohort_id' })
+}
+
 /** Remove a member from their cohort. Drops the circle_members row by id.
  *  Cascades will clean partner pairings that reference this member. */
 export async function adminRemoveMember(memberId: string) {

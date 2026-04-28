@@ -50,7 +50,7 @@ export default function AdminCardsPage() {
   async function save(id: string) {
     setSavingId(id)
     setError(null)
-    const { error } = await updateDailyCard(id, {
+    const patch = {
       theme:          draft.theme,
       title:          draft.title,
       body_text:      draft.body_text,
@@ -59,15 +59,20 @@ export default function AdminCardsPage() {
       image_url:      draft.image_url,
       card_color:     draft.card_color,
       emoji:          draft.emoji,
-    })
+    }
+    const { error } = await updateDailyCard(id, patch)
     setSavingId(null)
     if (error) {
       setError(error.message)
       return
     }
+    // Optimistic update — patch the row in place instead of refetching all 365.
+    // Avoids the loading flash after every save.
+    setCards(prev => prev.map(c =>
+      c.id === id ? { ...c, ...patch } as DailyCardRow : c
+    ))
     setEditingId(null)
     setDraft({})
-    await refresh()
   }
 
   const filtered = jumpDay

@@ -57,13 +57,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // Mobile: show/hide the slide-in drawer
   const [mobileOpen, setMobileOpen] = useState(false)
 
+  // Fetch admin name once on mount — it doesn't change during a session.
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       const { data: { user } } = await supabaseClient.auth.getUser()
       if (!user || cancelled) return
-      // Prefer the saved name from public.users; fall back to email prefix
-      // so empty saved names don't blank the avatar / label.
       const { data: profile } = await supabaseClient
         .from('users')
         .select('name')
@@ -73,21 +72,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       const fallback = user.email?.split('@')[0] ?? 'Coach'
       setAdminName(profile?.name?.trim() || fallback)
     })()
-
-    supabaseClient
-      .from('circle_engagement_alerts')
-      .select('*', { count: 'exact', head: true })
-      .eq('is_resolved', false)
-      .then(({ count }) => { if (!cancelled) setAlertCount(count ?? 0) })
-
-    supabaseClient
-      .from('support_messages')
-      .select('*', { count: 'exact', head: true })
-      .neq('status', 'resolved')
-      .then(({ count }) => { if (!cancelled) setSupportCount(count ?? 0) })
-
     return () => { cancelled = true }
-  }, [pathname])
+  }, [])
+
+  // Sidebar badge counts: fetch on mount and when the window regains focus.
+  // Previously this ran on every navigation (deps: [pathname]), causing
+  // a visible "blink" on every admin click while the counts re-fetched.
+  useEffect(() => {
+    let cancelled = false
+    function refreshCounts() {
+      supabaseClient
+        .from('circle_engagement_alerts')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_resolved', false)
+        .then(({ count }) => { if (!cancelled) setAlertCount(count ?? 0) })
+      supabaseClient
+        .from('support_messages')
+        .select('*', { count: 'exact', head: true })
+        .neq('status', 'resolved')
+        .then(({ count }) => { if (!cancelled) setSupportCount(count ?? 0) })
+    }
+    refreshCounts()
+    window.addEventListener('focus', refreshCounts)
+    return () => {
+      cancelled = true
+      window.removeEventListener('focus', refreshCounts)
+    }
+  }, [])
 
   // Close the mobile drawer on route change so a tap on a nav link
   // dismisses the overlay before the page swap.

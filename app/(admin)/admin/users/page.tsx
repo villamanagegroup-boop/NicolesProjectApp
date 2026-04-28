@@ -138,7 +138,6 @@ export default function AdminUsersPage() {
             const cfg = PATH_LABELS[u.selected_path ?? 'none']
             const display = u.name?.trim() || u.email?.split('@')[0] || u.id.slice(0, 8) + '…'
             const initials = display.slice(0, 2).toUpperCase()
-            const profileHref = u.member_id ? `/admin/members/${u.member_id}` : null
             return (
               <div key={u.id} style={{
                 display: 'flex', alignItems: 'center', gap: 12,
@@ -226,20 +225,14 @@ export default function AdminUsersPage() {
                 <span style={{ fontSize: 10, fontWeight: 600, color: savedId === u.id ? 'var(--green)' : 'var(--text-muted)', minWidth: 36, textAlign: 'right', flexShrink: 0 }}>
                   {savingId === u.id ? '…' : savedId === u.id ? '✓ saved' : ''}
                 </span>
-                {profileHref ? (
-                  <Link href={profileHref} style={{
-                    fontSize: 11, fontWeight: 600,
-                    padding: '5px 11px', borderRadius: 7,
-                    background: 'var(--gold)', color: '#fff',
-                    textDecoration: 'none', flexShrink: 0,
-                  }}>
-                    Profile →
-                  </Link>
-                ) : (
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)', flexShrink: 0, fontStyle: 'italic' }}>
-                    no profile
-                  </span>
-                )}
+                <Link href={`/admin/users/${u.id}`} style={{
+                  fontSize: 11, fontWeight: 600,
+                  padding: '5px 11px', borderRadius: 7,
+                  background: 'var(--gold)', color: '#fff',
+                  textDecoration: 'none', flexShrink: 0,
+                }}>
+                  Profile →
+                </Link>
               </div>
             )
           })}
