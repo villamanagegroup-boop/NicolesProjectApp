@@ -97,15 +97,21 @@ export default function AdminPreviewPage() {
       gap: 12,
       marginBottom: 20,
     } as const,
-    card: (on: boolean, accent: string, accentBg: string) => ({
-      background: on ? accentBg : '#fff',
-      border: `1px solid ${on ? accent : 'var(--line)'}`,
-      borderLeft: `4px solid ${accent}`,
-      borderRadius: 12,
-      padding: 16,
-      cursor: 'pointer',
-      transition: 'background 0.15s ease, border-color 0.15s ease',
-    } as const),
+    card: (on: boolean, accent: string, accentBg: string) => {
+      const sideBorder = `1px solid ${on ? accent : 'var(--line)'}`
+      return {
+        background: on ? accentBg : '#fff',
+        // Split sides instead of `border` shorthand so we don't conflict with borderLeft.
+        borderTop: sideBorder,
+        borderRight: sideBorder,
+        borderBottom: sideBorder,
+        borderLeft: `4px solid ${accent}`,
+        borderRadius: 12,
+        padding: 16,
+        cursor: 'pointer',
+        transition: 'background 0.15s ease, border-color 0.15s ease',
+      } as const
+    },
     pill: (accent: string) => ({
       display: 'inline-block', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em',
       textTransform: 'uppercase' as const,
