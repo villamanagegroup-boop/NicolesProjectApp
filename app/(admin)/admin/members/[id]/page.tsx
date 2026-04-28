@@ -15,10 +15,11 @@ import { supabaseClient } from '@/lib/supabase/client'
 import {
   fetchCoachingNotes, addCoachingNote,
   fetchCoachThread, sendCoachMessage,
-  adminUpdateUser, adminUpdateMember,
+  adminUpdateUser, adminUpdateMember, adminRemoveMember,
   fetchUserReflections,
   type CoachingNote, type CoachMessage, type ReflectionRow,
 } from '@/lib/admin/hooks'
+import { useRouter } from 'next/navigation'
 import { uploadCircleAttachment } from '@/lib/circle'
 
 const ARCHETYPE_COLORS: Record<string, string> = {
@@ -125,6 +126,8 @@ function currentWeekFromStart(startDate: string): number {
 export default function AdminMemberProfilePage() {
   const params = useParams<{ id: string }>()
   const memberId = params?.id
+  const router = useRouter()
+  const [removing, setRemoving] = useState(false)
 
   const [member, setMember] = useState<MemberRow | null>(null)
   const [user, setUser] = useState<UserProfile | null>(null)
@@ -495,6 +498,34 @@ export default function AdminMemberProfilePage() {
                 }}
               >
                 Edit profile
+              </button>
+              <button
+                onClick={async () => {
+                  if (!member) return
+                  const memberLabel = (user?.name?.trim() || user?.email || 'this member')
+                  const cohortLabel = cohort?.name ?? 'this cohort'
+                  if (!confirm(`Remove ${memberLabel} from ${cohortLabel}?\n\nThis deletes their circle_members row but keeps their user account and journal entries intact. They can be re-added to this or another cohort later.`)) return
+                  setRemoving(true)
+                  const { error } = await adminRemoveMember(member.id)
+                  setRemoving(false)
+                  if (error) {
+                    alert(`Could not remove from cohort: ${error.message}`)
+                    return
+                  }
+                  router.replace('/admin/members')
+                }}
+                disabled={removing}
+                style={{
+                  fontSize: 12, fontWeight: 600,
+                  padding: '6px 12px', borderRadius: 7,
+                  border: '1px solid rgba(187,52,52,0.35)',
+                  background: 'rgba(187,52,52,0.08)', color: 'var(--red)',
+                  cursor: removing ? 'wait' : 'pointer', fontFamily: 'inherit',
+                  opacity: removing ? 0.6 : 1,
+                }}
+                title="Remove this user from the cohort (keeps their account)"
+              >
+                {removing ? 'Removing…' : 'Remove from cohort'}
               </button>
               <Link href="/admin/members" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>
                 All members →

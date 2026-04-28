@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { fetchAllUsersAdmin, type AdminUserRow } from '@/lib/admin/hooks'
+import { fetchAllUsersAdmin, adminUpdateUser, type AdminUserRow } from '@/lib/admin/hooks'
 
 const PATH_LABELS: Record<NonNullable<AdminUserRow['selected_path']> | 'none', { label: string; color: string; bg: string; border: string }> = {
   A:    { label: 'Path A · Cohort',       color: '#3D3080',     bg: 'rgba(61,48,128,0.12)',  border: 'rgba(61,48,128,0.25)' },
@@ -30,6 +30,9 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<PathFilter>('all')
   const [search, setSearch] = useState('')
+  // Per-row "saving"/"saved" indicator; keyed by user.id.
+  const [savingId, setSavingId] = useState<string | null>(null)
+  const [savedId, setSavedId] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -38,6 +41,22 @@ export default function AdminUsersPage() {
     })
     return () => { cancelled = true }
   }, [])
+
+  async function patchUser(userId: string, updates: Parameters<typeof adminUpdateUser>[1]) {
+    setSavingId(userId)
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updates } as AdminUserRow : u))
+    const { error } = await adminUpdateUser(userId, updates)
+    setSavingId(null)
+    if (error) {
+      alert(`Could not update user: ${error.message}`)
+      // Revert by refetching the affected user — simplest correctness option.
+      const fresh = await fetchAllUsersAdmin()
+      setUsers(fresh)
+      return
+    }
+    setSavedId(userId)
+    setTimeout(() => setSavedId(curr => curr === userId ? null : curr), 1400)
+  }
 
   const counts = {
     all: users.length,
@@ -151,12 +170,61 @@ export default function AdminUsersPage() {
                     {u.email ?? '—'}
                   </div>
                 </div>
-                <span style={S.pathPill(cfg)}>{cfg.label}</span>
+                {/* Path — editable */}
+                <select
+                  value={u.selected_path ?? ''}
+                  disabled={savingId === u.id}
+                  onChange={e => {
+                    const v = e.target.value
+                    patchUser(u.id, { selected_path: v === '' ? null : v as 'A' | 'B' | 'C' })
+                  }}
+                  style={{
+                    fontSize: 11, fontWeight: 600,
+                    padding: '3px 8px', borderRadius: 999,
+                    background: cfg.bg, color: cfg.color,
+                    border: `1px solid ${cfg.border}`,
+                    cursor: 'pointer', fontFamily: 'inherit',
+                    outline: 'none',
+                  }}
+                  title="Change selected path"
+                >
+                  <option value="">No path</option>
+                  <option value="A">Path A · Cohort</option>
+                  <option value="B">Path B · Daily Cards</option>
+                  <option value="C">Path C · Circle</option>
+                </select>
+
                 <span style={{ fontSize: 11, color: 'var(--text-muted)', flexShrink: 0, minWidth: 56, textAlign: 'right' }}>
                   {daysAgo(u.last_active)}
                 </span>
-                <span style={{ fontSize: 11, color: u.has_paid ? 'var(--green)' : 'var(--text-muted)', flexShrink: 0, fontWeight: 600 }}>
+
+                {/* Paid — editable */}
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: u.has_paid ? 'var(--green)' : 'var(--text-muted)', fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+                  <input
+                    type="checkbox"
+                    checked={u.has_paid}
+                    disabled={savingId === u.id}
+                    onChange={e => patchUser(u.id, { has_paid: e.target.checked })}
+                    style={{ margin: 0, cursor: 'pointer' }}
+                  />
                   {u.has_paid ? 'Paid' : 'Unpaid'}
+                </label>
+
+                {/* Admin — editable */}
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: u.is_admin ? 'var(--gold)' : 'var(--text-muted)', fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+                  <input
+                    type="checkbox"
+                    checked={u.is_admin}
+                    disabled={savingId === u.id}
+                    onChange={e => patchUser(u.id, { is_admin: e.target.checked })}
+                    style={{ margin: 0, cursor: 'pointer' }}
+                  />
+                  Admin
+                </label>
+
+                {/* Save indicator */}
+                <span style={{ fontSize: 10, fontWeight: 600, color: savedId === u.id ? 'var(--green)' : 'var(--text-muted)', minWidth: 36, textAlign: 'right', flexShrink: 0 }}>
+                  {savingId === u.id ? '…' : savedId === u.id ? '✓ saved' : ''}
                 </span>
                 {profileHref ? (
                   <Link href={profileHref} style={{

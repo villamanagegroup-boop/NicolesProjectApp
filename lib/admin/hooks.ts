@@ -1045,9 +1045,28 @@ export async function adminUpdateUser(userId: string, updates: {
   has_paid?: boolean
   is_admin?: boolean
   onboarding_complete?: boolean
-  selected_path?: 'A' | 'B' | null
+  selected_path?: 'A' | 'B' | 'C' | null
+  quiz_result?: 'seeker' | 'builder' | 'healer' | 'visionary' | null
 }) {
   return supabase.from('users').update(updates).eq('id', userId)
+}
+
+/** Remove a member from their cohort. Drops the circle_members row by id.
+ *  Cascades will clean partner pairings that reference this member. */
+export async function adminRemoveMember(memberId: string) {
+  // First null out any partner pointing at this member (FK is on partner_id
+  // but there's no ON DELETE rule on it, so we orphan-clean manually).
+  const { data: row } = await supabase
+    .from('circle_members')
+    .select('partner_id')
+    .eq('id', memberId)
+    .maybeSingle()
+  if (row?.partner_id) {
+    await supabase.from('circle_members')
+      .update({ partner_id: null })
+      .eq('id', row.partner_id)
+  }
+  return supabase.from('circle_members').delete().eq('id', memberId)
 }
 
 /** Update editable fields on circle_members for a given member row. */
