@@ -319,13 +319,21 @@ export default function AdminMemberProfilePage() {
     setUser((userRes.data as UserProfile | null) ?? null)
     setCohort((cohortRes.data as Cohort | null) ?? null)
     if (partnerRes.data) {
-      const p = partnerRes.data as { id: string; user_id: string; archetype: string; user: { name: string | null; email: string | null } | null }
+      // Supabase types embedded one-to-one selects as arrays (it can't tell
+      // statically that user_id is unique), so read the first element.
+      const p = partnerRes.data as unknown as {
+        id: string
+        user_id: string
+        archetype: string
+        user: { name: string | null; email: string | null }[] | null
+      }
+      const userInfo = p.user?.[0] ?? null
       setPartner({
         id: p.id,
         user_id: p.user_id,
         archetype: p.archetype,
-        name: p.user?.name ?? null,
-        email: p.user?.email ?? null,
+        name:  userInfo?.name  ?? null,
+        email: userInfo?.email ?? null,
       })
     } else {
       setPartner(null)
