@@ -14,26 +14,56 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-04-22.dahlia',
-})
+// Lazy-init: avoid throwing during `next build` page-data collection if
+// env vars aren't yet wired up. The handler returns a clean 500 instead.
+let _stripe: Stripe | null = null
+function getStripe(): Stripe {
+  if (!_stripe) {
+    const key = process.env.STRIPE_SECRET_KEY
+    if (!key) throw new Error('STRIPE_SECRET_KEY is not configured')
+    _stripe = new Stripe(key, { apiVersion: '2026-04-22.dahlia' })
+  }
+  return _stripe
+}
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+let _supabase: SupabaseClient | null = null
+function getSupabase(): SupabaseClient {
+  if (!_supabase) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!url || !key) throw new Error('Supabase service-role env vars are not configured')
+    _supabase = createClient(url, key)
+  }
+  return _supabase
+}
 
-// Map Stripe product IDs → app paths
-const PRODUCT_TO_PATH: Record<string, 'A' | 'B' | 'C'> = {
-  [process.env.STRIPE_PRODUCT_CARDS!]:          'B',
-  [process.env.STRIPE_PRODUCT_LEAK!]:           'A',
-  [process.env.STRIPE_PRODUCT_CIRCLE_ONETIME!]: 'C',
-  [process.env.STRIPE_PRODUCT_CIRCLE_MONTHLY!]: 'C',
+// Map Stripe product IDs → app paths. Resolved at handler time so a missing
+// env var doesn't crash the build — it just falls through to the unknown-
+// product warning below.
+function getProductPathMap(): Record<string, 'A' | 'B' | 'C'> {
+  const map: Record<string, 'A' | 'B' | 'C'> = {}
+  if (process.env.STRIPE_PRODUCT_CARDS)          map[process.env.STRIPE_PRODUCT_CARDS]          = 'B'
+  if (process.env.STRIPE_PRODUCT_LEAK)           map[process.env.STRIPE_PRODUCT_LEAK]           = 'A'
+  if (process.env.STRIPE_PRODUCT_CIRCLE_ONETIME) map[process.env.STRIPE_PRODUCT_CIRCLE_ONETIME] = 'C'
+  if (process.env.STRIPE_PRODUCT_CIRCLE_MONTHLY) map[process.env.STRIPE_PRODUCT_CIRCLE_MONTHLY] = 'C'
+  return map
 }
 
 export async function POST(request: NextRequest) {
+  let stripe: Stripe
+  let supabase: SupabaseClient
+  try {
+    stripe   = getStripe()
+    supabase = getSupabase()
+  } catch (err) {
+    return NextResponse.json({
+      error: err instanceof Error ? err.message : 'Server misconfigured',
+    }, { status: 500 })
+  }
+  const PRODUCT_TO_PATH = getProductPathMap()
+
   const body = await request.text()
   const sig  = request.headers.get('stripe-signature')
 
@@ -41,9 +71,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
   }
 
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+  if (!webhookSecret) {
+    return NextResponse.json({ error: 'STRIPE_WEBHOOK_SECRET is not configured' }, { status: 500 })
+  }
+
   let event: Stripe.Event
   try {
-    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!)
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error'
     console.error('Webhook signature verification failed:', msg)

@@ -16,19 +16,45 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createSupabaseServer } from '@/lib/supabase/server'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-04-22.dahlia',
-})
+// Lazy-init so importing this module during `next build` (page-data
+// collection) doesn't crash when env vars aren't yet wired up.
+let _stripe: Stripe | null = null
+function getStripe(): Stripe {
+  if (!_stripe) {
+    const key = process.env.STRIPE_SECRET_KEY
+    if (!key) throw new Error('STRIPE_SECRET_KEY is not configured')
+    _stripe = new Stripe(key, { apiVersion: '2026-04-22.dahlia' })
+  }
+  return _stripe
+}
 
-const admin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-)
+let _admin: SupabaseClient | null = null
+function getAdmin(): SupabaseClient {
+  if (!_admin) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!url || !key) throw new Error('Supabase service-role env vars are not configured')
+    _admin = createClient(url, key)
+  }
+  return _admin
+}
 
 export async function POST(request: NextRequest) {
+  // 0. Resolve clients (throws clearly if env vars are missing at runtime)
+  let stripe: Stripe
+  let admin: SupabaseClient
+  try {
+    stripe = getStripe()
+    admin  = getAdmin()
+  } catch (err) {
+    return NextResponse.json({
+      error: err instanceof Error ? err.message : 'Server misconfigured',
+    }, { status: 500 })
+  }
+
   // 1. Auth
   const sb = await createSupabaseServer()
   if (!sb) return NextResponse.json({ error: 'Auth not configured' }, { status: 500 })

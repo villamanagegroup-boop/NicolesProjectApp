@@ -1,13 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createSupabaseServer } from '@/lib/supabase/server'
 
-const admin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Lazy-init so importing this module during `next build` doesn't crash
+// when env vars aren't configured yet.
+let _admin: SupabaseClient | null = null
+function getAdmin(): SupabaseClient {
+  if (!_admin) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!url || !key) throw new Error('Supabase service-role env vars are not configured')
+    _admin = createClient(url, key)
+  }
+  return _admin
+}
 
 export async function POST(request: NextRequest) {
+  let admin: SupabaseClient
+  try { admin = getAdmin() }
+  catch (err) {
+    return NextResponse.json({
+      error: err instanceof Error ? err.message : 'Server misconfigured',
+    }, { status: 500 })
+  }
+
   // Verify the caller is the user they claim to be. Without this guard, anyone
   // could claim any pending purchase by guessing an email.
   const sb = await createSupabaseServer()
