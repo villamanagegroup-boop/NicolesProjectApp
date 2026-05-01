@@ -361,29 +361,6 @@ function SignupForm() {
           🔒 Secure checkout via Stripe
         </p>
 
-        <div style={{
-          marginTop: '28px',
-          paddingTop: '24px',
-          borderTop: '1px solid var(--line)',
-          textAlign: 'center',
-        }}>
-          <Link
-            href="/quiz/paths"
-            style={{
-              fontSize: '13px',
-              color: 'var(--text-muted)',
-              fontFamily: 'var(--font-body)',
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-            }}
-            onMouseOver={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--ink)' }}
-            onMouseOut={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)' }}
-          >
-            ← Pick a different journey
-          </Link>
-        </div>
       </div>
 
       <style>{`
