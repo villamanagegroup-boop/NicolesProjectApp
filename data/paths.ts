@@ -16,6 +16,7 @@ export interface PathDefinition {
   accentPale: string
   ctaLabel: string
   ctaHref: string
+  ctaHrefAlt?: string
   billing: 'subscription' | 'one-time' | 'call'
   recommended?: boolean
 }
@@ -42,7 +43,8 @@ export const PATHS: Record<PathId, PathDefinition> = {
     accent: '#1f5c3a',
     accentPale: 'rgba(31,92,58,0.08)',
     ctaLabel: 'Start Daily Practice →',
-    ctaHref: '/signup?path=B',
+    ctaHref: process.env.NEXT_PUBLIC_STRIPE_CARDS_MONTHLY ?? '/signup?path=B',
+    ctaHrefAlt: process.env.NEXT_PUBLIC_STRIPE_CARDS_YEARLY ?? '/signup?path=B',
     billing: 'subscription',
   },
   A: {
@@ -66,7 +68,7 @@ export const PATHS: Record<PathId, PathDefinition> = {
     accent: '#b8922a',
     accentPale: 'rgba(184,146,42,0.08)',
     ctaLabel: 'Seal the Leak →',
-    ctaHref: '/signup?path=A',
+    ctaHref: process.env.NEXT_PUBLIC_STRIPE_LEAK ?? '/signup?path=A',
     billing: 'one-time',
     recommended: true,
   },
@@ -75,10 +77,10 @@ export const PATHS: Record<PathId, PathDefinition> = {
     tier: 3,
     tierLabel: 'Tier 3 — High Ticket',
     icon: '👑',
-    title: 'Private Coaching',
-    shortTitle: 'Private Coaching',
-    price: '$497+',
-    priceNote: 'Book a discovery call',
+    title: 'The Circle',
+    shortTitle: 'The Circle',
+    price: '$497',
+    priceNote: 'One-time · Full access',
     description:
       "Identity-level shift work with direct access to Nicole. Group or 1:1 intensive — for when you're ready to fully change the pattern.",
     includes: [
@@ -90,8 +92,9 @@ export const PATHS: Record<PathId, PathDefinition> = {
     bestFor: "Best if you're ready to go all the way in",
     accent: '#0c0c0a',
     accentPale: 'rgba(12,12,10,0.04)',
-    ctaLabel: 'Book a Discovery Call →',
-    ctaHref: '/signup?path=C',
+    ctaLabel: 'Join the Circle →',
+    ctaHref: process.env.NEXT_PUBLIC_STRIPE_CIRCLE_ONETIME ?? '/signup?path=C',
+    ctaHrefAlt: process.env.NEXT_PUBLIC_STRIPE_CIRCLE_MONTHLY ?? '/signup?path=C',
     billing: 'call',
   },
 }

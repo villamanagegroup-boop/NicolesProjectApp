@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from 'react'
 import type { PathDefinition } from '@/data/paths'
 
 interface PathTileProps {
@@ -7,6 +10,16 @@ interface PathTileProps {
 
 export default function PathTile({ def, featured = false }: PathTileProps) {
   const accent = def.accent
+  const isSubscription = def.billing === 'subscription' && !!def.ctaHrefAlt
+  const hasPaymentToggle = !!def.ctaHrefAlt
+  const [interval, setInterval] = useState<'monthly' | 'yearly'>('monthly')
+  const [payPlan, setPayPlan] = useState<'full' | 'split'>('full')
+
+  const ctaHref = isSubscription
+    ? (interval === 'monthly' ? def.ctaHref : (def.ctaHrefAlt ?? def.ctaHref))
+    : hasPaymentToggle
+      ? (payPlan === 'full' ? def.ctaHref : (def.ctaHrefAlt ?? def.ctaHref))
+      : def.ctaHref
 
   return (
     <div
@@ -78,6 +91,74 @@ export default function PathTile({ def, featured = false }: PathTileProps) {
         </p>
       </div>
 
+      {/* Billing toggle — subscriptions */}
+      {isSubscription && (
+        <div style={{
+          display: 'flex',
+          gap: '6px',
+          backgroundColor: `${accent}10`,
+          borderRadius: '8px',
+          padding: '4px',
+        }}>
+          {(['monthly', 'yearly'] as const).map((opt) => (
+            <button
+              key={opt}
+              onClick={() => setInterval(opt)}
+              style={{
+                flex: 1,
+                padding: '7px 10px',
+                borderRadius: '6px',
+                border: 'none',
+                backgroundColor: interval === opt ? '#ffffff' : 'transparent',
+                color: interval === opt ? accent : `${accent}99`,
+                fontSize: '12px',
+                fontFamily: 'var(--font-body)',
+                fontWeight: interval === opt ? 600 : 400,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: interval === opt ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              }}
+            >
+              {opt === 'monthly' ? 'Monthly · $9' : 'Yearly · $67'}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Payment toggle — The Circle */}
+      {!isSubscription && hasPaymentToggle && (
+        <div style={{
+          display: 'flex',
+          gap: '6px',
+          backgroundColor: `${accent}10`,
+          borderRadius: '8px',
+          padding: '4px',
+        }}>
+          {(['full', 'split'] as const).map((opt) => (
+            <button
+              key={opt}
+              onClick={() => setPayPlan(opt)}
+              style={{
+                flex: 1,
+                padding: '7px 10px',
+                borderRadius: '6px',
+                border: 'none',
+                backgroundColor: payPlan === opt ? '#ffffff' : 'transparent',
+                color: payPlan === opt ? accent : `${accent}99`,
+                fontSize: '12px',
+                fontFamily: 'var(--font-body)',
+                fontWeight: payPlan === opt ? 600 : 400,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: payPlan === opt ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              }}
+            >
+              {opt === 'full' ? 'Pay in Full · $497' : '3 Payments · $197'}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Price */}
       <div style={{ borderTop: '1px solid rgba(12,12,10,0.07)', paddingTop: '14px' }}>
         <span style={{
@@ -87,7 +168,11 @@ export default function PathTile({ def, featured = false }: PathTileProps) {
           color: 'var(--ink)',
           lineHeight: 1,
         }}>
-          {def.price}
+          {isSubscription
+            ? (interval === 'monthly' ? '$9/mo' : '$67/yr')
+            : (!isSubscription && hasPaymentToggle)
+              ? (payPlan === 'full' ? '$497' : '$197/mo')
+              : def.price}
         </span>
         {def.priceNote && (
           <p style={{
@@ -97,7 +182,11 @@ export default function PathTile({ def, featured = false }: PathTileProps) {
             fontFamily: 'var(--font-body)',
             lineHeight: 1.5,
           }}>
-            {def.priceNote}
+            {isSubscription
+              ? (interval === 'monthly' ? 'Monthly · Cancel anytime' : 'Yearly · Save 38%')
+              : (!isSubscription && hasPaymentToggle)
+                ? (payPlan === 'full' ? 'One-time · Full access' : '3 monthly payments')
+                : def.priceNote}
           </p>
         )}
       </div>
@@ -151,8 +240,10 @@ export default function PathTile({ def, featured = false }: PathTileProps) {
 
       {/* CTA */}
       <a
-        href={def.ctaHref}
+        href={ctaHref}
         aria-label={def.ctaLabel}
+        target={def.billing !== 'call' ? '_blank' : undefined}
+        rel={def.billing !== 'call' ? 'noopener noreferrer' : undefined}
         style={{
           display: 'block',
           width: '100%',

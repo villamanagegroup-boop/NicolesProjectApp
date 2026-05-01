@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 
@@ -8,6 +9,7 @@ const PURPLE = '#3D3080'
 export default function ChoosePathPage() {
   const router = useRouter()
   const { setSidebarMode } = useApp()
+  const [cardsInterval, setCardsInterval] = useState<'monthly' | 'yearly'>('monthly')
 
   function choose(mode: 'cards' | 'work') {
     setSidebarMode(mode)
@@ -70,8 +72,7 @@ export default function ChoosePathPage() {
       }}>
 
         {/* 365 Days */}
-        <button
-          onClick={() => choose('cards')}
+        <div
           style={{
             flex: '1 1 300px',
             maxWidth: '360px',
@@ -80,23 +81,9 @@ export default function ChoosePathPage() {
             borderRadius: '16px',
             padding: '32px 28px',
             textAlign: 'left',
-            cursor: 'pointer',
-            transition: 'box-shadow 0.2s ease, border-color 0.2s ease, transform 0.15s ease',
             display: 'flex',
             flexDirection: 'column',
             gap: '12px',
-          }}
-          onMouseEnter={(e) => {
-            const el = e.currentTarget
-            el.style.boxShadow = '0 8px 32px rgba(26,82,48,0.12)'
-            el.style.borderColor = 'rgba(26,82,48,0.5)'
-            el.style.transform = 'translateY(-2px)'
-          }}
-          onMouseLeave={(e) => {
-            const el = e.currentTarget
-            el.style.boxShadow = 'none'
-            el.style.borderColor = 'rgba(26,82,48,0.2)'
-            el.style.transform = 'translateY(0)'
           }}
         >
           {/* Icon badge */}
@@ -149,24 +136,116 @@ export default function ChoosePathPage() {
             </p>
           </div>
 
+          {/* Pricing toggle */}
+          <div style={{
+            marginTop: '16px',
+            display: 'flex',
+            gap: '8px',
+            backgroundColor: 'rgba(26,82,48,0.06)',
+            borderRadius: '8px',
+            padding: '4px',
+          }}>
+            <button
+              onClick={() => setCardsInterval('monthly')}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: 'none',
+                backgroundColor: cardsInterval === 'monthly' ? '#ffffff' : 'transparent',
+                color: cardsInterval === 'monthly' ? GREEN : 'rgba(26,82,48,0.7)',
+                fontSize: '13px',
+                fontFamily: 'var(--font-body)',
+                fontWeight: cardsInterval === 'monthly' ? 600 : 500,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              Monthly <span style={{ fontWeight: 400, fontSize: '12px' }}>$9</span>
+            </button>
+            <button
+              onClick={() => setCardsInterval('yearly')}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: 'none',
+                backgroundColor: cardsInterval === 'yearly' ? '#ffffff' : 'transparent',
+                color: cardsInterval === 'yearly' ? GREEN : 'rgba(26,82,48,0.7)',
+                fontSize: '13px',
+                fontFamily: 'var(--font-body)',
+                fontWeight: cardsInterval === 'yearly' ? 600 : 500,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              Yearly <span style={{ fontWeight: 400, fontSize: '12px' }}>$67</span>
+            </button>
+          </div>
+
+          {/* CTA buttons */}
           <div style={{
             marginTop: 'auto',
             paddingTop: '16px',
             borderTop: '1px solid var(--line)',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
+            gap: '8px',
+            flexDirection: 'column',
           }}>
-            <span style={{ fontSize: '13px', fontFamily: 'var(--font-body)', color: GREEN, fontWeight: 500 }}>
-              Go to Daily Alignment
-            </span>
-            <span style={{ color: GREEN, fontSize: '18px' }}>→</span>
+            <a
+              href={cardsInterval === 'monthly'
+                ? process.env.NEXT_PUBLIC_STRIPE_CARDS_MONTHLY
+                : process.env.NEXT_PUBLIC_STRIPE_CARDS_YEARLY
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'block',
+                padding: '10px 12px',
+                backgroundColor: GREEN,
+                color: '#ffffff',
+                borderRadius: '8px',
+                textAlign: 'center',
+                fontSize: '13px',
+                fontFamily: 'var(--font-body)',
+                fontWeight: 600,
+                textDecoration: 'none',
+                cursor: 'pointer',
+                transition: 'opacity 0.2s ease',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+            >
+              Subscribe Now
+            </a>
+            <button
+              onClick={() => choose('cards')}
+              style={{
+                padding: '10px 12px',
+                backgroundColor: 'transparent',
+                color: GREEN,
+                border: `1px solid ${GREEN}`,
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontFamily: 'var(--font-body)',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(26,82,48,0.05)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+              }}
+            >
+              Preview First
+            </button>
           </div>
-        </button>
+        </div>
 
         {/* Seal the Leak */}
-        <button
-          onClick={() => choose('work')}
+        <div
           style={{
             flex: '1 1 300px',
             maxWidth: '360px',
@@ -175,23 +254,9 @@ export default function ChoosePathPage() {
             borderRadius: '16px',
             padding: '32px 28px',
             textAlign: 'left',
-            cursor: 'pointer',
-            transition: 'box-shadow 0.2s ease, border-color 0.2s ease, transform 0.15s ease',
             display: 'flex',
             flexDirection: 'column',
             gap: '12px',
-          }}
-          onMouseEnter={(e) => {
-            const el = e.currentTarget
-            el.style.boxShadow = '0 8px 32px rgba(61,48,128,0.12)'
-            el.style.borderColor = 'rgba(61,48,128,0.5)'
-            el.style.transform = 'translateY(-2px)'
-          }}
-          onMouseLeave={(e) => {
-            const el = e.currentTarget
-            el.style.boxShadow = 'none'
-            el.style.borderColor = 'rgba(61,48,128,0.2)'
-            el.style.transform = 'translateY(0)'
           }}
         >
           {/* Icon badge */}
@@ -244,20 +309,91 @@ export default function ChoosePathPage() {
             </p>
           </div>
 
+          {/* Pricing */}
+          <div style={{
+            marginTop: '12px',
+            padding: '12px',
+            backgroundColor: 'rgba(61,48,128,0.05)',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}>
+            <span style={{
+              fontSize: '13px',
+              fontFamily: 'var(--font-body)',
+              color: PURPLE,
+              fontWeight: 600,
+            }}>
+              One-time purchase
+            </span>
+            <span style={{
+              fontSize: '16px',
+              fontFamily: 'var(--font-display)',
+              color: PURPLE,
+              fontWeight: 600,
+            }}>
+              $37
+            </span>
+          </div>
+
+          {/* CTA buttons */}
           <div style={{
             marginTop: 'auto',
             paddingTop: '16px',
             borderTop: '1px solid var(--line)',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
+            gap: '8px',
+            flexDirection: 'column',
           }}>
-            <span style={{ fontSize: '13px', fontFamily: 'var(--font-body)', color: PURPLE, fontWeight: 500 }}>
-              Go to The Work
-            </span>
-            <span style={{ color: PURPLE, fontSize: '18px' }}>→</span>
+            <a
+              href={process.env.NEXT_PUBLIC_STRIPE_LEAK}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'block',
+                padding: '10px 12px',
+                backgroundColor: PURPLE,
+                color: '#ffffff',
+                borderRadius: '8px',
+                textAlign: 'center',
+                fontSize: '13px',
+                fontFamily: 'var(--font-body)',
+                fontWeight: 600,
+                textDecoration: 'none',
+                cursor: 'pointer',
+                transition: 'opacity 0.2s ease',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+            >
+              Buy Now
+            </a>
+            <button
+              onClick={() => choose('work')}
+              style={{
+                padding: '10px 12px',
+                backgroundColor: 'transparent',
+                color: PURPLE,
+                border: `1px solid ${PURPLE}`,
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontFamily: 'var(--font-body)',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(61,48,128,0.05)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+              }}
+            >
+              Preview First
+            </button>
           </div>
-        </button>
+        </div>
 
       </div>
     </div>

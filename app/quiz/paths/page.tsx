@@ -1,7 +1,10 @@
 'use client'
 
+'use client'
+
 import Link from 'next/link'
 import PathTile from '@/components/result/PathTile'
+import ComparisonChart from '@/components/result/ComparisonChart'
 import { PATHS, PATH_ORDER } from '@/data/paths'
 
 export default function QuizPathsPage() {
@@ -87,6 +90,9 @@ export default function QuizPathsPage() {
             return <PathTile key={id} def={def} featured={!!def.recommended} />
           })}
         </div>
+
+        {/* Comparison chart */}
+        <ComparisonChart />
 
         {/* Footer */}
         <div style={{ textAlign: 'center' }}>
