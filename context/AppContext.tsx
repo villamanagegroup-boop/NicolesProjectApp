@@ -22,6 +22,7 @@ const defaultUser: User = {
   onboardingComplete: false,
   skipPathChooser: false,
   cardsAddOnAt: null,
+  hasSeenWelcome: false,
 }
 
 // ── Supabase row → domain model transforms ───────────────────────────────────
@@ -40,6 +41,7 @@ interface UserRow {
   onboarding_complete: boolean | null
   skip_path_chooser: boolean | null
   cards_addon_started_at: string | null
+  has_seen_welcome: boolean | null
 }
 
 function userFromRow(row: UserRow, fallbackEmail: string): User {
@@ -56,6 +58,7 @@ function userFromRow(row: UserRow, fallbackEmail: string): User {
     onboardingComplete: row.onboarding_complete ?? false,
     skipPathChooser:    row.skip_path_chooser ?? false,
     cardsAddOnAt:       row.cards_addon_started_at ? new Date(row.cards_addon_started_at) : null,
+    hasSeenWelcome:     row.has_seen_welcome ?? false,
   }
 }
 

@@ -16,6 +16,7 @@ export interface User {
   // Path A only: when they bought Daily Cards as an add-on. Null = no add-on yet.
   // This date becomes Cards Day 1 for Path A add-on users.
   cardsAddOnAt: Date | null
+  hasSeenWelcome: boolean
 }
 
 export interface DailyCard {

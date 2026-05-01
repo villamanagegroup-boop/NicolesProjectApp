@@ -9,6 +9,7 @@ import MobileNav from '@/components/layout/MobileNav'
 import MobileDrawer from '@/components/layout/MobileDrawer'
 import PageTransition from '@/components/layout/PageTransition'
 import PreviewBanner from '@/components/admin/PreviewBanner'
+import WelcomeModal from '@/components/portal/WelcomeModal'
 import { useApp } from '@/context/AppContext'
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
@@ -42,8 +43,11 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   // flow they may not have personally completed.
   useEffect(() => {
     if (loading || !isAuthed || user.isAdmin) return
-    if (!user.quizResult)   { router.replace('/quiz'); return }
-    if (!user.selectedPath) { router.replace('/quiz/paths'); return }
+    // Paid users coming from a payment link already have a path — skip the quiz gate.
+    // They can take the quiz later from settings to personalise their content.
+    const paidWithPath = user.hasPaid && !!user.selectedPath
+    if (!paidWithPath && !user.quizResult)   { router.replace('/quiz'); return }
+    if (!paidWithPath && !user.selectedPath) { router.replace('/quiz/paths'); return }
     if (user.selectedPath === 'C' && !user.onboardingComplete) {
       router.replace('/onboarding'); return
     }
@@ -111,6 +115,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
           <PageTransition>
             {children}
           </PageTransition>
+          <WelcomeModal />
         </main>
       </div>
       <MobileNav />

@@ -63,23 +63,28 @@ function SignupForm() {
       return
     }
 
-    // If session was created (email confirmation off), persist path + archetype on the user row.
-    // If confirmation is on, data.session is null — we'll fill these after first login.
-    // Path A/B don't need the Enneagram onboarding (it's only for Circle matchmaking),
-    // so mark them complete immediately and route them straight to their portal home.
-    if (data.session && data.user) {
-      await supabaseClient.from('users').update({
-        selected_path: path,
-        quiz_result: quizResult,
-        onboarding_complete: path !== 'C',
-      }).eq('id', data.user.id)
-    }
-
-    // If no session (needs email confirmation), ask them to confirm + sign in
-    if (!data.session) {
+    if (!data.session || !data.user) {
       setSubmitting(false)
       setError('Check your email to confirm your account, then sign in.')
       return
+    }
+
+    // Persist path + archetype on the user row
+    await supabaseClient.from('users').update({
+      selected_path: path,
+      quiz_result: quizResult,
+      onboarding_complete: path !== 'C',
+    }).eq('id', data.user.id)
+
+    // Claim any pending purchase made before signup (Stripe payment link flow)
+    try {
+      await fetch('/api/claim-purchase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: data.user.id, email: email.trim() }),
+      })
+    } catch {
+      // Non-fatal — path is already set above; access will still work
     }
 
     const dest = path === 'A' ? '/program' : path === 'C' ? '/onboarding' : '/dashboard'
@@ -183,7 +188,7 @@ function SignupForm() {
             margin: 0,
             lineHeight: 1.7,
           }}>
-            Create your account, then complete your purchase to unlock your portal.
+            Create your account to access your program.
           </p>
         </div>
 
@@ -242,7 +247,7 @@ function SignupForm() {
           marginTop: 0,
           marginBottom: '32px',
         }}>
-          Then you&apos;ll complete your purchase to unlock your portal.
+          Your payment is confirmed. Create your account to enter your program.
         </p>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -324,7 +329,7 @@ function SignupForm() {
             onMouseOver={(e) => { if (!submitting) e.currentTarget.style.opacity = '0.88' }}
             onMouseOut={(e) => { e.currentTarget.style.opacity = '1' }}
           >
-            {submitting ? 'Creating account…' : (stripeLink && stripeLink !== '#' ? 'Create Account & Continue to Payment →' : 'Create Account →')}
+            {submitting ? 'Creating account…' : 'Create Account & Enter Your Program →'}
           </button>
         </form>
 
