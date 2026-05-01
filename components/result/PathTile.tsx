@@ -242,8 +242,6 @@ export default function PathTile({ def, featured = false }: PathTileProps) {
       <a
         href={ctaHref}
         aria-label={def.ctaLabel}
-        target={def.billing !== 'call' ? '_blank' : undefined}
-        rel={def.billing !== 'call' ? 'noopener noreferrer' : undefined}
         style={{
           display: 'block',
           width: '100%',

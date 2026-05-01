@@ -8,7 +8,9 @@ import Link from 'next/link'
 import { supabaseClient } from '@/lib/supabase/client'
 import {
   fetchAdminCohorts, fetchEngagementAlerts, resolveAlert, snoozeAlert,
+  fetchAllUsersAdmin, fetchUnclaimedPurchases,
   type AdminCohortSummary, type AdminEngagementAlert,
+  type AdminUserRow, type PendingPurchase,
 } from '@/lib/admin/hooks'
 
 const ARCHETYPE_COLORS: Record<string, string> = {
@@ -59,11 +61,18 @@ function EngagementBar({ rate }: { rate: number }) {
 export default function AdminDashboard() {
   const [cohorts, setCohorts] = useState<AdminCohortSummary[]>([])
   const [alerts, setAlerts] = useState<AdminEngagementAlert[]>([])
+  const [users, setUsers] = useState<AdminUserRow[]>([])
+  const [unclaimed, setUnclaimed] = useState<PendingPurchase[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([fetchAdminCohorts(), fetchEngagementAlerts()])
-      .then(([c, a]) => { setCohorts(c); setAlerts(a) })
+    Promise.all([
+      fetchAdminCohorts(),
+      fetchEngagementAlerts(),
+      fetchAllUsersAdmin(),
+      fetchUnclaimedPurchases(),
+    ])
+      .then(([c, a, u, p]) => { setCohorts(c); setAlerts(a); setUsers(u); setUnclaimed(p) })
       .finally(() => setLoading(false))
   }, [])
 
@@ -111,6 +120,99 @@ export default function AdminDashboard() {
         <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Loading dashboard...</div>
       ) : (
         <>
+          {/* All-program snapshot */}
+          {(() => {
+            const totalUsers = users.length
+            const paid       = users.filter(u => u.has_paid).length
+            const byPath = (p: 'A' | 'B' | 'C') => ({
+              total: users.filter(u => u.selected_path === p).length,
+              paid:  users.filter(u => u.selected_path === p && u.has_paid).length,
+            })
+            const a = byPath('A'), b = byPath('B'), c = byPath('C')
+            const recent = [...users]
+              .filter(u => !!u.signup_date)
+              .sort((x, y) => (y.signup_date! < x.signup_date! ? -1 : 1))
+              .slice(0, 5)
+
+            return (
+              <div style={{ marginBottom: 28 }}>
+                <SectionHeader>All programs at a glance</SectionHeader>
+
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                  gap: 12, marginBottom: 14,
+                }}>
+                  <BigStat label="Total users" value={totalUsers} sub={`${paid} paid`} />
+                  <BigStat label="Seal the Leak" value={a.total} sub={`${a.paid} paid`} accent="var(--gold)" />
+                  <BigStat label="365 Cards"     value={b.total} sub={`${b.paid} paid`} accent="var(--green)" />
+                  <BigStat label="The Circle"    value={c.total} sub={`${c.paid} paid`} accent="#3D3080" />
+                  <BigStat
+                    label="Unclaimed payments"
+                    value={unclaimed.length}
+                    sub={unclaimed.length > 0 ? 'Action needed →' : 'All caught up'}
+                    accent={unclaimed.length > 0 ? 'var(--red)' : 'var(--text-muted)'}
+                    href="/admin/money"
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
+                  {/* Recent signups */}
+                  <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 12, padding: 14 }}>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 10 }}>
+                      Recent signups
+                    </div>
+                    {recent.length === 0 ? (
+                      <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>No signups yet.</p>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {recent.map(u => (
+                          <Link
+                            key={u.id}
+                            href={`/admin/users/${u.id}`}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 10,
+                              padding: '6px 8px', borderRadius: 6,
+                              textDecoration: 'none', color: 'var(--ink)',
+                            }}
+                          >
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {u.name || u.email || u.id.slice(0, 8)}
+                              </div>
+                              <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                                {u.selected_path ? `Path ${u.selected_path}` : 'No path'}
+                                {' · '}{u.signup_date ? new Date(u.signup_date).toLocaleDateString() : '—'}
+                              </div>
+                            </div>
+                            {u.has_paid && (
+                              <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--green)', background: 'var(--green-pale)', padding: '2px 6px', borderRadius: 4, letterSpacing: '.05em', textTransform: 'uppercase' }}>
+                                Paid
+                              </span>
+                            )}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Quick links */}
+                  <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 12, padding: 14 }}>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 10 }}>
+                      Quick actions
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <QuickLink href="/admin/users"    title="Browse people"    desc="All users, all paths" />
+                      <QuickLink href="/admin/money"    title="Money & payments" desc="Stripe, paid access, unclaimed" />
+                      <QuickLink href="/admin/reports"  title="Pull a report"    desc="CSV exports" />
+                      <QuickLink href="/admin/comms"    title="Send a message"   desc="Broadcast or DM" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
+
           {/* Top stat row — auto-wraps to 2x2 on narrow screens */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '28px' }}>
             {[
@@ -286,6 +388,11 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {/* Circle-only section header */}
+          {(activeCohorts.length > 0 || alerts.length > 0) && (
+            <SectionHeader>The Circle — operations</SectionHeader>
+          )}
+
           {cohorts.length === 0 && (
             <div style={{
               background: '#ffffff', border: '1px solid var(--line)',
@@ -310,5 +417,59 @@ export default function AdminDashboard() {
         </>
       )}
     </div>
+  )
+}
+
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      fontSize: 11, fontWeight: 700, letterSpacing: '.1em',
+      textTransform: 'uppercase', color: 'var(--text-muted)',
+      marginBottom: 12, paddingBottom: 8,
+      borderBottom: '1px solid var(--line)',
+    }}>
+      {children}
+    </div>
+  )
+}
+
+function BigStat({
+  label, value, sub, accent, href,
+}: {
+  label: string; value: number | string; sub?: string;
+  accent?: string; href?: string;
+}) {
+  const inner = (
+    <div style={{
+      background: '#fff', border: '1px solid var(--line)',
+      borderRadius: 12, padding: 16,
+      cursor: href ? 'pointer' : 'default',
+      transition: 'transform .1s',
+    }}>
+      <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.1, color: accent ?? 'var(--ink)' }}>
+        {value}
+      </div>
+      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '.07em' }}>
+        {label}
+      </div>
+      {sub && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{sub}</div>}
+    </div>
+  )
+  return href ? <Link href={href} style={{ textDecoration: 'none' }}>{inner}</Link> : inner
+}
+
+function QuickLink({ href, title, desc }: { href: string; title: string; desc: string }) {
+  return (
+    <Link
+      href={href}
+      style={{
+        display: 'block', padding: '8px 10px', borderRadius: 6,
+        textDecoration: 'none', color: 'var(--ink)',
+        background: 'var(--paper2)', border: '1px solid var(--line)',
+      }}
+    >
+      <div style={{ fontSize: 13, fontWeight: 600 }}>{title}</div>
+      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{desc}</div>
+    </Link>
   )
 }

@@ -1,5 +1,5 @@
 // app/(admin)/admin/cohorts/page.tsx
-// Cohort list — read-only for now. Create/edit ships in a follow-up.
+// Cohort list — clicking a row opens the detail/edit view.
 
 'use client'
 
@@ -49,7 +49,7 @@ export default function CohortsPage() {
             No cohorts yet
           </div>
           <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-            Insert one via the Supabase SQL editor for now — the cohort builder UI lands next.
+            Click <strong>+ New cohort</strong> above to create your first one.
           </div>
         </div>
       ) : (

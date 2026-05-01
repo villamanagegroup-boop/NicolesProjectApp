@@ -15,18 +15,39 @@ import { supabaseClient } from '@/lib/supabase/client'
 import { signOut } from '@/lib/supabase/auth'
 import RoleBadge from '@/components/layout/RoleBadge'
 
-const NAV_ITEMS = [
-  { href: '/admin',         icon: '◎', label: 'Overview', sub: 'Dashboard' },
-  { href: '/admin/cohorts', icon: '⬡', label: 'Cohorts',  sub: 'Manage programs' },
-  { href: '/admin/users',   icon: '⬡', label: 'Users',    sub: 'All paths · 365 + Seal + Circle' },
-  { href: '/admin/members', icon: '⬡', label: 'Members',  sub: 'Cohort roster + profiles' },
+// Sidebar IA: top-level items + two collapsible groups (Programs, Tools).
+// Labels chosen to read like English, not jargon — Nicole isn't a developer.
+type NavLeaf = { href: string; icon: string; label: string; sub: string }
+type NavGroup = { groupKey: string; label: string; icon: string; items: NavLeaf[] }
+type NavEntry = NavLeaf | NavGroup
+
+function isGroup(e: NavEntry): e is NavGroup {
+  return (e as NavGroup).items !== undefined
+}
+
+const NAV_ITEMS: NavEntry[] = [
+  { href: '/admin',         icon: '◎', label: 'Home',     sub: 'Dashboard' },
+  { href: '/admin/users',   icon: '⬡', label: 'People',   sub: 'Everyone in the portal' },
   { href: '/admin/pairs',   icon: '⬡', label: 'Pairs',    sub: 'Accountability map' },
-  { href: '/admin/cards',   icon: '⬡', label: 'Daily cards', sub: 'Edit the 365 deck' },
-  { href: '/admin/content', icon: '⬡', label: 'Content',  sub: 'Curriculum + calls' },
+  {
+    groupKey: 'programs', label: 'Programs', icon: '⬡',
+    items: [
+      { href: '/admin/cards',    icon: '·', label: '365 Cards',   sub: 'Edit the daily deck' },
+      { href: '/admin/cohorts',  icon: '·', label: 'Cohorts',     sub: 'Circle programs' },
+      { href: '/admin/content',  icon: '·', label: 'Curriculum',  sub: 'Weekly content + calls' },
+    ],
+  },
   { href: '/admin/comms',   icon: '⬡', label: 'Messages', sub: 'Announce + DM' },
-  { href: '/admin/preview', icon: '⬡', label: 'View as',  sub: 'Preview the user portal' },
-  { href: '/admin/revenue', icon: '⬡', label: 'Revenue',  sub: 'Tracking + access' },
-  { href: '/admin/support', icon: '⬡', label: 'Support',  sub: 'Bug reports + help' },
+  { href: '/admin/money',   icon: '⬡', label: 'Money',    sub: 'Payments + access' },
+  { href: '/admin/reports', icon: '⬡', label: 'Reports',  sub: 'Exports + analytics' },
+  {
+    groupKey: 'tools', label: 'Tools', icon: '⬡',
+    items: [
+      { href: '/admin/preview', icon: '·', label: 'Preview as user', sub: 'Walk in their shoes' },
+      { href: '/admin/support', icon: '·', label: 'Bug reports',     sub: 'Member-submitted issues' },
+      { href: '/admin/audit',   icon: '·', label: 'History',         sub: 'Admin action log' },
+    ],
+  },
 ]
 
 function HamburgerIcon() {
@@ -56,6 +77,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarOpen, setSidebarOpen] = useState(true)
   // Mobile: show/hide the slide-in drawer
   const [mobileOpen, setMobileOpen] = useState(false)
+  // Which collapsible nav groups are expanded. Auto-expand the group
+  // containing the current page on mount so the active page is visible.
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+  useEffect(() => {
+    const next: Record<string, boolean> = {}
+    for (const e of NAV_ITEMS) {
+      if (!('items' in e)) continue
+      next[e.groupKey] = e.items.some(i => pathname?.startsWith(i.href))
+    }
+    setOpenGroups(prev => ({ ...next, ...prev }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Fetch admin name once on mount — it doesn't change during a session.
   useEffect(() => {
@@ -104,9 +137,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // dismisses the overlay before the page swap.
   useEffect(() => { setMobileOpen(false) }, [pathname])
 
-  const currentLabel = NAV_ITEMS.find(i => i.href === '/admin'
-    ? pathname === '/admin'
-    : pathname?.startsWith(i.href))?.label ?? 'Admin'
+  // Walk the nav tree (groups + leaves) to find the current page's label.
+  const currentLabel = (() => {
+    for (const e of NAV_ITEMS) {
+      if (isGroup(e)) {
+        const hit = e.items.find(i => pathname?.startsWith(i.href))
+        if (hit) return hit.label
+      } else if (e.href === '/admin' ? pathname === '/admin' : pathname?.startsWith(e.href)) {
+        return e.label
+      }
+    }
+    return 'Admin'
+  })()
 
   return (
     <div
@@ -217,11 +259,75 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Nav */}
         <nav style={{ padding: '12px 8px', flex: 1, overflowY: 'auto' }}>
-          {NAV_ITEMS.map(item => {
+          {NAV_ITEMS.map(entry => {
+            if (isGroup(entry)) {
+              const expanded = openGroups[entry.groupKey] ?? false
+              const groupActive = entry.items.some(i => pathname?.startsWith(i.href))
+              return (
+                <div key={entry.groupKey} style={{ marginBottom: 2 }}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenGroups(g => ({ ...g, [entry.groupKey]: !expanded }))}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      width: '100%', padding: '9px 10px', borderRadius: 8,
+                      background: groupActive && !expanded ? 'var(--green-pale)' : 'transparent',
+                      border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <span style={{
+                      fontSize: 16, color: groupActive ? 'var(--green)' : 'var(--text-muted)',
+                      flexShrink: 0, width: 20, textAlign: 'center',
+                    }}>{entry.icon}</span>
+                    {sidebarOpen && (
+                      <>
+                        <span style={{
+                          flex: 1, fontSize: 13, fontWeight: groupActive ? 600 : 500,
+                          color: groupActive ? 'var(--ink)' : 'var(--text-soft)',
+                        }}>
+                          {entry.label}
+                        </span>
+                        <span style={{
+                          fontSize: 10, color: 'var(--text-muted)',
+                          transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                          transition: 'transform .15s',
+                        }}>▶</span>
+                      </>
+                    )}
+                  </button>
+                  {sidebarOpen && expanded && (
+                    <div style={{ marginLeft: 14, paddingLeft: 8, borderLeft: '1px solid var(--line)' }}>
+                      {entry.items.map(item => {
+                        const isActive = pathname?.startsWith(item.href)
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setMobileOpen(false)}
+                            style={{
+                              display: 'block', padding: '7px 10px', borderRadius: 6,
+                              textDecoration: 'none',
+                              fontSize: 12, fontWeight: isActive ? 600 : 500,
+                              color: isActive ? 'var(--ink)' : 'var(--text-soft)',
+                              background: isActive ? 'var(--green-pale)' : 'transparent',
+                            }}
+                          >
+                            {item.label}
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
+            const item = entry
             const isActive = item.href === '/admin'
               ? pathname === '/admin'
               : pathname?.startsWith(item.href)
-            const showAlertBadge   = item.href === '/admin/members'
+            const showAlertBadge   = item.href === '/admin/users'
             const showSupportBadge = item.href === '/admin/support'
 
             return (
@@ -230,12 +336,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  padding: '9px 10px',
-                  borderRadius: '8px',
-                  marginBottom: '2px',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '9px 10px', borderRadius: 8, marginBottom: 2,
                   textDecoration: 'none',
                   background: isActive ? 'var(--green-pale)' : 'transparent',
                   borderLeft: isActive ? '2px solid var(--gold)' : '2px solid transparent',
@@ -243,45 +345,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 }}
               >
                 <span style={{
-                  fontSize: '16px',
-                  color: isActive ? 'var(--green)' : 'var(--text-muted)',
-                  flexShrink: 0, width: '20px', textAlign: 'center',
-                }}>
-                  {item.icon}
-                </span>
+                  fontSize: 16, color: isActive ? 'var(--green)' : 'var(--text-muted)',
+                  flexShrink: 0, width: 20, textAlign: 'center',
+                }}>{item.icon}</span>
                 {sidebarOpen && (
                   <div style={{ flex: 1, overflow: 'hidden' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{
-                        fontSize: '13px', fontWeight: isActive ? 600 : 500,
+                        fontSize: 13, fontWeight: isActive ? 600 : 500,
                         color: isActive ? 'var(--ink)' : 'var(--text-soft)',
                         whiteSpace: 'nowrap',
-                      }}>
-                        {item.label}
-                      </span>
+                      }}>{item.label}</span>
                       {showAlertBadge && alertCount > 0 && (
                         <span style={{
-                          fontSize: '10px', fontWeight: 700,
+                          fontSize: 10, fontWeight: 700,
                           background: 'var(--red-pale)', color: 'var(--red)',
-                          padding: '1px 6px', borderRadius: '10px',
-                        }}>
-                          {alertCount}
-                        </span>
+                          padding: '1px 6px', borderRadius: 10,
+                        }}>{alertCount}</span>
                       )}
                       {showSupportBadge && supportCount > 0 && (
                         <span style={{
-                          fontSize: '10px', fontWeight: 700,
+                          fontSize: 10, fontWeight: 700,
                           background: 'var(--gold-pale)', color: 'var(--gold)',
-                          padding: '1px 6px', borderRadius: '10px',
+                          padding: '1px 6px', borderRadius: 10,
                           border: '1px solid var(--gold-line)',
-                        }}>
-                          {supportCount}
-                        </span>
+                        }}>{supportCount}</span>
                       )}
                     </div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '1px' }}>
-                      {item.sub}
-                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 1 }}>{item.sub}</div>
                   </div>
                 )}
               </Link>

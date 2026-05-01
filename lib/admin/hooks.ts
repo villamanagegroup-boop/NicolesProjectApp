@@ -1035,6 +1035,268 @@ export async function upsertReflection(input: {
   }, { onConflict: 'user_id,route_id,day_number,item_index' })
 }
 
+// ─── Program membership detection ────────────────────────────────────────────
+
+export type ProgramKey = 'seal' | 'cards' | 'circle'
+
+export interface ProgramBadge {
+  key: ProgramKey
+  label: string
+  color: string
+}
+
+/**
+ * Returns every program the user has access to. A user can be in multiple
+ * programs simultaneously (e.g. Seal the Leak + cards add-on, or Path B +
+ * a Circle cohort).
+ *
+ * Inputs are the columns we already fetch on AdminUserRow / AdminUserDetail.
+ */
+export function getUserPrograms(input: {
+  selected_path: 'A' | 'B' | 'C' | null
+  cards_addon_started_at?: string | null
+  has_circle_membership?: boolean
+}): ProgramBadge[] {
+  const out: ProgramBadge[] = []
+  if (input.selected_path === 'A') {
+    out.push({ key: 'seal', label: 'Seal the Leak', color: 'gold' })
+    if (input.cards_addon_started_at) {
+      out.push({ key: 'cards', label: '365 Cards (add-on)', color: 'green' })
+    }
+  } else if (input.selected_path === 'B') {
+    out.push({ key: 'cards', label: '365 Cards', color: 'green' })
+  } else if (input.selected_path === 'C') {
+    out.push({ key: 'circle', label: 'The Circle', color: 'blue' })
+  }
+  // A non-Path-C user enrolled in a cohort is in two programs.
+  if (input.has_circle_membership && input.selected_path !== 'C') {
+    out.push({ key: 'circle', label: 'The Circle (added)', color: 'blue' })
+  }
+  return out
+}
+
+// ─── User tags (migration 016) ──────────────────────────────────────────────
+
+export type TagColor = 'gold' | 'green' | 'red' | 'blue' | 'gray'
+
+export interface UserTag {
+  id: string
+  label: string
+  color: TagColor
+  created_at: string
+}
+
+export interface UserTagAssignment {
+  user_id: string
+  tag_id: string
+}
+
+export async function fetchAllTags(): Promise<UserTag[]> {
+  const { data } = await supabase
+    .from('user_tags')
+    .select('id, label, color, created_at')
+    .order('label')
+  return (data ?? []) as UserTag[]
+}
+
+export async function fetchTagAssignments(): Promise<UserTagAssignment[]> {
+  const { data } = await supabase
+    .from('user_tag_assignments')
+    .select('user_id, tag_id')
+  return (data ?? []) as UserTagAssignment[]
+}
+
+export async function fetchUserTags(userId: string): Promise<UserTag[]> {
+  const { data } = await supabase
+    .from('user_tag_assignments')
+    .select('user_tags ( id, label, color, created_at )')
+    .eq('user_id', userId)
+  if (!data) return []
+  // The join returns { user_tags: UserTag } per row.
+  return (data as unknown as Array<{ user_tags: UserTag | null }>)
+    .map(r => r.user_tags)
+    .filter((t): t is UserTag => !!t)
+}
+
+export async function createTag(label: string, color: TagColor) {
+  return supabase.from('user_tags').insert({ label: label.trim(), color }).select().single()
+}
+
+export async function deleteTag(tagId: string) {
+  return supabase.from('user_tags').delete().eq('id', tagId)
+}
+
+export async function assignTag(userId: string, tagId: string, assignedBy?: string) {
+  return supabase.from('user_tag_assignments').upsert({
+    user_id: userId,
+    tag_id: tagId,
+    assigned_by: assignedBy ?? null,
+  }, { onConflict: 'user_id,tag_id' })
+}
+
+export async function removeTag(userId: string, tagId: string) {
+  return supabase.from('user_tag_assignments').delete().match({ user_id: userId, tag_id: tagId })
+}
+
+// ─── Audit log (migration 015) — soft-fails if table doesn't exist yet ─────
+
+export async function logAdminAction(input: {
+  actor_id: string
+  actor_email?: string | null
+  action: string
+  resource_type?: string | null
+  resource_id?: string | null
+  changes?: Record<string, unknown> | null
+}) {
+  // Best-effort. If the table doesn't exist or RLS rejects, swallow silently —
+  // we never want an audit-write to block a legitimate admin operation.
+  try {
+    await supabase.from('admin_audit_log').insert({
+      actor_id: input.actor_id,
+      actor_email: input.actor_email ?? null,
+      action: input.action,
+      resource_type: input.resource_type ?? null,
+      resource_id: input.resource_id ?? null,
+      changes: input.changes ?? null,
+    })
+  } catch {
+    // Migration 015 not yet applied or RLS misconfigured — non-fatal.
+  }
+}
+
+export interface AuditLogEntry {
+  id: string
+  actor_id: string | null
+  actor_email: string | null
+  action: string
+  resource_type: string | null
+  resource_id: string | null
+  changes: Record<string, unknown> | null
+  created_at: string
+}
+
+export async function fetchRecentAuditLog(limit = 100): Promise<AuditLogEntry[]> {
+  const { data } = await supabase
+    .from('admin_audit_log')
+    .select('id, actor_id, actor_email, action, resource_type, resource_id, changes, created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  return (data ?? []) as AuditLogEntry[]
+}
+
+// ─── Per-user content (admin reads via RLS migration 011) ───────────────────
+
+export interface AdminJournalEntry {
+  id: string
+  user_id: string
+  card_id: string | null
+  day_number: number | null
+  content: string
+  created_at: string
+}
+
+export async function fetchUserJournalEntries(userId: string): Promise<AdminJournalEntry[]> {
+  const { data } = await supabase
+    .from('journal_entries')
+    .select('id, user_id, card_id, day_number, content, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+  return (data ?? []) as AdminJournalEntry[]
+}
+
+export interface AdminWin {
+  id: string
+  user_id: string
+  category: string
+  title: string
+  description: string | null
+  created_at: string
+}
+
+export async function fetchUserWins(userId: string): Promise<AdminWin[]> {
+  const { data } = await supabase
+    .from('wins')
+    .select('id, user_id, category, title, description, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+  return (data ?? []) as AdminWin[]
+}
+
+export interface AdminCheckIn {
+  id: string
+  user_id: string
+  check_in_date: string
+  mood: string
+  created_at: string
+}
+
+export async function fetchUserCheckIns(userId: string): Promise<AdminCheckIn[]> {
+  const { data } = await supabase
+    .from('daily_check_ins')
+    .select('id, user_id, check_in_date, mood, created_at')
+    .eq('user_id', userId)
+    .order('check_in_date', { ascending: false })
+    .limit(90)
+  return (data ?? []) as AdminCheckIn[]
+}
+
+// ─── Pending purchases (Stripe pre-signup limbo) ─────────────────────────────
+
+export interface PendingPurchase {
+  id: string
+  email: string
+  path: 'A' | 'B' | 'C'
+  stripe_customer_id: string | null
+  stripe_session_id: string | null
+  price_id: string | null
+  claimed_at: string | null
+  created_at: string
+}
+
+export async function fetchUnclaimedPurchases(): Promise<PendingPurchase[]> {
+  const { data } = await supabase
+    .from('pending_purchases')
+    .select('*')
+    .is('claimed_at', null)
+    .order('created_at', { ascending: false })
+  return (data ?? []) as PendingPurchase[]
+}
+
+export async function fetchPendingPurchaseByEmail(email: string): Promise<PendingPurchase | null> {
+  const { data } = await supabase
+    .from('pending_purchases')
+    .select('*')
+    .ilike('email', email.trim())
+    .is('claimed_at', null)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  return (data ?? null) as PendingPurchase | null
+}
+
+/** Force-claim a pending purchase onto a user. Use when the email differs
+ *  from the signup email (e.g. user paid with a different address). */
+export async function adminClaimPurchaseForUser(purchaseId: string, userId: string) {
+  const { data: purchase } = await supabase
+    .from('pending_purchases')
+    .select('*')
+    .eq('id', purchaseId)
+    .maybeSingle()
+  if (!purchase) return { error: { message: 'Purchase not found' } }
+
+  const userUpdate = await supabase.from('users').update({
+    has_paid: true,
+    selected_path: purchase.path,
+    stripe_customer_id: purchase.stripe_customer_id ?? null,
+    onboarding_complete: purchase.path !== 'C',
+  }).eq('id', userId)
+  if (userUpdate.error) return userUpdate
+
+  return supabase.from('pending_purchases')
+    .update({ claimed_at: new Date().toISOString() })
+    .eq('id', purchaseId)
+}
+
 // ─── Admin user / member edits ────────────────────────────────────────────────
 
 /** Update editable fields on public.users for any user. Admin-only via RLS. */
@@ -1064,6 +1326,7 @@ export interface AdminUserDetail {
   is_admin: boolean
   onboarding_complete: boolean
   signup_date: string | null
+  cards_addon_started_at: string | null
 }
 
 export interface UserCohortMembership {
@@ -1085,10 +1348,45 @@ export interface CohortOption {
 export async function fetchAdminUserById(userId: string): Promise<AdminUserDetail | null> {
   const { data } = await supabase
     .from('users')
-    .select('id, name, email, avatar_url, selected_path, quiz_result, has_paid, is_admin, onboarding_complete, signup_date')
+    .select('id, name, email, avatar_url, selected_path, quiz_result, has_paid, is_admin, onboarding_complete, signup_date, cards_addon_started_at')
     .eq('id', userId)
     .maybeSingle()
   return (data as AdminUserDetail | null) ?? null
+}
+
+/** Toggle the 365 Cards add-on for a Path A user. Setting `true` stamps
+ *  cards_addon_started_at to now (becomes their cards Day 1). Setting `false`
+ *  clears the timestamp, removing card access. */
+export async function adminSetCardsAddOn(userId: string, enabled: boolean) {
+  return supabase.from('users').update({
+    cards_addon_started_at: enabled ? new Date().toISOString() : null,
+  }).eq('id', userId)
+}
+
+/**
+ * Set a user's effective cards Day. Back-dates the appropriate column so that
+ * `today - <column>` equals `(day - 1)` days.
+ *
+ * Path B users: writes to `signup_date` (their Day 1 anchor).
+ * Path A users with the cards add-on: writes to `cards_addon_started_at`.
+ * Path A users without the add-on, and Path C, are no-ops (the cards Day
+ * concept doesn't apply).
+ */
+export async function adminSetCardsDay(
+  userId: string,
+  day: number,
+  selectedPath: 'A' | 'B' | 'C' | null,
+  hasCardsAddOn: boolean,
+) {
+  const targetMs = Date.now() - (day - 1) * 86400000
+  const iso = new Date(targetMs).toISOString()
+  if (selectedPath === 'B') {
+    return supabase.from('users').update({ signup_date: iso }).eq('id', userId)
+  }
+  if (selectedPath === 'A' && hasCardsAddOn) {
+    return supabase.from('users').update({ cards_addon_started_at: iso }).eq('id', userId)
+  }
+  return { error: { message: 'Day adjustment only applies to Path B users or Path A users with the cards add-on.' } }
 }
 
 /** All cohorts this user is enrolled in (zero, one, or many). */

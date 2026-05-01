@@ -7,7 +7,25 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { fetchAllUsersAdmin, adminUpdateUser, type AdminUserRow } from '@/lib/admin/hooks'
+import {
+  fetchAllUsersAdmin, adminUpdateUser, fetchAllTags, fetchTagAssignments,
+  getUserPrograms,
+  type AdminUserRow, type UserTag, type UserTagAssignment, type TagColor,
+} from '@/lib/admin/hooks'
+
+const PROGRAM_TINT: Record<string, { bg: string; fg: string; border: string }> = {
+  gold:  { bg: 'rgba(184,146,42,0.12)', fg: 'var(--gold)',  border: 'var(--gold-line)' },
+  green: { bg: 'rgba(31,92,58,0.12)',   fg: 'var(--green)', border: 'rgba(31,92,58,0.25)' },
+  blue:  { bg: 'rgba(61,48,128,0.12)',  fg: '#3D3080',      border: 'rgba(61,48,128,0.25)' },
+}
+
+const TAG_COLOR_STYLE: Record<TagColor, { bg: string; fg: string; border: string }> = {
+  gold:  { bg: 'rgba(184,146,42,0.12)', fg: 'var(--gold)',  border: 'var(--gold-line)' },
+  green: { bg: 'rgba(31,92,58,0.12)',   fg: 'var(--green)', border: 'rgba(31,92,58,0.25)' },
+  red:   { bg: 'rgba(184,40,40,0.12)',  fg: 'var(--red)',   border: 'rgba(184,40,40,0.3)' },
+  blue:  { bg: 'rgba(61,48,128,0.12)',  fg: '#3D3080',      border: 'rgba(61,48,128,0.25)' },
+  gray:  { bg: 'rgba(0,0,0,0.06)',      fg: 'var(--text-muted)', border: 'var(--line)' },
+}
 
 const PATH_LABELS: Record<NonNullable<AdminUserRow['selected_path']> | 'none', { label: string; color: string; bg: string; border: string }> = {
   A:    { label: 'Path A · Cohort',       color: '#3D3080',     bg: 'rgba(61,48,128,0.12)',  border: 'rgba(61,48,128,0.25)' },
@@ -30,17 +48,36 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<PathFilter>('all')
   const [search, setSearch] = useState('')
+  const [tags, setTags] = useState<UserTag[]>([])
+  const [assignments, setAssignments] = useState<UserTagAssignment[]>([])
+  const [tagFilter, setTagFilter] = useState<string | null>(null)
   // Per-row "saving"/"saved" indicator; keyed by user.id.
   const [savingId, setSavingId] = useState<string | null>(null)
   const [savedId, setSavedId] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    fetchAllUsersAdmin().then(rows => {
-      if (!cancelled) { setUsers(rows); setLoading(false) }
+    Promise.all([
+      fetchAllUsersAdmin(),
+      fetchAllTags(),
+      fetchTagAssignments(),
+    ]).then(([rows, t, a]) => {
+      if (!cancelled) { setUsers(rows); setTags(t); setAssignments(a); setLoading(false) }
     })
     return () => { cancelled = true }
   }, [])
+
+  const tagsByUser = (() => {
+    const map = new Map<string, UserTag[]>()
+    const tagById = new Map(tags.map(t => [t.id, t]))
+    for (const a of assignments) {
+      const t = tagById.get(a.tag_id)
+      if (!t) continue
+      if (!map.has(a.user_id)) map.set(a.user_id, [])
+      map.get(a.user_id)!.push(t)
+    }
+    return map
+  })()
 
   async function patchUser(userId: string, updates: Parameters<typeof adminUpdateUser>[1]) {
     setSavingId(userId)
@@ -73,6 +110,9 @@ export default function AdminUsersPage() {
       (u.name ?? '').toLowerCase().includes(q) ||
       (u.email ?? '').toLowerCase().includes(q),
     )
+  }
+  if (tagFilter) {
+    filtered = filtered.filter(u => (tagsByUser.get(u.id) ?? []).some(t => t.id === tagFilter))
   }
 
   const S = {
@@ -116,12 +156,12 @@ export default function AdminUsersPage() {
         <input placeholder="Search name or email…" value={search} onChange={e => setSearch(e.target.value)} style={S.search} />
       </div>
 
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
         {([
           { id: 'all',  label: `All (${counts.all})` },
-          { id: 'A',    label: `Path A · Cohort (${counts.A})` },
-          { id: 'B',    label: `Path B · Daily Cards (${counts.B})` },
-          { id: 'C',    label: `Path C · Circle (${counts.C})` },
+          { id: 'A',    label: `Seal the Leak (${counts.A})` },
+          { id: 'B',    label: `365 Cards (${counts.B})` },
+          { id: 'C',    label: `The Circle (${counts.C})` },
           { id: 'none', label: `No path (${counts.none})` },
         ] as { id: PathFilter; label: string }[]).map(opt => (
           <button key={opt.id} onClick={() => setFilter(opt.id)} style={S.tab(filter === opt.id)}>
@@ -129,6 +169,64 @@ export default function AdminUsersPage() {
           </button>
         ))}
       </div>
+
+      {filter === 'C' && (
+        <div style={{
+          background: 'rgba(61,48,128,0.06)', border: '1px solid rgba(61,48,128,0.2)',
+          borderRadius: 10, padding: '10px 14px', marginBottom: 12,
+          fontSize: 12, color: 'var(--ink)',
+          display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+        }}>
+          <span>Circle members have extra context — engagement alerts, archetype, coaching notes.</span>
+          <Link
+            href="/admin/members"
+            style={{
+              marginLeft: 'auto', fontSize: 11, fontWeight: 600,
+              padding: '5px 12px', borderRadius: 7,
+              background: '#3D3080', color: '#fff', textDecoration: 'none',
+            }}
+          >
+            Open Circle deep-dive →
+          </Link>
+        </div>
+      )}
+
+      {tags.length > 0 && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '.07em', textTransform: 'uppercase', marginRight: 4 }}>
+            Tags:
+          </span>
+          <button
+            onClick={() => setTagFilter(null)}
+            style={{
+              ...S.tab(tagFilter === null),
+              fontSize: 11, padding: '4px 10px',
+            }}
+          >
+            All
+          </button>
+          {tags.map(t => {
+            const c = TAG_COLOR_STYLE[t.color]
+            const on = tagFilter === t.id
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTagFilter(on ? null : t.id)}
+                style={{
+                  fontSize: 11, fontWeight: 600,
+                  padding: '4px 10px', borderRadius: 999,
+                  background: on ? c.fg : c.bg,
+                  color: on ? '#fff' : c.fg,
+                  border: `1px solid ${c.border}`,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                {t.label}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {loading ? (
         <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading users…</div>
@@ -168,6 +266,59 @@ export default function AdminUsersPage() {
                   }}>
                     {u.email ?? '—'}
                   </div>
+                  {/* Program badges (auto-computed) */}
+                  {(() => {
+                    const programs = getUserPrograms({
+                      selected_path: u.selected_path,
+                      cards_addon_started_at: u.cards_addon_started_at,
+                      has_circle_membership: !!u.cohort_id,
+                    })
+                    if (programs.length <= 1) return null  // single-program users get the path select; no badge needed
+                    return (
+                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+                        <span style={{
+                          fontSize: 9, fontWeight: 700,
+                          padding: '1px 6px', borderRadius: 999,
+                          background: 'rgba(0,0,0,0.7)', color: '#fff',
+                          letterSpacing: '.06em', textTransform: 'uppercase',
+                        }}>
+                          IN {programs.length} PROGRAMS
+                        </span>
+                        {programs.map(p => {
+                          const c = PROGRAM_TINT[p.color] ?? PROGRAM_TINT.gold
+                          return (
+                            <span key={p.key + p.label} style={{
+                              fontSize: 9, fontWeight: 600,
+                              padding: '1px 6px', borderRadius: 999,
+                              background: c.bg, color: c.fg, border: `1px solid ${c.border}`,
+                              letterSpacing: '.04em',
+                            }}>
+                              {p.label}
+                            </span>
+                          )
+                        })}
+                      </div>
+                    )
+                  })()}
+                  {/* Tag pills */}
+                  {(tagsByUser.get(u.id) ?? []).length > 0 && (
+                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+                      {(tagsByUser.get(u.id) ?? []).map(t => {
+                        const c = TAG_COLOR_STYLE[t.color]
+                        return (
+                          <span key={t.id} style={{
+                            fontSize: 9, fontWeight: 600,
+                            padding: '1px 6px', borderRadius: 999,
+                            background: c.bg, color: c.fg,
+                            border: `1px solid ${c.border}`,
+                            letterSpacing: '.04em',
+                          }}>
+                            {t.label}
+                          </span>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
                 {/* Path — editable */}
                 <select

@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
 
-export default function RevenueRedirect() {
+export default function PurchasesRedirect() {
   redirect('/admin/money')
 }

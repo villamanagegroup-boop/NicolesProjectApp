@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 
 const STRIPE_PATH_A = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK ?? '#'
 const STRIPE_PATH_B = process.env.NEXT_PUBLIC_STRIPE_PATH_B_LINK ?? '#'
@@ -15,7 +15,9 @@ const PATH_LABELS: Record<string, string> = {
 
 function SignupForm() {
   const searchParams = useSearchParams()
-  const path = (searchParams.get('path') ?? 'A') as 'A' | 'B' | 'C'
+  const router = useRouter()
+  const rawPath = searchParams.get('path')
+  const path = (rawPath === 'A' || rawPath === 'B' || rawPath === 'C' ? rawPath : null) as 'A' | 'B' | 'C' | null
   const stripeLink = path === 'B' ? STRIPE_PATH_B : path === 'C' ? STRIPE_PATH_C : STRIPE_PATH_A
 
   const [name, setName] = useState('')
@@ -24,14 +26,26 @@ function SignupForm() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [ready, setReady] = useState(false)
 
-  // Pre-fill from quiz lead capture
+  // Guard: must have completed the quiz AND chosen a path before signing up.
+  // Also pre-fills name/email captured during the quiz lead step.
   useEffect(() => {
+    const quizResult = sessionStorage.getItem('clarity_quiz_result')
+    if (!quizResult) {
+      router.replace('/quiz')
+      return
+    }
+    if (!path) {
+      router.replace('/quiz/paths')
+      return
+    }
     const savedName = sessionStorage.getItem('clarity_lead_name') ?? ''
     const savedEmail = sessionStorage.getItem('clarity_lead_email') ?? ''
     if (savedName) setName(savedName)
     if (savedEmail) setEmail(savedEmail)
-  }, [])
+    setReady(true)
+  }, [router, path])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -76,15 +90,20 @@ function SignupForm() {
       onboarding_complete: path !== 'C',
     }).eq('id', data.user.id)
 
-    // Claim any pending purchase made before signup (Stripe payment link flow)
+    // Claim any pending purchase made before signup (Stripe payment link flow).
+    // Non-fatal if it fails — the webhook will retry on its next event, and
+    // selected_path is already saved so the user can still reach their program.
     try {
-      await fetch('/api/claim-purchase', {
+      const res = await fetch('/api/claim-purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: data.user.id, email: email.trim() }),
       })
-    } catch {
-      // Non-fatal — path is already set above; access will still work
+      if (!res.ok) {
+        console.warn('claim-purchase non-OK', res.status, await res.text().catch(() => ''))
+      }
+    } catch (err) {
+      console.warn('claim-purchase failed', err)
     }
 
     const dest = path === 'A' ? '/program' : path === 'C' ? '/onboarding' : '/dashboard'
@@ -121,6 +140,8 @@ function SignupForm() {
   function handleBlur(e: React.FocusEvent<HTMLInputElement>) {
     e.currentTarget.style.borderBottomColor = 'var(--line-md)'
   }
+
+  if (!ready || !path) return null
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#ffffff' }}>

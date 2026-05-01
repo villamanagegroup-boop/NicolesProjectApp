@@ -50,19 +50,21 @@ export default function QuizSubmitPage() {
     const answers: Record<number, number> = raw ? JSON.parse(raw) : {}
     const result: QuizResultId = scoreQuiz(answers)
 
-    try {
-      await supabaseClient.from('quiz_leads').insert({
-        name: name.trim(),
-        email: email.trim(),
-        quiz_result: result,
-        answers_json: answers,
-      })
-    } catch (err) {
-      console.error('Supabase insert error:', err)
+    // Persist the lead. If this fails the user still gets their result —
+    // we don't block the funnel — but we log loudly so the team notices.
+    const { error: insertError } = await supabaseClient.from('quiz_leads').insert({
+      name: name.trim(),
+      email: email.trim(),
+      quiz_result: result,
+      answers_json: answers,
+    })
+    if (insertError) {
+      console.error('quiz_leads insert failed:', insertError)
     }
 
     sessionStorage.setItem('clarity_quiz_result', result)
     sessionStorage.setItem('clarity_lead_name', name.trim())
+    sessionStorage.setItem('clarity_lead_email', email.trim())
     router.push('/quiz/result')
   }
 

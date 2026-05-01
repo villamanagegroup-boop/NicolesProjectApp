@@ -43,11 +43,10 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   // flow they may not have personally completed.
   useEffect(() => {
     if (loading || !isAuthed || user.isAdmin) return
-    // Paid users coming from a payment link already have a path — skip the quiz gate.
-    // They can take the quiz later from settings to personalise their content.
-    const paidWithPath = user.hasPaid && !!user.selectedPath
-    if (!paidWithPath && !user.quizResult)   { router.replace('/quiz'); return }
-    if (!paidWithPath && !user.selectedPath) { router.replace('/quiz/paths'); return }
+    // Users who selected a path (paid or free) skip the quiz gate entirely.
+    // The quiz is only required for users who haven't picked a path yet.
+    if (!user.selectedPath && !user.quizResult) { router.replace('/quiz'); return }
+    if (!user.selectedPath)                     { router.replace('/quiz/paths'); return }
     if (user.selectedPath === 'C' && !user.onboardingComplete) {
       router.replace('/onboarding'); return
     }
