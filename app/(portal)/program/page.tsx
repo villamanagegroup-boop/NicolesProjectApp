@@ -147,7 +147,7 @@ function ProgramOverviewInner() {
             <span style={{ fontSize: '20px' }}>→</span>
           </Link>
 
-          {/* Daily journal CTA */}
+          {/* Complete Reflection CTA — links to the Seal-only reflections page */}
           <Link
             href="/program/reflections"
             style={{
@@ -175,10 +175,10 @@ function ProgramOverviewInner() {
           >
             <div>
               <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 2px' }}>
-                Daily Journal
+                Reflections
               </p>
               <p style={{ fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', margin: 0, color: 'var(--ink)' }}>
-                Open your daily journal
+                Complete Reflection
               </p>
             </div>
             <span style={{ fontSize: '16px', opacity: 0.6 }}>✏</span>

@@ -53,10 +53,11 @@ export default function ProfilePage() {
   const cardsUnlocked = Math.min(dayNumber, cards.length)
   const reflectionsCount = journalEntries.length
 
-  // ── Recent reflections (last 10, newest first) ────────────────────────────
+  // ── Reflections archive — every journal entry the user has ever written.
+  // The profile is the "backend record" view: you come here to find anything
+  // you wrote, not just the last 10. Newest first; scrollable.
   const recentReflections = [...journalEntries]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 10)
     .map(entry => {
       const card = cards.find(c => c.id === entry.cardId)
       return { entry, card }
@@ -285,11 +286,16 @@ export default function ProfilePage() {
           justifyContent: 'space-between',
           alignItems: 'center',
         }}>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 400, color: 'var(--ink)', margin: 0 }}>
-            Your reflections
-          </h2>
+          <div>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 400, color: 'var(--ink)', margin: 0 }}>
+              Your reflections
+            </h2>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '2px 0 0' }}>
+              Every journal entry you&apos;ve written, kept on file.
+            </p>
+          </div>
           <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
-            {reflectionsCount === 0 ? 'None yet' : `Showing ${recentReflections.length} of ${reflectionsCount}`}
+            {reflectionsCount === 0 ? 'None yet' : `${reflectionsCount} ${reflectionsCount === 1 ? 'entry' : 'entries'}`}
           </span>
         </div>
 
@@ -318,7 +324,7 @@ export default function ProfilePage() {
             </Link>
           </div>
         ) : (
-          <div style={{ maxHeight: 420, overflowY: 'auto' }}>
+          <div style={{ maxHeight: 720, overflowY: 'auto' }}>
             {recentReflections.map(({ entry, card }, i) => {
               const isLast = i === recentReflections.length - 1
               const themeColor = card ? themeColors[card.theme] ?? 'var(--text-soft)' : 'var(--text-soft)'

@@ -5,38 +5,30 @@ import { useSearchParams } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 import { programRoutes, archetypeToRoute } from '@/data/sealTheLeakProgram'
 import type { ProgramRoute } from '@/data/sealTheLeakProgram'
-import type { JournalEntry } from '@/types'
 
 function storageKey(routeId: string, dayNum: number, itemIndex: number) {
   return `stl_${routeId}_day${dayNum}_item${itemIndex}`
 }
 
-function DownloadAllButton({ routeId, route, currentDay, journalEntries }: {
+function DownloadAllButton({ routeId, route, currentDay }: {
   routeId: string
   route: ProgramRoute
   currentDay: number
-  journalEntries: JournalEntry[]
 }) {
   function handleDownload() {
     const lines: string[] = []
     lines.push(`SEAL THE LEAK — ${route.name}`)
-    lines.push(`Daily Journal Export`)
+    lines.push(`Reflections export`)
     lines.push(`Generated ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`)
     lines.push('')
     lines.push('─'.repeat(60))
 
-    // Program prompt entries
-    let hasPrompts = false
     for (const d of route.days) {
       if (d.day > currentDay) break
       const dayLines: string[] = []
       d.prompt.items.forEach((q, i) => {
         const answer = localStorage.getItem(storageKey(routeId, d.day, i))
         if (answer?.trim()) {
-          if (!hasPrompts) {
-            lines.push(''); lines.push('PROGRAM PROMPTS'); lines.push('')
-            hasPrompts = true
-          }
           if (dayLines.length === 0) {
             dayLines.push(`Day ${d.day} — ${d.title} (${d.phase})`)
             dayLines.push('')
@@ -52,22 +44,11 @@ function DownloadAllButton({ routeId, route, currentDay, journalEntries }: {
       }
     }
 
-    // Daily Journal entries
-    if (journalEntries.length > 0) {
-      lines.push(''); lines.push('DAILY JOURNAL'); lines.push('')
-      for (const entry of journalEntries) {
-        lines.push(`Day ${entry.dayNumber} · ${entry.createdAt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`)
-        lines.push(entry.content.trim())
-        lines.push('')
-        lines.push('─'.repeat(40))
-      }
-    }
-
     const blob = new Blob([lines.join('\n')], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `seal-the-leak-daily-journal.txt`
+    a.download = `seal-the-leak-reflections.txt`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -91,16 +72,8 @@ function DownloadAllButton({ routeId, route, currentDay, journalEntries }: {
   )
 }
 
-function parseEntry(content: string) {
-  const parts = content.split('\n\n')
-  if (parts.length > 1 && parts[0].length < 80) {
-    return { topic: parts[0], body: parts.slice(1).join('\n\n') }
-  }
-  return { topic: null, body: content }
-}
-
 function ReflectionsInner() {
-  const { user, dayNumber, journalEntries } = useApp()
+  const { user, dayNumber } = useApp()
   const searchParams = useSearchParams()
 
   const routeId = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
@@ -110,7 +83,7 @@ function ReflectionsInner() {
 
   // Which day tab is active — default to query param or currentDay
   const paramDay = searchParams ? Number(searchParams.get('day')) : 0
-  const [activeDay, setActiveDay] = useState<number | 'journal'>(
+  const [activeDay, setActiveDay] = useState<number>(
     paramDay >= 1 && paramDay <= currentDay ? paramDay : currentDay
   )
 
@@ -134,37 +107,28 @@ function ReflectionsInner() {
 
   const completedDays = Math.max(currentDay - 1, 0)
 
-  // Journal entries split into program reflections and free-write
-  // Daily journal entries belong to the program (no card binding).
-  const programJournalEntries = journalEntries.filter(e => !e.cardId)
+  // Active prompt entry for selected day. The universal Journal lives at
+  // /journal — this page is intentionally Seal-only, no cross-pollination.
+  const activePromptEntry = promptEntries.find(e => e.day === activeDay) ?? null
 
-  // Active prompt entry for selected day
-  const activePromptEntry = typeof activeDay === 'number'
-    ? promptEntries.find(e => e.day === activeDay)
-    : null
+  const hasSomething = promptEntries.length > 0
 
-  const hasSomething = promptEntries.length > 0 || programJournalEntries.length > 0
-
-  // ── Cycle navigation ──
+  // ── Cycle navigation — Seal program days only ──
   const availableDays = route.days
     .filter(d => d.day <= currentDay)
     .map(d => d.day)
 
-  const allTabs: (number | 'journal')[] = [
-    ...availableDays,
-    ...(programJournalEntries.length > 0 ? ['journal' as const] : []),
-  ]
+  const allTabs: number[] = availableDays
 
-  const currentTabIndex = allTabs.indexOf(activeDay as number | 'journal')
+  const currentTabIndex = allTabs.indexOf(activeDay)
   const prevTab = currentTabIndex > 0 ? allTabs[currentTabIndex - 1] : null
   const nextTab = currentTabIndex < allTabs.length - 1 ? allTabs[currentTabIndex + 1] : null
 
-  function tabLabel(tab: number | 'journal'): string {
-    if (tab === 'journal') return 'Journal entries'
-    return `Day ${tab} — ${route.days[(tab as number) - 1]?.title ?? ''}`
+  function tabLabel(tab: number): string {
+    return `Day ${tab} — ${route.days[tab - 1]?.title ?? ''}`
   }
 
-  function goToTab(tab: number | 'journal') {
+  function goToTab(tab: number) {
     setActiveDay(tab)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -185,7 +149,7 @@ function ReflectionsInner() {
           </Link>
           <span style={{ color: 'var(--line-md)', fontSize: '12px' }}>/</span>
           <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
-            Daily Journal
+            Reflections
           </span>
         </div>
 
@@ -200,10 +164,10 @@ function ReflectionsInner() {
               </span>
             </div>
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '30px', fontWeight: 300, color: 'var(--ink)', margin: '0 0 6px' }}>
-              Daily Journal
+              Reflections
             </h1>
             <p style={{ fontSize: '13px', color: 'var(--text-soft)', fontFamily: 'var(--font-body)', margin: 0, lineHeight: 1.6 }}>
-              Your daily journal entries across the program.
+              Your daily reflection prompts for the {route.name} track. Tap a day to review what you wrote.
             </p>
           </div>
 
@@ -229,7 +193,7 @@ function ReflectionsInner() {
           >
             Review my sessions →
           </Link>
-          <DownloadAllButton routeId={routeId} route={route} currentDay={currentDay} journalEntries={programJournalEntries} />
+          <DownloadAllButton routeId={routeId} route={route} currentDay={currentDay} />
         </div>
       </div>
 
@@ -243,7 +207,7 @@ function ReflectionsInner() {
             No entries yet
           </p>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 20px' }}>
-            Complete a day&apos;s session to see your daily journal here.
+            Complete a day&apos;s session to see your reflections here.
           </p>
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link
@@ -317,28 +281,6 @@ function ReflectionsInner() {
               </div>
             )}
 
-            {/* Daily Journal entries tab */}
-            {programJournalEntries.length > 0 && (
-              <button
-                onClick={() => setActiveDay('journal')}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '12px 16px', borderRadius: '10px', border: `1px solid ${activeDay === 'journal' ? 'rgba(61,48,128,0.25)' : 'var(--line)'}`,
-                  background: activeDay === 'journal' ? 'rgba(61,48,128,0.06)' : 'white',
-                  cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.1s',
-                }}
-              >
-                <div>
-                  <p style={{ fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.1em', color: activeDay === 'journal' ? '#3D3080' : 'var(--text-muted)', margin: '0 0 2px', fontFamily: 'var(--font-body)' }}>
-                    Daily Journal
-                  </p>
-                  <p style={{ fontSize: '12px', color: 'var(--text-soft)', margin: 0, fontFamily: 'var(--font-body)' }}>
-                    {programJournalEntries.length} {programJournalEntries.length === 1 ? 'entry' : 'entries'}
-                  </p>
-                </div>
-                <span style={{ fontSize: '14px', color: activeDay === 'journal' ? '#3D3080' : 'var(--text-muted)', opacity: 0.7 }}>✏</span>
-              </button>
-            )}
           </div>
 
           {/* ── RIGHT: content ── */}
@@ -355,12 +297,9 @@ function ReflectionsInner() {
                 WebkitOverflowScrolling: 'touch',
                 paddingBottom: '2px',
               }}>
-                {allTabs.map((tab, i) => {
+                {allTabs.map((tab) => {
                   const isActive = tab === activeDay
-                  const isDot = typeof tab === 'number'
-                  const hasData = isDot
-                    ? promptEntries.some(e => e.day === tab)
-                    : programJournalEntries.length > 0
+                  const hasData = promptEntries.some(e => e.day === tab)
                   return (
                     <button
                       key={String(tab)}
@@ -397,9 +336,7 @@ function ReflectionsInner() {
                         outlineOffset: '2px',
                       }}
                     >
-                      {isActive
-                        ? (typeof tab === 'number' ? `Day ${tab}` : '✏ Journal')
-                        : (typeof tab === 'number' ? tab : '✏')}
+                      {isActive ? `Day ${tab}` : tab}
                     </button>
                   )
                 })}
@@ -410,8 +347,7 @@ function ReflectionsInner() {
             )}
 
             {/* Program prompt entries for selected day */}
-            {typeof activeDay === 'number' && (
-              <>
+            <>
                 {activePromptEntry ? (
                   <div>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '20px' }}>
@@ -478,42 +414,6 @@ function ReflectionsInner() {
                   </div>
                 )}
               </>
-            )}
-
-            {/* Journal entries view */}
-            {activeDay === 'journal' && (
-              <div>
-                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', fontWeight: 300, color: 'var(--ink)', margin: '0 0 20px' }}>
-                  Daily Journal
-                </h2>
-
-                {programJournalEntries.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {programJournalEntries.map(entry => {
-                      const parsed = parseEntry(entry.content)
-                      return (
-                        <div key={entry.id} style={{ background: 'white', border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden' }}>
-                          <div style={{ height: '3px', background: '#3D3080' }} />
-                          <div style={{ padding: '18px 20px' }}>
-                            <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 6px' }}>
-                              Day {entry.dayNumber} · {entry.createdAt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                            </p>
-                            {parsed.topic && (
-                              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--ink)', fontFamily: 'var(--font-body)', margin: '0 0 8px' }}>
-                                {parsed.topic}
-                              </p>
-                            )}
-                            <p style={{ fontSize: '13px', color: 'var(--ink)', fontFamily: 'var(--font-body)', lineHeight: 1.8, margin: 0, whiteSpace: 'pre-wrap' }}>
-                              {parsed.body}
-                            </p>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* ── Prev / Next cycling ── */}
             {(prevTab !== null || nextTab !== null) && (
