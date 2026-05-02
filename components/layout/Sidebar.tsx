@@ -40,9 +40,9 @@ interface Program {
 }
 
 const PROGRAMS: Record<ProgramKey, Program> = {
-  seal:   { key: 'seal',   title: 'Seal the Leak', subtitle: '7-day reset',      icon: '✦', home: '/program',   palette: SEAL,   pathPrefix: '/program',   upgradePath: 'A' },
-  cards:  { key: 'cards',  title: '365 Cards',     subtitle: 'Daily alignment',  icon: '◇', home: '/dashboard', palette: CARDS,  pathPrefix: '/dashboard', upgradePath: 'B' },
-  circle: { key: 'circle', title: 'The Circle',    subtitle: '90-day cohort',    icon: '○', home: '/circle',    palette: CIRCLE, pathPrefix: '/circle',    upgradePath: 'C' },
+  seal:   { key: 'seal',   title: 'Seal the Leak', subtitle: '7-day reset',      icon: '✦', home: '/program', palette: SEAL,   pathPrefix: '/program', upgradePath: 'A' },
+  cards:  { key: 'cards',  title: '365 Cards',     subtitle: 'Daily alignment',  icon: '◇', home: '/card',    palette: CARDS,  pathPrefix: '/card',    upgradePath: 'B' },
+  circle: { key: 'circle', title: 'The Circle',    subtitle: '90-day cohort',    icon: '○', home: '/circle',  palette: CIRCLE, pathPrefix: '/circle',  upgradePath: 'C' },
 }
 
 const SEAL_ITEMS: NavItem[] = [
@@ -75,13 +75,14 @@ function isActive(href: string, pathname: string, exact?: boolean): boolean {
 }
 
 // Derive which program the user is currently in based on the URL.
+// /dashboard is universal (not tied to any program) — the picker stays on
+// whatever the user's natural default was when they navigate there.
 function programFromPath(pathname: string, fallback: ProgramKey): ProgramKey {
   if (pathname.startsWith('/program')) return 'seal'
   if (pathname.startsWith('/circle'))  return 'circle'
-  if (pathname === '/dashboard' || pathname.startsWith('/dashboard') ||
-      pathname === '/card'      || pathname.startsWith('/card')      ||
-      pathname === '/past'      || pathname.startsWith('/past')      ||
-      pathname === '/vault'     || pathname.startsWith('/vault')) {
+  if (pathname === '/card'  || pathname.startsWith('/card')  ||
+      pathname === '/past'  || pathname.startsWith('/past')  ||
+      pathname === '/vault' || pathname.startsWith('/vault')) {
     return 'cards'
   }
   return fallback
@@ -118,9 +119,8 @@ export default function Sidebar() {
   // Vault unlock depends on dayNumber.
   const vaultUnlocked = dayNumber >= 30
   const cardsItems: NavItem[] = [
-    { href: '/dashboard', label: "Today's home",  exact: true },
-    { href: '/card',      label: "Today's card",  exact: true },
-    { href: '/past',      label: 'Past cards',    exact: true },
+    { href: '/card',      label: "Today's card", exact: true },
+    { href: '/past',      label: 'Past cards',   exact: true },
     ...(vaultUnlocked ? [{ href: '/vault', label: 'The Vault', exact: true }] : []),
   ]
 
@@ -174,6 +174,46 @@ export default function Sidebar() {
         }}>
           <span style={{ color: 'var(--gold)' }}>✦</span> Seal Your Leak
         </div>
+      </div>
+
+      {/* Home — universal landing showing every program at a glance */}
+      <div style={{ padding: '0 12px 10px' }}>
+        <Link
+          href="/dashboard"
+          style={{ textDecoration: 'none', display: 'block' }}
+        >
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '9px 12px', borderRadius: 8,
+            background: pathname === '/dashboard' ? 'var(--paper2)' : 'transparent',
+            border: `1px solid ${pathname === '/dashboard' ? 'var(--line-md)' : 'transparent'}`,
+            color: pathname === '/dashboard' ? 'var(--ink)' : 'var(--text-soft)',
+            fontFamily: 'var(--font-body)',
+            transition: 'background 0.15s, border-color 0.15s',
+          }}
+          onMouseEnter={e => {
+            if (pathname !== '/dashboard') (e.currentTarget as HTMLDivElement).style.background = 'var(--paper2)'
+          }}
+          onMouseLeave={e => {
+            if (pathname !== '/dashboard') (e.currentTarget as HTMLDivElement).style.background = 'transparent'
+          }}>
+            <span style={{ fontSize: 14, lineHeight: 1, flexShrink: 0 }}>◌</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                fontSize: 13, fontWeight: pathname === '/dashboard' ? 600 : 500,
+                lineHeight: 1.2,
+              }}>
+                Home
+              </div>
+              <div style={{
+                fontSize: 10, color: 'var(--text-muted)',
+                marginTop: 1, lineHeight: 1.3,
+              }}>
+                Today across every program
+              </div>
+            </div>
+          </div>
+        </Link>
       </div>
 
       {/* Program picker */}
