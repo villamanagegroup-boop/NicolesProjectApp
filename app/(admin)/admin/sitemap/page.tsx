@@ -110,6 +110,8 @@ const SECTIONS: Section[] = [
       { path: '/login',        access: 'public', title: 'Log in',        desc: 'Email + password sign in.' },
       { path: '/signup',       access: 'public', title: 'Sign up',       desc: 'Quiz-gated account creation.' },
       { path: '/onboarding',   access: 'public', title: 'Onboarding',    desc: 'Path C cohort enrollment intake.' },
+      { path: '/take-the-quiz',  access: 'user', title: 'Take-the-quiz failsafe', desc: 'Friendly landing for users who reached a program without a quiz result. Two CTAs: standalone quiz or email Nicole.' },
+      { path: '/quiz/standalone', access: 'user', title: 'Standalone quiz',         desc: '12 questions for already-signed-in users. Writes archetype to user row, then redirects to their dashboard.' },
     ],
   },
   {

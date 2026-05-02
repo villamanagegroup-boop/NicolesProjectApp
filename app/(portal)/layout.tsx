@@ -43,10 +43,14 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   // flow they may not have personally completed.
   useEffect(() => {
     if (loading || !isAuthed || user.isAdmin) return
-    // Users who selected a path (paid or free) skip the quiz gate entirely.
-    // The quiz is only required for users who haven't picked a path yet.
+    // Quiz funnel for users without a path yet.
     if (!user.selectedPath && !user.quizResult) { router.replace('/quiz'); return }
     if (!user.selectedPath)                     { router.replace('/quiz/paths'); return }
+    // Failsafe: a user who has a path but no quiz result reached the portal
+    // through some out-of-funnel route (admin claim, manual path assignment).
+    // Send them to the friendly /take-the-quiz landing where they can take a
+    // standalone version of the quiz or email Nicole for help.
+    if (!user.quizResult)                       { router.replace('/take-the-quiz'); return }
     if (user.selectedPath === 'C' && !user.onboardingComplete) {
       router.replace('/onboarding'); return
     }
