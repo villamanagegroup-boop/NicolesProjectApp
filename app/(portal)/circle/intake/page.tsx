@@ -290,7 +290,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       className="portal-full-bleed"
       style={{ background: ORANGE_PALE, minHeight: 'calc(100vh - 60px)', padding: '40px 24px' }}
     >
-      <div style={{ maxWidth: 640, margin: '0 auto' }}>{children}</div>
+      <div style={{ maxWidth: 720, margin: '0 auto' }}>{children}</div>
     </div>
   )
 }

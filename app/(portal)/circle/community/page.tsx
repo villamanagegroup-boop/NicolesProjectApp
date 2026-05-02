@@ -151,22 +151,34 @@ export default function CommunityPage() {
   }
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+      {/* Hero */}
+      <div style={{ marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: ORANGE, margin: '0 0 4px' }}>
+          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: ORANGE, margin: '0 0 6px' }}>
             The Circle
           </p>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', margin: 0 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300, color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em', lineHeight: 1.15 }}>
             Community
           </h1>
+          <p style={{ fontSize: 14, color: 'var(--text-soft)', margin: '8px 0 0', lineHeight: 1.6 }}>
+            Wins, prompts, and partner check-ins from your cohort.
+          </p>
         </div>
         {!showCompose && (
           <button onClick={() => setShowCompose(true)} style={primaryBtn}>+ Post</button>
         )}
       </div>
+
+      {/* Feed (left) + filters/info (right) on desktop, stacked on mobile */}
+      <div className="community-cols" style={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)',
+        gap: 28, alignItems: 'start',
+      }}>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
       {/* Compose */}
       {showCompose && (
@@ -230,22 +242,11 @@ export default function CommunityPage() {
         </div>
       )}
 
-      {/* Filters */}
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>All</FilterChip>
-        {POST_TYPES.map(t => (
-          <FilterChip key={t.id} dot={t.dot} active={filter === t.id} onClick={() => setFilter(t.id)}>
-            {t.label}
-          </FilterChip>
-        ))}
-      </div>
-
       {/* Feed */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {visiblePosts.length === 0 ? (
           <div style={{
             textAlign: 'center', padding: '40px 20px',
-            background: '#fff', border: '1px solid var(--line)', borderRadius: 14,
             color: 'var(--text-muted)', fontSize: 13,
           }}>
             No posts yet. Be the first to share.
@@ -258,7 +259,104 @@ export default function CommunityPage() {
           />
         ))}
       </div>
+
+      </div>
+
+      {/* Right column — filter sidebar (sticky on desktop) */}
+      <div style={{ position: 'sticky', top: 24 }}>
+        <section style={{ marginBottom: 24 }}>
+          <header style={{
+            display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+            paddingBottom: 8, borderBottom: '1px solid var(--line)',
+            marginBottom: 12,
+          }}>
+            <h2 style={{
+              fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
+              textTransform: 'uppercase', color: 'var(--text-soft)',
+              margin: 0, fontFamily: 'var(--font-body)',
+            }}>
+              Filter
+            </h2>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
+              {visiblePosts.length} {visiblePosts.length === 1 ? 'post' : 'posts'}
+            </span>
+          </header>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <FilterRow active={filter === 'all'} onClick={() => setFilter('all')}>All</FilterRow>
+            {POST_TYPES.map(t => (
+              <FilterRow key={t.id} dot={t.dot} active={filter === t.id} onClick={() => setFilter(t.id)}>
+                {t.label}
+              </FilterRow>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <header style={{
+            paddingBottom: 8, borderBottom: '1px solid var(--line)',
+            marginBottom: 12,
+          }}>
+            <h2 style={{
+              fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
+              textTransform: 'uppercase', color: 'var(--text-soft)',
+              margin: 0, fontFamily: 'var(--font-body)',
+            }}>
+              About this feed
+            </h2>
+          </header>
+          <p style={{ fontSize: 12, color: 'var(--text-soft)', lineHeight: 1.6, margin: 0 }}>
+            Everything posted here is visible to your full cohort. Use <strong>Wins</strong> to celebrate small shifts, <strong>Monday</strong> for the weekly prompt, <strong>Partner</strong> for accountability check-ins, and <strong>General</strong> for anything else.
+          </p>
+        </section>
+      </div>
+
+      </div>
+
+      <style>{`
+        @media (max-width: 900px) {
+          .community-cols {
+            grid-template-columns: 1fr !important;
+          }
+          .community-cols > div { position: static !important; }
+        }
+      `}</style>
     </div>
+  )
+}
+
+function FilterRow({ active, onClick, dot, children }: {
+  active: boolean
+  onClick: () => void
+  dot?: string
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '8px 12px', borderRadius: 7,
+        border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+        textAlign: 'left', width: '100%',
+        background: active ? ORANGE_PALE : 'transparent',
+        color: active ? ORANGE : 'var(--text-soft)',
+        fontSize: 13, fontWeight: active ? 600 : 500,
+        transition: 'background 0.15s, color 0.15s',
+      }}
+      onMouseEnter={e => {
+        if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'var(--paper2)'
+      }}
+      onMouseLeave={e => {
+        if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+      }}
+    >
+      <span style={{
+        width: 8, height: 8, borderRadius: '50%',
+        background: dot ?? 'var(--text-muted)',
+        flexShrink: 0,
+      }} />
+      {children}
+    </button>
   )
 }
 

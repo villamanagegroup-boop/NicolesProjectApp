@@ -16,13 +16,13 @@ const CALL_DESCRIPTIONS: Record<number, string> = {
   6: 'Graduation. Transformation shares, partner appreciation, what comes next beyond these 90 days.',
 }
 
-const MONTH_FOR_CALL: Record<number, { label: string; tint: string }> = {
-  1: { label: 'Welcome',  tint: ORANGE            },
-  2: { label: 'Root',     tint: 'var(--green)'    },
-  3: { label: 'Rebuild',  tint: '#a66128'         },
-  4: { label: 'Rebuild',  tint: '#a66128'         },
-  5: { label: 'Rise',     tint: 'var(--gold)'     },
-  6: { label: 'Rise',     tint: 'var(--gold)'     },
+const MONTH_FOR_CALL: Record<number, { label: string }> = {
+  1: { label: 'Welcome' },
+  2: { label: 'Root' },
+  3: { label: 'Rebuild' },
+  4: { label: 'Rebuild' },
+  5: { label: 'Rise' },
+  6: { label: 'Rise' },
 }
 
 export default function CallsPage() {
@@ -35,7 +35,6 @@ export default function CallsPage() {
   useEffect(() => {
     if (loading) return
     if (!isAuthed) { router.replace('/login'); return }
-
     (async () => {
       const member = await getMyCircleMember()
       if (!member) { setHydrating(false); return }
@@ -45,7 +44,7 @@ export default function CallsPage() {
     })()
   }, [loading, isAuthed, router])
 
-  const { past, upcoming, nextId } = useMemo(() => {
+  const { past, upcoming } = useMemo(() => {
     const now = Date.now()
     const past: LiveCall[]     = []
     const upcoming: LiveCall[] = []
@@ -55,7 +54,7 @@ export default function CallsPage() {
     }
     past.sort((a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime())
     upcoming.sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())
-    return { past, upcoming, nextId: upcoming[0]?.id ?? null }
+    return { past, upcoming }
   }, [calls])
 
   if (loading || hydrating) {
@@ -64,10 +63,7 @@ export default function CallsPage() {
 
   if (calls.length === 0) {
     return (
-      <div style={{
-        maxWidth: 520, margin: '40px auto', textAlign: 'center',
-        background: '#fff', border: '1px solid var(--line)', borderRadius: 14, padding: 40,
-      }}>
+      <div style={{ maxWidth: 540, margin: '40px auto', textAlign: 'center', padding: 40 }}>
         <div style={{
           width: 56, height: 56, borderRadius: '50%',
           background: ORANGE_PALE, color: ORANGE,
@@ -87,261 +83,248 @@ export default function CallsPage() {
   const next = upcoming[0]
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-      {/* Header */}
-      <div>
-        <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: ORANGE, margin: '0 0 4px' }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+      {/* Hero */}
+      <div style={{ marginBottom: 28 }}>
+        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: ORANGE, margin: '0 0 6px' }}>
           The Circle
         </p>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', margin: '0 0 4px' }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300, color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em', lineHeight: 1.15 }}>
           Live calls
         </h1>
-        <p style={{ fontSize: 13, color: 'var(--text-soft)', margin: 0 }}>
-          6 calls across your 90-day journey · {past.length} complete, {upcoming.length} upcoming
+        <p style={{ fontSize: 14, color: 'var(--text-soft)', margin: '8px 0 0', lineHeight: 1.6 }}>
+          6 calls across your 90-day journey · {past.length} complete, {upcoming.length} upcoming.
         </p>
       </div>
 
-      {/* Next up hero */}
-      {next && <NextUpCard call={next} />}
+      {/* Next-up centerpiece — full width, gradient bar like the affirmation */}
+      {next && <NextUpHero call={next} />}
 
-      {/* Upcoming (minus next) */}
-      {upcoming.length > 1 && (
-        <Section title="Upcoming">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {upcoming.slice(1).map(call => <CallRow key={call.id} call={call} kind="upcoming" />)}
-          </div>
-        </Section>
-      )}
+      {/* Below the hero: upcoming on left, past replays on right */}
+      <div className="calls-cols" style={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)',
+        gap: 28, alignItems: 'start',
+      }}>
+        <div>
+          {upcoming.length > 1 && (
+            <Section title="Upcoming" count={upcoming.length - 1}>
+              {upcoming.slice(1).map(call => <CallRow key={call.id} call={call} kind="upcoming" />)}
+            </Section>
+          )}
+          {upcoming.length === 1 && (
+            <Section title="Upcoming">
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', padding: '14px 4px 14px 16px', borderBottom: '1px solid var(--line)' }}>
+                No calls beyond the next one. Future calls will appear here as they&apos;re scheduled.
+              </p>
+            </Section>
+          )}
+        </div>
 
-      {/* Past */}
-      {past.length > 0 && (
-        <Section title="Past calls">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {past.map(call => <CallRow key={call.id} call={call} kind="past" />)}
-          </div>
-        </Section>
-      )}
+        <div style={{ position: 'sticky', top: 24 }}>
+          {past.length > 0 ? (
+            <Section title="Past calls" count={past.length}>
+              {past.map(call => <CallRow key={call.id} call={call} kind="past" />)}
+            </Section>
+          ) : (
+            <Section title="Past calls">
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', padding: '14px 4px 14px 16px', borderBottom: '1px solid var(--line)' }}>
+                You haven&apos;t finished any calls yet. Replays will collect here as you go.
+              </p>
+            </Section>
+          )}
+        </div>
+      </div>
+
+      <style>{`
+        @media (max-width: 900px) {
+          .calls-cols {
+            grid-template-columns: 1fr !important;
+          }
+          .calls-cols > div { position: static !important; }
+        }
+      `}</style>
     </div>
   )
 }
 
-// ─── Sub-components ─────────────────────────────────────────────────────────
-
-function NextUpCard({ call }: { call: LiveCall }) {
+// ── Hero (Next up) ───────────────────────────────────────────────────────────
+function NextUpHero({ call }: { call: LiveCall }) {
   const date = new Date(call.scheduled_at)
   const meta = MONTH_FOR_CALL[call.call_number]
   const countdown = humanCountdown(date)
 
   return (
     <div style={{
-      background: ORANGE, color: '#fff',
-      borderRadius: 16, padding: 24,
+      background: `linear-gradient(135deg, ${ORANGE_PALE} 0%, #fff 70%)`,
+      borderTop: `2px solid ${ORANGE}`,
+      borderBottom: '1px solid var(--line)',
+      padding: '32px 4px 32px 24px',
+      marginBottom: 36,
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.18)', color: '#fff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 18, fontWeight: 700, flexShrink: 0,
-          }}>
-            {call.call_number}
-          </div>
-          <div>
-            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)', margin: '0 0 2px' }}>
-              Next up · {meta?.label ?? ''}
-            </p>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400, margin: 0 }}>{call.title}</h2>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 280 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: ORANGE, margin: '0 0 12px' }}>
+            Next up · {meta?.label ?? ''} · Call {call.call_number}
+          </p>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontStyle: 'italic', fontWeight: 300, color: 'var(--ink)', margin: '0 0 12px', lineHeight: 1.25 }}>
+            {call.title}
+          </h2>
+          <p style={{ fontSize: 14, color: 'var(--text-soft)', margin: '0 0 8px', lineHeight: 1.6, maxWidth: 720 }}>
+            {CALL_DESCRIPTIONS[call.call_number]}
+          </p>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+            {date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+            {' · '}
+            <span style={{ color: ORANGE, fontWeight: 600 }}>{countdown}</span>
+          </p>
+
+          <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
+            {call.zoom_url && (
+              <a href={call.zoom_url} target="_blank" rel="noreferrer" style={{
+                padding: '10px 18px', borderRadius: 8,
+                background: ORANGE, color: '#fff',
+                fontSize: 13, fontWeight: 600,
+                textDecoration: 'none',
+              }}>
+                Join live stream →
+              </a>
+            )}
+            <button
+              onClick={() => downloadIcs(call)}
+              style={{
+                background: '#fff', color: 'var(--text-soft)',
+                border: '1px solid var(--line-md)',
+                padding: '10px 16px', borderRadius: 8,
+                fontSize: 13, fontWeight: 600,
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              Add to calendar
+            </button>
           </div>
         </div>
-        <span style={{
-          fontSize: 11, fontWeight: 700,
-          padding: '4px 12px', borderRadius: 999,
-          background: 'rgba(255,255,255,0.2)',
-          flexShrink: 0,
-        }}>
-          {countdown}
-        </span>
-      </div>
-
-      <p style={{ fontSize: 13, lineHeight: 1.6, color: 'rgba(255,255,255,0.92)', margin: '10px 0 0' }}>
-        {CALL_DESCRIPTIONS[call.call_number]}
-      </p>
-
-      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', margin: '10px 0 0' }}>
-        {date.toLocaleDateString('en-US', {
-          weekday: 'long', month: 'long', day: 'numeric',
-          hour: 'numeric', minute: '2-digit',
-        })}
-      </p>
-
-      <div style={{ display: 'flex', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
-        {call.zoom_url && (
-          <a href={call.zoom_url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
-            <button style={{
-              background: '#fff', color: ORANGE,
-              padding: '10px 20px', borderRadius: 10,
-              fontSize: 13, fontWeight: 600,
-              border: 'none', cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}>
-              Join live stream →
-            </button>
-          </a>
-        )}
-        <button
-          onClick={() => downloadIcs(call)}
-          style={{
-            background: 'transparent', color: '#fff',
-            border: '1px solid rgba(255,255,255,0.5)',
-            padding: '10px 18px', borderRadius: 10,
-            fontSize: 13, fontWeight: 600,
-            cursor: 'pointer', fontFamily: 'inherit',
-          }}
-        >
-          Add to calendar
-        </button>
       </div>
     </div>
   )
 }
 
+// ── Row (matches CircleRow style from /circle home) ──────────────────────────
 function CallRow({ call, kind }: { call: LiveCall; kind: 'upcoming' | 'past' }) {
   const date = new Date(call.scheduled_at)
   const meta = MONTH_FOR_CALL[call.call_number]
   const isPast = kind === 'past'
 
   return (
-    <div style={{
-      background: '#fff', border: '1px solid var(--line)',
-      borderRadius: 12, padding: 16,
-      display: 'flex', gap: 14, alignItems: 'flex-start',
-      opacity: isPast ? 0.85 : 1,
-    }}>
-      <div style={{
-        width: 36, height: 36, borderRadius: '50%',
-        background: isPast ? 'var(--paper2)' : ORANGE_PALE,
-        color: isPast ? 'var(--text-muted)' : ORANGE,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 14, fontWeight: 700, flexShrink: 0,
-      }}>
-        {call.call_number}
+    <div
+      style={{
+        display: 'flex', alignItems: 'center', gap: 16,
+        padding: '14px 4px 14px 16px',
+        borderBottom: '1px solid var(--line)',
+        position: 'relative', flexWrap: 'wrap',
+        transition: 'background 0.15s',
+      }}
+      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'var(--paper2)' }}
+      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent' }}
+    >
+      <span style={{
+        position: 'absolute', left: 0, top: 14, bottom: 14,
+        width: 2, background: isPast ? 'var(--line-md)' : ORANGE,
+        borderRadius: 2,
+      }} />
+
+      <div style={{ flex: 1, minWidth: 220 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: isPast ? 'var(--text-muted)' : ORANGE, marginBottom: 6, fontFamily: 'var(--font-body)' }}>
+          {meta?.label ?? ''} · Call {call.call_number}
+          <span style={{
+            marginLeft: 10, fontWeight: 500,
+            padding: '2px 8px', borderRadius: 999,
+            background: 'var(--paper2)', color: 'var(--text-muted)',
+            letterSpacing: '0.04em',
+          }}>
+            {isPast ? 'Replay' : humanCountdown(date)}
+          </span>
+        </div>
+        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', marginBottom: 4, lineHeight: 1.4 }}>
+          {call.title}
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--text-soft)', marginBottom: 4, lineHeight: 1.5 }}>
+          {date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.55 }}>
+          {CALL_DESCRIPTIONS[call.call_number]}
+        </div>
       </div>
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', margin: 0 }}>{call.title}</p>
-          {meta && (
-            <span style={{
-              fontSize: 10, fontWeight: 700,
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-              color: meta.tint,
-            }}>
-              · {meta.label}
-            </span>
-          )}
-          {isPast && (
-            <span style={{
-              fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
-              color: 'var(--text-muted)',
-              padding: '2px 8px', borderRadius: 999,
-              border: '1px solid var(--line-md)',
-            }}>
-              Complete
-            </span>
-          )}
-        </div>
-
-        <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>
-          {date.toLocaleDateString('en-US', {
-            weekday: 'short', month: 'short', day: 'numeric',
-            hour: 'numeric', minute: '2-digit',
-          })}
-        </p>
-
-        <p style={{ fontSize: 12, color: 'var(--text-soft)', margin: '8px 0 0', lineHeight: 1.5 }}>
-          {CALL_DESCRIPTIONS[call.call_number]}
-        </p>
-
-        {call.notes && (
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '6px 0 0', fontStyle: 'italic' }}>
-            {call.notes}
-          </p>
+      <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+        {isPast && call.recording_url && (
+          <a href={call.recording_url} target="_blank" rel="noreferrer" style={{
+            padding: '6px 12px', borderRadius: 6,
+            background: ORANGE, color: '#fff',
+            fontSize: 11, fontWeight: 600,
+            textDecoration: 'none',
+          }}>
+            Watch replay ↗
+          </a>
         )}
-
-        <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-          {isPast && call.recording_url && (
-            <a href={call.recording_url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
-              <button style={{
-                background: '#fff', border: `1px solid ${ORANGE}`,
-                color: ORANGE,
-                padding: '6px 14px', borderRadius: 8,
+        {!isPast && (
+          <>
+            <button
+              onClick={() => downloadIcs(call)}
+              style={{
+                background: '#fff', border: '1px solid var(--line-md)',
+                color: 'var(--text-soft)',
+                padding: '6px 11px', borderRadius: 6,
                 fontSize: 11, fontWeight: 600,
                 cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              + Calendar
+            </button>
+            {call.zoom_url && (
+              <a href={call.zoom_url} target="_blank" rel="noreferrer" style={{
+                padding: '6px 12px', borderRadius: 6,
+                background: ORANGE, color: '#fff',
+                fontSize: 11, fontWeight: 600,
+                textDecoration: 'none',
               }}>
-                Watch replay
-              </button>
-            </a>
-          )}
-          {isPast && !call.recording_url && (
-            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>
-              Replay will be posted soon.
-            </span>
-          )}
-          {!isPast && (
-            <>
-              <button
-                onClick={() => downloadIcs(call)}
-                style={{
-                  background: '#fff', border: '1px solid var(--line-md)',
-                  color: 'var(--text-soft)',
-                  padding: '6px 14px', borderRadius: 8,
-                  fontSize: 11, fontWeight: 600,
-                  cursor: 'pointer', fontFamily: 'inherit',
-                }}
-              >
-                Add to calendar
-              </button>
-              {call.zoom_url && (
-                <a href={call.zoom_url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
-                  <button style={{
-                    background: 'transparent', border: 'none',
-                    color: ORANGE,
-                    padding: '6px 4px',
-                    fontSize: 11, fontWeight: 600,
-                    cursor: 'pointer', fontFamily: 'inherit',
-                  }}>
-                    Live stream link →
-                  </button>
-                </a>
-              )}
-            </>
-          )}
-        </div>
+                Zoom ↗
+              </a>
+            )}
+          </>
+        )}
       </div>
     </div>
   )
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, count, children }: { title: string; count?: number; children: React.ReactNode }) {
   return (
-    <div>
-      <p style={{
-        fontSize: 10, fontWeight: 700,
-        letterSpacing: '0.12em', textTransform: 'uppercase',
-        color: 'var(--text-muted)',
-        margin: '0 0 10px',
+    <section style={{ marginBottom: 32 }}>
+      <header style={{
+        display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+        paddingBottom: 8, borderBottom: '1px solid var(--line)',
+        marginBottom: 4,
       }}>
-        {title}
-      </p>
-      {children}
-    </div>
+        <h2 style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
+          textTransform: 'uppercase', color: 'var(--text-soft)',
+          margin: 0, fontFamily: 'var(--font-body)',
+        }}>
+          {title}
+        </h2>
+        {count !== undefined && (
+          <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
+            {count} {count === 1 ? 'call' : 'calls'}
+          </span>
+        )}
+      </header>
+      <div>{children}</div>
+    </section>
   )
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-
 function humanCountdown(date: Date): string {
   const diff = date.getTime() - Date.now()
   if (diff <= 0) return 'Live now'
@@ -357,7 +340,6 @@ function humanCountdown(date: Date): string {
 
 function downloadIcs(call: LiveCall) {
   const dtStart = formatIcsDate(new Date(call.scheduled_at))
-  // Assume 90-minute calls for the .ics end time.
   const dtEnd   = formatIcsDate(new Date(new Date(call.scheduled_at).getTime() + 90 * 60_000))
   const uid     = `${call.id}@clarity-portal`
   const lines = [

@@ -62,128 +62,153 @@ export default function CircleWelcomePage() {
   const endsAt   = cohort ? new Date(cohort.ends_at)   : null
 
   return (
-    <div
-      className="portal-full-bleed"
-      style={{
-        background: ORANGE_PALE,
-        padding: '48px 24px',
-        minHeight: 'calc(100vh - 60px)',
-      }}
-    >
-      <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
-        {/* Hero */}
-        <div style={{
-          background: '#fff', border: '1px solid var(--line)',
-          borderRadius: 16, padding: 32, textAlign: 'center',
-        }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: '50%',
-            background: ORANGE, color: '#fff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 18px', fontSize: 22,
-          }}>✦</div>
-          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: ORANGE, margin: '0 0 8px' }}>
-            Welcome to The Circle
+      {/* Hero — full-width gradient block, same treatment as the affirmation
+          on /circle home. */}
+      <div style={{
+        background: `linear-gradient(135deg, ${ORANGE_PALE} 0%, #fff 70%)`,
+        borderTop: `2px solid ${ORANGE}`,
+        borderBottom: '1px solid var(--line)',
+        padding: '40px 4px 40px 24px',
+        marginBottom: 36,
+      }}>
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: ORANGE, margin: '0 0 14px', fontFamily: 'var(--font-body)' }}>
+          Welcome to The Circle
+        </p>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 36, fontStyle: 'italic', fontWeight: 300, color: 'var(--ink)', margin: 0, lineHeight: 1.2, maxWidth: 720, letterSpacing: '-0.01em' }}>
+          You&apos;re in, {firstName}.
+        </h1>
+        {member && (
+          <p style={{ fontSize: 15, color: 'var(--text-soft)', lineHeight: 1.65, margin: '14px 0 0', maxWidth: 720 }}>
+            You joined the cohort as <strong>{ARCHETYPE_LABELS[member.archetype]}</strong>.
+            {' '}Over the next 90 days you&apos;ll go deeper on your archetype, meet your accountability partner,
+            and build the practices that make this work stick.
           </p>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 300, color: 'var(--ink)', margin: '0 0 10px' }}>
-            You&apos;re in, {firstName}.
-          </h1>
-          {member && (
-            <p style={{ fontSize: 14, color: 'var(--text-soft)', lineHeight: 1.6, margin: 0 }}>
-              You joined the cohort as <strong>{ARCHETYPE_LABELS[member.archetype]}</strong>.
-              {' '}Over the next 90 days you&apos;ll go deeper on your archetype, meet your accountability partner,
-              and build the practices that make this work stick.
-            </p>
-          )}
-        </div>
+        )}
+      </div>
 
-        {/* Cohort details */}
+      <div className="welcome-cols" style={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)',
+        gap: 28, alignItems: 'start',
+      }}>
+
+      {/* What to expect — list of rows */}
+      <div>
+        <Section title="What to expect">
+          {[
+            { t: 'Weekly teaching + archetype track',   d: 'Every Monday a new teaching drops, plus a journal prompt and weekly action tailored to your archetype.' },
+            { t: 'Wednesday partner check-ins',         d: 'A prompted message exchange with your accountability partner — keeps things moving without scheduling.' },
+            { t: 'Friday wins in the community feed',   d: 'Everyone posts one win. Small is fine. The practice is noticing.' },
+            { t: 'Live group calls every other week',   d: 'Six calls across the 90 days. Replays are posted if you can’t make it live.' },
+            { t: 'Re-pair option at Day 30',            d: 'If the match isn’t working, request a new pairing — no explanation needed.' },
+          ].map(({ t, d }, i) => (
+            <ExpectRow key={i} num={i + 1} title={t} body={d} />
+          ))}
+        </Section>
+      </div>
+
+      {/* Right column — cohort details + first call + CTA, sticky */}
+      <div style={{ position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 24 }}>
         {cohort && startsAt && endsAt && (
-          <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 14, padding: 20 }}>
-            <Eyebrow>Your cohort</Eyebrow>
-            <p style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 400, margin: '8px 0 4px' }}>
-              {cohort.name}
-            </p>
-            <p style={{ fontSize: 13, color: 'var(--text-soft)', margin: 0 }}>
-              {formatRange(startsAt, endsAt)} · {memberCount} {memberCount === 1 ? 'member' : 'members'} enrolled
-            </p>
-          </div>
+          <Section title="Your cohort">
+            <div style={{ padding: '14px 4px 14px 16px', position: 'relative', borderBottom: '1px solid var(--line)' }}>
+              <span style={{ position: 'absolute', left: 0, top: 14, bottom: 14, width: 2, background: ORANGE, borderRadius: 2 }} />
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 400, margin: '0 0 6px', color: 'var(--ink)' }}>
+                {cohort.name}
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--text-soft)', margin: 0, lineHeight: 1.5 }}>
+                {formatRange(startsAt, endsAt)} · {memberCount} {memberCount === 1 ? 'member' : 'members'} enrolled
+              </p>
+            </div>
+          </Section>
         )}
 
-        {/* What to expect */}
-        <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 14, padding: 20 }}>
-          <Eyebrow>What to expect</Eyebrow>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 14 }}>
-            {[
-              { t: 'Weekly teaching + archetype track',   d: 'Every Monday a new teaching drops, plus a journal prompt and weekly action tailored to your archetype.' },
-              { t: 'Wednesday partner check-ins',         d: 'A prompted message exchange with your accountability partner — keeps things moving without scheduling.' },
-              { t: 'Friday wins in the community feed',   d: 'Everyone posts one win. Small is fine. The practice is noticing.' },
-              { t: 'Live group calls every other week',   d: 'Six calls across the 90 days. Replays are posted if you can&apos;t make it live.' },
-              { t: 'Re-pair option at Day 30',            d: 'If the match isn&apos;t working, request a new pairing — no explanation needed.' },
-            ].map(({ t, d }, i) => (
-              <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                <div style={{
-                  width: 22, height: 22, borderRadius: '50%',
-                  background: ORANGE, color: '#fff',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 2,
-                }}>{i + 1}</div>
-                <div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', margin: '0 0 2px' }}>{t}</p>
-                  <p style={{ fontSize: 12, color: 'var(--text-soft)', lineHeight: 1.6, margin: 0 }}>{d}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Next call */}
         {nextCall && (
-          <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 14, padding: 20 }}>
-            <Eyebrow>Your first live call</Eyebrow>
-            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', margin: '10px 0 4px' }}>{nextCall.title}</p>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-              {new Date(nextCall.scheduled_at).toLocaleDateString('en-US', {
-                weekday: 'long', month: 'long', day: 'numeric',
-                hour: 'numeric', minute: '2-digit',
-              })}
-            </p>
-            <p style={{ fontSize: 12, color: 'var(--text-soft)', lineHeight: 1.6, margin: '10px 0 0' }}>
-              Come ready to share your 90-day focus in one sentence.
-            </p>
-          </div>
+          <Section title="Your first live call">
+            <div style={{ padding: '14px 4px 14px 16px', position: 'relative', borderBottom: '1px solid var(--line)' }}>
+              <span style={{ position: 'absolute', left: 0, top: 14, bottom: 14, width: 2, background: ORANGE, borderRadius: 2 }} />
+              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', margin: '0 0 4px' }}>{nextCall.title}</p>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+                {new Date(nextCall.scheduled_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--text-soft)', lineHeight: 1.55, margin: '8px 0 0' }}>
+                Come ready to share your 90-day focus in one sentence.
+              </p>
+            </div>
+          </Section>
         )}
 
-        {/* CTA */}
-        <div style={{ textAlign: 'center', marginTop: 8 }}>
-          <Link href="/circle" style={{ textDecoration: 'none' }}>
-            <button style={{
-              background: ORANGE, color: '#fff',
-              padding: '14px 32px', borderRadius: 12,
-              fontSize: 14, fontWeight: 600,
-              border: 'none', cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}>
-              Enter The Circle →
-            </button>
-          </Link>
-        </div>
+        <Link href="/circle" style={{ textDecoration: 'none' }}>
+          <button style={{
+            width: '100%',
+            background: ORANGE, color: '#fff',
+            padding: '14px 24px', borderRadius: 10,
+            fontSize: 14, fontWeight: 600,
+            border: 'none', cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}>
+            Enter The Circle →
+          </button>
+        </Link>
+      </div>
 
       </div>
+
+      <style>{`
+        @media (max-width: 900px) {
+          .welcome-cols {
+            grid-template-columns: 1fr !important;
+          }
+          .welcome-cols > div { position: static !important; }
+        }
+      `}</style>
     </div>
   )
 }
 
-function Eyebrow({ children }: { children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <span style={{
-      fontSize: 10, fontWeight: 700,
-      letterSpacing: '0.12em', textTransform: 'uppercase',
-      color: 'var(--text-muted)',
+    <section style={{ marginBottom: 24 }}>
+      <header style={{
+        paddingBottom: 8, borderBottom: '1px solid var(--line)',
+        marginBottom: 4,
+      }}>
+        <h2 style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
+          textTransform: 'uppercase', color: 'var(--text-soft)',
+          margin: 0, fontFamily: 'var(--font-body)',
+        }}>
+          {title}
+        </h2>
+      </header>
+      <div>{children}</div>
+    </section>
+  )
+}
+
+function ExpectRow({ num, title, body }: { num: number; title: string; body: string }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'flex-start', gap: 14,
+      padding: '16px 4px 16px 16px',
+      borderBottom: '1px solid var(--line)',
+      position: 'relative',
     }}>
-      {children}
-    </span>
+      <span style={{ position: 'absolute', left: 0, top: 16, bottom: 16, width: 2, background: ORANGE, borderRadius: 2 }} />
+      <div style={{
+        width: 26, height: 26, borderRadius: '50%',
+        background: ORANGE_PALE, color: ORANGE,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 12, fontWeight: 700, flexShrink: 0,
+        fontFamily: 'var(--font-body)',
+      }}>{num}</div>
+      <div>
+        <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', margin: '0 0 4px', fontFamily: 'var(--font-body)' }}>{title}</p>
+        <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.6, margin: 0, fontFamily: 'var(--font-body)' }}>{body}</p>
+      </div>
+    </div>
   )
 }
 
