@@ -1,9 +1,7 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Sidebar from '@/components/layout/Sidebar'
-import SidebarWork from '@/components/layout/SidebarWork'
-import SidebarCircle from '@/components/layout/SidebarCircle'
 import Topbar from '@/components/layout/Topbar'
 import MobileNav from '@/components/layout/MobileNav'
 import MobileDrawer from '@/components/layout/MobileDrawer'
@@ -14,9 +12,26 @@ import { useApp } from '@/context/AppContext'
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const { sidebarMode, setSidebarMode, loading, isAuthed, user } = useApp()
+  const { loading, isAuthed, user, setSidebarMode } = useApp()
   const router = useRouter()
   const pathname = usePathname()
+
+  // Keep mobile nav/drawer themed correctly. The desktop sidebar is now
+  // unified and ignores sidebarMode, but MobileNav and MobileDrawer still
+  // use it to swap their per-program nav lists. Update mode based on
+  // the current route — shared routes don't change it.
+  useEffect(() => {
+    if (!pathname) return
+    const isShared =
+      pathname === '/settings' || pathname.startsWith('/settings/') ||
+      pathname === '/profile'  || pathname.startsWith('/profile/')  ||
+      pathname === '/upgrade'
+    if (isShared) return
+    if (pathname.startsWith('/circle'))      setSidebarMode('circle')
+    else if (pathname.startsWith('/program')) setSidebarMode('work')
+    else                                       setSidebarMode('cards')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
 
   // Route-level path isolation: each persona only sees their own content.
   // A: /program + (when unlocked) /card·/dashboard·... — no /circle.
@@ -56,51 +71,10 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     }
   }, [loading, isAuthed, user.isAdmin, user.quizResult, user.selectedPath, user.onboardingComplete, router])
 
-  // One-time init: on first load with a known path, set the sidebar mode
-  // to the user's natural home so direct /settings (or any shared route)
-  // opens in the right color.
-  const didInitMode = useRef(false)
-  useEffect(() => {
-    if (didInitMode.current) return
-    if (loading || !user.selectedPath) return
-    const natural = user.selectedPath === 'A' ? 'work'
-                  : user.selectedPath === 'C' ? 'circle'
-                  : 'cards'
-    setSidebarMode(natural)
-    didInitMode.current = true
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, user.selectedPath])
-
-  // Auto-switch sidebar mode based on the route the user is on.
-  // Shared routes (/settings, /profile, /upgrade) don't change the mode —
-  // they stay in whatever mode the user last navigated to.
-  useEffect(() => {
-    if (!pathname) return
-    const isShared =
-      pathname === '/settings' || pathname.startsWith('/settings/') ||
-      pathname === '/profile'  || pathname.startsWith('/profile/')  ||
-      pathname === '/upgrade'
-    if (isShared) return
-    if (pathname.startsWith('/circle')) {
-      if (sidebarMode !== 'circle') setSidebarMode('circle')
-    } else if (pathname.startsWith('/program')) {
-      if (sidebarMode !== 'work') setSidebarMode('work')
-    } else {
-      if (sidebarMode !== 'cards') setSidebarMode('cards')
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname])
-
-  function renderSidebar() {
-    if (sidebarMode === 'work')   return <SidebarWork />
-    if (sidebarMode === 'circle') return <SidebarCircle />
-    return <Sidebar />
-  }
-
   return (
     <div className="portal-shell" style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#ffffff' }}>
       <div className="sidebar">
-        {renderSidebar()}
+        <Sidebar />
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         {/* Admin preview banner — only renders when an admin has activated
