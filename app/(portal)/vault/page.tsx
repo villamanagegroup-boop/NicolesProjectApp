@@ -1,10 +1,13 @@
 'use client'
 import React from 'react'
+import Link from 'next/link'
 import { useApp } from '@/context/AppContext'
 import EyebrowLabel from '@/components/ui/EyebrowLabel'
 
+const VAULT_OPENS_DAY = 30
+
 export default function VaultPage() {
-  const { vaultCards } = useApp()
+  const { vaultCards, dayNumber } = useApp()
 
   return (
     <div>
@@ -30,29 +33,157 @@ export default function VaultPage() {
 
       {/* Empty state */}
       {vaultCards.length === 0 ? (
-        <div style={{ textAlign: 'center', paddingTop: 80, paddingBottom: 80 }}>
-          <p
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 18,
-              fontStyle: 'italic',
-              color: 'var(--text-muted)',
-            }}
-          >
-            Your vault fills after Day 30.
-          </p>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>
-            Keep showing up — your earliest cards will be preserved here.
-          </p>
-        </div>
+        <VaultLockedState dayNumber={dayNumber} />
       ) : (
-        /* Vault card list */
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {vaultCards.map((card) => (
-            <VaultRow key={card.id} card={card} />
-          ))}
-        </div>
+        <>
+          {/* Stats summary */}
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+            gap: 12, marginBottom: 24,
+          }}>
+            <StatTile value={vaultCards.length} label="Cards preserved" accent="var(--gold)" />
+            <StatTile value={vaultCards[vaultCards.length - 1]?.dayNumber ?? 1} label="Earliest day" accent="var(--text-soft)" />
+            <StatTile value={`Day ${dayNumber}`} label="Where you are now" accent="var(--green)" />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {vaultCards.map((card) => (
+              <VaultRow key={card.id} card={card} />
+            ))}
+          </div>
+        </>
       )}
+    </div>
+  )
+}
+
+interface StatTileProps {
+  value: string | number
+  label: string
+  accent: string
+}
+
+function StatTile({ value, label, accent }: StatTileProps) {
+  return (
+    <div style={{
+      background: '#fff', border: '1px solid var(--line)',
+      borderRadius: 12, padding: 14,
+    }}>
+      <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1, color: accent }}>{value}</div>
+      <div style={{
+        fontSize: 10, fontWeight: 600,
+        textTransform: 'uppercase', letterSpacing: '0.08em',
+        color: 'var(--text-muted)', marginTop: 6, fontFamily: 'var(--font-body)',
+      }}>{label}</div>
+    </div>
+  )
+}
+
+function VaultLockedState({ dayNumber }: { dayNumber: number }) {
+  const daysToGo = Math.max(0, VAULT_OPENS_DAY - dayNumber)
+  const progressPct = Math.min(100, Math.round((dayNumber / VAULT_OPENS_DAY) * 100))
+
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, var(--paper2) 0%, #fff 100%)',
+      border: '1px solid var(--line)',
+      borderRadius: 16, padding: '40px 32px',
+      textAlign: 'center',
+    }}>
+      {/* Progress ring */}
+      <div style={{
+        width: 120, height: 120, margin: '0 auto 24px',
+        position: 'relative',
+      }}>
+        <svg width="120" height="120" viewBox="0 0 120 120" style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx="60" cy="60" r="52" fill="none" stroke="var(--line)" strokeWidth="6" />
+          <circle
+            cx="60" cy="60" r="52" fill="none"
+            stroke="var(--gold)" strokeWidth="6" strokeLinecap="round"
+            strokeDasharray={`${(progressPct / 100) * 326.7} 326.7`}
+            style={{ transition: 'stroke-dasharray 0.8s ease' }}
+          />
+        </svg>
+        <div style={{
+          position: 'absolute', inset: 0,
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{ fontSize: 28, fontWeight: 300, fontFamily: 'var(--font-display)', color: 'var(--ink)', lineHeight: 1 }}>
+            {dayNumber}
+          </div>
+          <div style={{
+            fontSize: 9, fontWeight: 600,
+            textTransform: 'uppercase', letterSpacing: '0.1em',
+            color: 'var(--text-muted)', marginTop: 4,
+          }}>
+            of {VAULT_OPENS_DAY}
+          </div>
+        </div>
+      </div>
+
+      {/* Headline */}
+      <h2 style={{
+        fontFamily: 'var(--font-display)',
+        fontSize: 22, fontStyle: 'italic', fontWeight: 300,
+        color: 'var(--ink)',
+        margin: '0 0 8px',
+      }}>
+        {daysToGo === 0 ? 'Your vault opens today.' : `${daysToGo} ${daysToGo === 1 ? 'day' : 'days'} until your vault opens.`}
+      </h2>
+      <p style={{
+        fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.6,
+        margin: '0 auto', maxWidth: 380,
+      }}>
+        On Day {VAULT_OPENS_DAY}, the cards from your earliest weeks will be preserved
+        here — a record of where you started, ready to revisit any time.
+      </p>
+
+      {/* Preview tiles — what's coming */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+        gap: 10, marginTop: 28,
+        maxWidth: 480, marginLeft: 'auto', marginRight: 'auto',
+      }}>
+        {[
+          { day: 1, theme: 'The first arrival' },
+          { day: 7, theme: 'A week in' },
+          { day: 14, theme: 'Mid-stretch' },
+          { day: 21, theme: 'The shift begins' },
+        ].map(t => (
+          <div key={t.day} style={{
+            background: '#fff', border: '1px dashed var(--line-md)',
+            borderRadius: 10, padding: '14px 10px',
+            opacity: 0.7,
+          }}>
+            <div style={{
+              fontSize: 18, fontWeight: 300,
+              fontFamily: 'var(--font-display)', color: 'var(--gold)',
+              opacity: dayNumber >= t.day ? 1 : 0.4,
+            }}>
+              Day {t.day}
+            </div>
+            <div style={{
+              fontSize: 9, fontWeight: 600,
+              textTransform: 'uppercase', letterSpacing: '0.08em',
+              color: 'var(--text-muted)', marginTop: 6,
+            }}>
+              {dayNumber >= t.day ? t.theme : 'Coming'}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA */}
+      <Link href="/card" style={{
+        display: 'inline-block', marginTop: 28,
+        padding: '10px 20px', borderRadius: 999,
+        background: 'var(--ink)', color: '#fff',
+        fontSize: 12, fontWeight: 600,
+        textDecoration: 'none', fontFamily: 'var(--font-body)',
+        letterSpacing: '0.02em',
+      }}>
+        Today&apos;s card →
+      </Link>
     </div>
   )
 }

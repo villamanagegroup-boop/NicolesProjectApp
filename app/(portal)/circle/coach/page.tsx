@@ -128,8 +128,86 @@ export default function CoachChatPage() {
           display: 'flex', flexDirection: 'column', gap: 10,
         }}>
           {messages.length === 0 ? (
-            <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, padding: '40px 0' }}>
-              No messages yet. Send the first one when you’re ready.
+            <div style={{ padding: '20px 4px 8px' }}>
+              <div style={{
+                display: 'flex', alignItems: 'flex-start', gap: 12,
+                marginBottom: 16,
+              }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: '50%',
+                  background: ORANGE, color: '#fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 16, fontWeight: 600, flexShrink: 0,
+                }}>
+                  N
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: 9, fontWeight: 700, letterSpacing: '.1em',
+                    textTransform: 'uppercase', color: ORANGE, marginBottom: 4,
+                  }}>
+                    Nicole · Coach
+                  </div>
+                  <p style={{
+                    fontSize: 14, color: 'var(--ink)', lineHeight: 1.55,
+                    margin: 0,
+                  }}>
+                    Hey{firstName ? ` ${firstName}` : ''} — this is our private line. I read every message.
+                    Bring me the things you don&apos;t want to share with the wider Circle: the wobbles,
+                    the breakthroughs, the questions about the work.
+                  </p>
+                  <p style={{
+                    fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5,
+                    margin: '8px 0 0',
+                  }}>
+                    Voice notes welcome. I aim to reply within 48h on weekdays.
+                  </p>
+                </div>
+              </div>
+
+              {/* Conversation starters */}
+              <div style={{
+                paddingTop: 14, borderTop: '1px solid var(--line)',
+              }}>
+                <div style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: '.08em',
+                  textTransform: 'uppercase', color: 'var(--text-muted)',
+                  marginBottom: 10,
+                }}>
+                  Need a starting point?
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {[
+                    "I'm stuck on this week's work — here's what I'm noticing…",
+                    "Can I share something from a recent journal entry?",
+                    "I have a question about the program structure.",
+                    "Just an update — here's where I am.",
+                  ].map(starter => (
+                    <button
+                      key={starter}
+                      onClick={() => setBody(starter)}
+                      style={{
+                        textAlign: 'left',
+                        background: ORANGE_PALE, border: '1px solid var(--line)',
+                        borderRadius: 10, padding: '10px 14px',
+                        fontSize: 13, color: 'var(--ink)',
+                        cursor: 'pointer', fontFamily: 'inherit',
+                        transition: 'background 0.15s, border-color 0.15s',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = '#fff'
+                        e.currentTarget.style.borderColor = ORANGE
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = ORANGE_PALE
+                        e.currentTarget.style.borderColor = 'var(--line)'
+                      }}
+                    >
+                      {starter}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           ) : (
             messages.map(m => {

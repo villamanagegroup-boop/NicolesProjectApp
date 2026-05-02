@@ -270,11 +270,76 @@ export default function PartnerPage() {
         display: 'flex', flexDirection: 'column', gap: 6,
       }}>
         {messages.length === 0 && (
-          <div style={{
-            textAlign: 'center', padding: '40px 20px',
-            color: 'var(--text-muted)', fontSize: 13,
-          }}>
-            No messages yet. Say hello to your partner.
+          <div style={{ padding: '24px 4px 16px' }}>
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: '50%',
+                background: ORANGE_PALE, color: ORANGE,
+                margin: '0 auto 12px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 22,
+              }}>
+                ✦
+              </div>
+              <p style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 18, fontWeight: 300, fontStyle: 'italic',
+                color: 'var(--ink)',
+                margin: '0 0 6px',
+              }}>
+                Say hello to {partner.full_name?.split(/\s+/)[0] ?? 'your partner'}.
+              </p>
+              <p style={{
+                fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6,
+                margin: 0,
+              }}>
+                You&apos;re paired for these 90 days. Show up however you can — even a quick check-in counts.
+              </p>
+            </div>
+
+            {/* Icebreakers */}
+            <div style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: '.08em',
+              textTransform: 'uppercase', color: 'var(--text-muted)',
+              marginBottom: 10, textAlign: 'center',
+            }}>
+              Tap an icebreaker to start
+            </div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: 8,
+            }}>
+              {[
+                `Hey${partner.full_name?.split(/\s+/)[0] ? ` ${partner.full_name?.split(/\s+/)[0]}` : ''} — excited we got matched. Where are you tuning in from?`,
+                "What pulled you toward The Circle? I'd love to know your why.",
+                "How's your week landing? I'll go first if it helps.",
+                "I'm working on this right now — any thoughts?",
+              ].map(starter => (
+                <button
+                  key={starter}
+                  onClick={() => setBody(starter)}
+                  style={{
+                    textAlign: 'left',
+                    background: '#fff', border: '1px solid var(--line)',
+                    borderRadius: 10, padding: '10px 12px',
+                    fontSize: 12, color: 'var(--ink)', lineHeight: 1.5,
+                    cursor: 'pointer', fontFamily: 'inherit',
+                    transition: 'background 0.15s, border-color 0.15s',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = ORANGE_PALE
+                    e.currentTarget.style.borderColor = ORANGE
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = '#fff'
+                    e.currentTarget.style.borderColor = 'var(--line)'
+                  }}
+                >
+                  {starter}
+                </button>
+              ))}
+            </div>
           </div>
         )}
         {grouped.map(g => (
