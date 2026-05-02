@@ -28,32 +28,6 @@ interface Section {
 
 const SECTIONS: Section[] = [
   {
-    key: 'admin',
-    title: 'Admin tools',
-    desc: 'Everything under /admin. Most of these are also in the sidebar.',
-    routes: [
-      { path: '/admin',           access: 'admin', title: 'Home',                 desc: 'Cross-program dashboard with metrics and Circle alerts.' },
-      { path: '/admin/users',     access: 'admin', title: 'People',               desc: 'Roster of every signed-up user across all paths.' },
-      { path: '/admin/users/[id]', access: 'admin', title: 'User profile',        desc: 'Edit a user, view activity, send invoices, manage tags.', dynamic: true, exampleHint: 'click a user from People' },
-      { path: '/admin/members',   access: 'admin', title: 'Circle deep-dive',     desc: 'Engagement-focused view of Circle members.' },
-      { path: '/admin/members/[id]', access: 'admin', title: 'Circle member',     desc: 'Coaching notes, weekly progress, partner thread.', dynamic: true, exampleHint: 'click a member from Circle deep-dive' },
-      { path: '/admin/pairs',     access: 'admin', title: 'Accountability pairs', desc: 'Pair health, manual pairing, repair requests.' },
-      { path: '/admin/cards',     access: 'admin', title: '365 Cards editor',     desc: 'Inline editor for the daily card deck.' },
-      { path: '/admin/cohorts',   access: 'admin', title: 'Cohorts list',         desc: 'All Circle cohorts with status.' },
-      { path: '/admin/cohorts/new', access: 'admin', title: 'New cohort',         desc: 'Create a new 90-day cohort.' },
-      { path: '/admin/cohorts/[id]', access: 'admin', title: 'Cohort detail',     desc: 'Stats, members, calls for one cohort.', dynamic: true, exampleHint: 'click a cohort from Cohorts list' },
-      { path: '/admin/content',   access: 'admin', title: 'Curriculum',           desc: 'Weekly content + live calls.' },
-      { path: '/admin/comms',     access: 'admin', title: 'Messages',             desc: 'Broadcasts, DMs, message templates.' },
-      { path: '/admin/money',     access: 'admin', title: 'Money & payments',     desc: 'Paid breakdown, unclaimed Stripe purchases, conversion.' },
-      { path: '/admin/reports',   access: 'admin', title: 'Reports',              desc: 'CSV exports of users, journals, wins, conversion.' },
-      { path: '/admin/preview',   access: 'admin', title: 'Preview as user',      desc: 'Walk the portal as any user / cohort / day.' },
-      { path: '/admin/support',   access: 'admin', title: 'Bug reports',          desc: 'User-submitted bug triage queue.' },
-      { path: '/admin/audit',     access: 'admin', title: 'History',              desc: 'Admin action audit log (needs migration 015).' },
-      { path: '/admin/sitemap',   access: 'admin', title: 'Site map',             desc: 'This page.' },
-      { path: '/admin/settings',  access: 'admin', title: 'Admin settings',       desc: 'Owner profile, team, integrations.' },
-    ],
-  },
-  {
     key: 'portal-shared',
     title: 'User portal — shared',
     desc: 'Pages every signed-in user sees regardless of path.',
@@ -167,8 +141,8 @@ export default function SitemapPage() {
       <div style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink)', margin: '0 0 4px' }}>Site map</h1>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-          Every page in the app — admin tools, user portal, marketing, welcome flows.
-          {' '}{visibleRoutes} of {totalRoutes} shown.
+          Every user-facing page — portal, marketing, quiz funnel, welcome flows.
+          {' '}{visibleRoutes} of {totalRoutes} shown. (Admin tools live in the sidebar.)
         </p>
       </div>
 
@@ -187,7 +161,7 @@ export default function SitemapPage() {
             padding: '8px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit',
           }}
         />
-        {(['all', 'admin', 'user', 'public'] as const).map(opt => {
+        {(['all', 'user', 'public'] as const).map(opt => {
           const on = accessFilter === opt
           const tint = opt === 'all'
             ? { bg: '#fff', fg: 'var(--text-muted)', border: 'var(--line)', label: 'All' }
