@@ -1,7 +1,6 @@
 'use client'
 import React, { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 import { programRoutes, archetypeToRoute, PHASE_DAYS, PHASE_ORDER } from '@/data/sealTheLeakProgram'
 
@@ -31,13 +30,13 @@ export default function ProgramOverviewPage() {
 
 function ProgramOverviewInner() {
   const { user, dayNumber } = useApp()
-  const searchParams = useSearchParams()
 
-  const ownRouteId = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
-  const paramPath  = searchParams?.get('path') ?? null
-  const routeId    = (paramPath && programRoutes[paramPath]) ? paramPath : ownRouteId
+  // Each user is anchored to their own archetype track. We used to support a
+  // ?path= URL override so users could browse the other 3 archetypes — that
+  // turned out to be more confusing than useful, so it's been removed. Admins
+  // who need to preview other archetypes still can via /admin/preview.
+  const routeId    = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
   const route      = programRoutes[routeId]
-  const isOwnPath  = routeId === ownRouteId
   const currentDay    = Math.min(dayNumber, 7)
   const completedDays = currentDay - 1
   const isFirstDay    = currentDay === 1
@@ -53,63 +52,10 @@ function ProgramOverviewInner() {
     setSnippets(result)
   }, [routeId, route.days])
 
-  // Build day-link hrefs that preserve the current path query.
-  const dayHref = (d: number) =>
-    isOwnPath ? `/program/today?day=${d}` : `/program/today?path=${routeId}&day=${d}`
+  const dayHref = (d: number) => `/program/today?day=${d}`
 
   return (
     <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
-
-      {/* Path selector — 4 archetype tracks */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap',
-        marginBottom: '20px',
-      }}>
-        <span style={{
-          fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em',
-          textTransform: 'uppercase', color: 'var(--text-muted)',
-          fontFamily: 'var(--font-body)', marginRight: '4px',
-        }}>
-          Path
-        </span>
-        {(['door', 'throne', 'engine', 'push'] as const).map(rid => {
-          const r = programRoutes[rid]
-          const active = rid === routeId
-          const own = rid === ownRouteId
-          return (
-            <Link
-              key={rid}
-              href={rid === ownRouteId ? '/program' : `/program?path=${rid}`}
-              style={{
-                padding: '6px 13px', borderRadius: '999px',
-                border: active ? `1.5px solid ${r.color}` : '1px solid var(--line)',
-                background: active ? r.color : 'white',
-                color: active ? 'white' : 'var(--text-soft)',
-                fontSize: '11px', fontWeight: 500,
-                fontFamily: 'var(--font-body)', textDecoration: 'none',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {r.name}{own && !active ? ' · yours' : ''}
-            </Link>
-          )
-        })}
-      </div>
-
-      {!isOwnPath && (
-        <div style={{
-          background: `${route.color}10`,
-          border: `1px solid ${route.color}30`,
-          borderRadius: '8px',
-          padding: '10px 14px',
-          marginBottom: '20px',
-          fontSize: '12px',
-          color: 'var(--text-soft)',
-          fontFamily: 'var(--font-body)',
-        }}>
-          You&apos;re previewing <strong style={{ color: route.color }}>{route.name}</strong>. Reflections won&apos;t save here. <Link href="/program" style={{ color: route.color, textDecoration: 'underline' }}>Return to your path</Link>.
-        </div>
-      )}
 
       {/* Two-column grid */}
       <div className="two-col-grid" style={{
@@ -173,9 +119,9 @@ function ProgramOverviewInner() {
             </p>
           </div>
 
-          {/* CTA to today (or day 1 of preview path) */}
+          {/* CTA to today */}
           <Link
-            href={isOwnPath ? '/program/today' : `/program/today?path=${routeId}&day=1`}
+            href="/program/today"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -192,13 +138,10 @@ function ProgramOverviewInner() {
           >
             <div>
               <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.7)', fontFamily: 'var(--font-body)', margin: '0 0 4px' }}>
-                {isOwnPath ? 'Continue now' : 'Preview Day 1'}
+                Continue now
               </p>
               <p style={{ fontSize: '15px', fontWeight: 500, fontFamily: 'var(--font-body)', margin: 0 }}>
-                {isOwnPath
-                  ? <>Day {currentDay} — {route.days[currentDay - 1]?.title}</>
-                  : <>Day 1 — {route.days[0]?.title}</>
-                }
+                Day {currentDay} — {route.days[currentDay - 1]?.title}
               </p>
             </div>
             <span style={{ fontSize: '20px' }}>→</span>
@@ -295,8 +238,8 @@ function ProgramOverviewInner() {
         {/* ── RIGHT: Day journey ── */}
         <div>
 
-          {/* Day 1 — or any non-own preview path: clickable list of all 7 days */}
-          {(isFirstDay || !isOwnPath) && (
+          {/* Day 1 view: clickable list of all 7 days */}
+          {isFirstDay && (
             <div>
               <div style={{ marginBottom: '16px' }}>
                 <h2 style={{
@@ -306,20 +249,17 @@ function ProgramOverviewInner() {
                   color: 'var(--ink)',
                   margin: '0 0 4px',
                 }}>
-                  {isOwnPath ? 'Your 7-day journey' : `Browse ${route.name}`}
+                  Your 7-day journey
                 </h2>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: 0, lineHeight: 1.6 }}>
-                  {isOwnPath
-                    ? <>Each day builds on the last. Here&apos;s where you&apos;re headed.</>
-                    : <>Tap any day to read the full session.</>
-                  }
+                  Each day builds on the last. Here&apos;s where you&apos;re headed.
                 </p>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 {route.days.map((day, i) => {
                   const phaseColor = PHASE_COLOR[day.phase] ?? 'var(--ink)'
-                  const isToday = isOwnPath && day.day === 1
+                  const isToday = day.day === 1
                   return (
                     <Link
                       key={day.day}
@@ -385,8 +325,8 @@ function ProgramOverviewInner() {
             </div>
           )}
 
-          {/* Day 2+: Where you've been (own path only — preview paths use block above) */}
-          {isOwnPath && !isFirstDay && completedData.length > 0 && (
+          {/* Day 2+: Where you've been */}
+          {!isFirstDay && completedData.length > 0 && (
             <div>
               <div style={{ marginBottom: '16px' }}>
                 <h2 style={{

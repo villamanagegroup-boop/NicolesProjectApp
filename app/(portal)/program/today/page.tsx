@@ -190,18 +190,16 @@ function TodaysSessionInner() {
   const { user, dayNumber, streakCount } = useApp()
   const searchParams = useSearchParams()
 
-  // The user's "own" path (assigned by the quiz).
-  const ownRouteId = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
-
-  // ?path= overrides the assigned path so users can browse all 4 archetype tracks.
-  const paramPath = searchParams?.get('path') ?? null
-  const routeId   = (paramPath && programRoutes[paramPath]) ? paramPath : ownRouteId
-  const route     = programRoutes[routeId]
-  const isOwnPath = routeId === ownRouteId
+  // The user is always on their own archetype track. The cross-path preview
+  // (?path= URL override) was removed — users only see their own assigned
+  // path. Admins use /admin/preview for cross-archetype browsing.
+  const routeId = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
+  const route   = programRoutes[routeId]
 
   const currentDay = Math.min(dayNumber, 7)
 
-  // Allow any day 1-7. Future days and other-path days are read-only "preview".
+  // Allow any day 1-7 via ?day= (so users can revisit past days). Future days
+  // are read-only "preview" — they can read ahead but not seal.
   const paramDay   = searchParams ? Number(searchParams.get('day')) : 0
   const initialDay = paramDay >= 1 && paramDay <= 7 ? paramDay : currentDay
 
@@ -213,10 +211,10 @@ function TodaysSessionInner() {
   if (!day) return null
 
   const isDay7    = day.day === 7
-  const isToday   = isOwnPath && viewingDay === currentDay
-  const isPast    = isOwnPath && viewingDay < currentDay
-  const isFuture  = isOwnPath && viewingDay > currentDay
-  const isPreview = !isOwnPath || isFuture
+  const isToday   = viewingDay === currentDay
+  const isPast    = viewingDay < currentDay
+  const isFuture  = viewingDay > currentDay
+  const isPreview = isFuture
   const isSealed  = sealedDays.has(viewingDay)
 
   function handleSeal() {
@@ -285,8 +283,8 @@ function TodaysSessionInner() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 'max-content' }}>
           {route.days.map((d) => {
             const isActive     = viewingDay === d.day
-            const isDoneOnOwn  = isOwnPath && d.day < currentDay
-            const isTodayOnOwn = isOwnPath && d.day === currentDay
+            const isDoneOnOwn  = d.day < currentDay
+            const isTodayOnOwn = d.day === currentDay
             return (
               <button
                 key={d.day}
@@ -330,43 +328,7 @@ function TodaysSessionInner() {
         </div>{/* end relative wrapper */}
       </div>
 
-      {/* ── Path selector: 4 archetype tracks ── */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
-        marginBottom: '14px',
-      }}>
-        <span style={{
-          fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em',
-          textTransform: 'uppercase', color: 'var(--text-muted)',
-          fontFamily: 'var(--font-body)', marginRight: 4,
-        }}>
-          Path
-        </span>
-        {(['door', 'throne', 'engine', 'push'] as const).map(rid => {
-          const r = programRoutes[rid]
-          const active = rid === routeId
-          const own = rid === ownRouteId
-          return (
-            <Link
-              key={rid}
-              href={`/program/today?path=${rid}&day=${viewingDay}`}
-              style={{
-                padding: '5px 12px', borderRadius: '999px',
-                border: active ? `1.5px solid ${r.color}` : '1px solid var(--line)',
-                background: active ? r.color : 'white',
-                color: active ? 'white' : 'var(--text-soft)',
-                fontSize: '11px', fontWeight: 500,
-                fontFamily: 'var(--font-body)', textDecoration: 'none',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {r.name}{own && !active ? ' · yours' : ''}
-            </Link>
-          )
-        })}
-      </div>
-
-      {/* Preview banner when viewing a non-own path or future day */}
+      {/* Preview banner when viewing a future day */}
       {isPreview && (
         <div style={{
           background: `${route.color}10`,
@@ -378,10 +340,7 @@ function TodaysSessionInner() {
           color: 'var(--text-soft)',
           fontFamily: 'var(--font-body)',
         }}>
-          {!isOwnPath
-            ? <>Previewing <strong style={{ color: route.color }}>{route.name}</strong>. Reflections won&apos;t save while you&apos;re on a different path. <Link href={`/program/today?path=${ownRouteId}&day=${viewingDay}`} style={{ color: route.color, textDecoration: 'underline' }}>Return to your path</Link>.</>
-            : <>Previewing Day {viewingDay} — your work unlocks on Day {viewingDay} (you&apos;re on Day {currentDay}). You can browse but not seal yet.</>
-          }
+          Previewing Day {viewingDay} — your work unlocks on Day {viewingDay} (you&apos;re on Day {currentDay}). You can browse but not seal yet.
         </div>
       )}
 
@@ -490,7 +449,7 @@ function TodaysSessionInner() {
           ) : isPreview ? (
             <div style={{ background: `${route.color}06`, border: `1px dashed ${route.color}30`, borderRadius: '10px', padding: '18px 20px' }}>
               <p style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 8px' }}>
-                Day&apos;s seal {!isOwnPath && `· ${route.name}`}
+                Day&apos;s seal
               </p>
               <p style={{ fontFamily: 'var(--font-display)', fontSize: '15px', fontStyle: 'italic', color: 'var(--ink)', lineHeight: 1.65, margin: 0 }}>
                 &ldquo;{isDay7 && day.sealedIdentity ? day.sealedIdentity : day.seal}&rdquo;
