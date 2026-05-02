@@ -1,6 +1,7 @@
 'use client'
-import React, { useState, useRef, Suspense } from 'react'
+import React, { useState, useRef, useEffect, Suspense } from 'react'
 import { useApp } from '@/context/AppContext'
+import { supabaseClient } from '@/lib/supabase/client'
 import EyebrowLabel from '@/components/ui/EyebrowLabel'
 import Button from '@/components/ui/Button'
 
@@ -12,18 +13,54 @@ function parseEntry(content: string) {
   return { topic: null, body: content }
 }
 
+const FALLBACK_PROMPT = 'What is calling for your attention today?'
+
+// Universal journal day: 1..365, anchored to signup, loops every year.
+// Same first day for everyone — they just hit it on different calendar dates.
+function computeJournalDay(signupDate: Date | null | undefined): number {
+  if (!signupDate) return 1
+  const ms = Date.now() - signupDate.getTime()
+  const days = Math.floor(ms / 86400000)
+  if (days < 0) return 1
+  return ((days) % 365) + 1
+}
+
 function JournalInner() {
   const {
-    user, dayNumber, todayCard,
+    user,
     journalEntries, addJournalEntry, updateJournalEntry, deleteJournalEntry,
   } = useApp()
 
-  // Only card-bound entries belong on this page (Reflection lives with the card).
-  const cardJournalEntries = journalEntries.filter(e => !!e.cardId)
+  // Universal day, independent of program/path.
+  const journalDay = computeJournalDay(user.signupDate)
 
-  const todayCardEntry = todayCard
-    ? journalEntries.find(e => e.cardId === todayCard.id)
-    : undefined
+  // Pull today's prompt from the daily_cards table — same source as the
+  // 365 Cards program, repurposed here as a universal journaling prompt.
+  const [universalPrompt, setUniversalPrompt] = useState<string>(FALLBACK_PROMPT)
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const { data } = await supabaseClient
+        .from('daily_cards')
+        .select('journal_prompt')
+        .eq('day_number', journalDay)
+        .maybeSingle()
+      if (cancelled) return
+      const prompt = (data?.journal_prompt as string | null) ?? null
+      if (prompt && prompt.trim()) setUniversalPrompt(prompt)
+    })()
+    return () => { cancelled = true }
+  }, [journalDay])
+
+  // Today's universal-journal entry: an entry created today on this day_number
+  // without a card link. Used to pre-fill the editor and to switch the save
+  // button into "edit" mode.
+  const todayStart = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime() })()
+  const todayEntry = journalEntries.find(e => {
+    if (e.cardId) return false
+    if (e.dayNumber !== journalDay) return false
+    return new Date(e.createdAt).getTime() >= todayStart
+  })
   const [isEditingJournal, setIsEditingJournal] = useState(false)
 
   const [entryContent, setEntryContent] = useState('')
@@ -31,12 +68,12 @@ function JournalInner() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState('')
 
-  // Pre-populate from today's card entry if one exists
+  // Pre-populate from today's entry if one exists
   React.useEffect(() => {
-    if (todayCardEntry && !isEditingJournal) {
-      setEntryContent(todayCardEntry.content)
+    if (todayEntry && !isEditingJournal) {
+      setEntryContent(todayEntry.content)
     }
-  }, [todayCardEntry?.id])
+  }, [todayEntry?.id])
 
   // ── Voice recording ──
   const [isRecording, setIsRecording] = useState(false)
@@ -81,28 +118,28 @@ function JournalInner() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `clarity-journal-day-${dayNumber}.txt`
+    a.download = `journal-day-${journalDay}.txt`
     a.click()
     URL.revokeObjectURL(url)
   }
 
-  const cardsPrompt = todayCard?.journalPrompt ?? 'What is calling for your attention today?'
+  const cardsPrompt = universalPrompt
 
-  const isReadOnly = !!todayCardEntry && !isEditingJournal
+  const isReadOnly = !!todayEntry && !isEditingJournal
 
   function handleSave() {
-    if (!entryContent.trim() || !todayCard) return
+    if (!entryContent.trim()) return
     addJournalEntry({
       userId:    user.id,
-      cardId:    todayCard.id,
-      dayNumber,
+      cardId:    null,
+      dayNumber: journalDay,
       content:   entryContent,
     })
   }
 
   function handleSaveChanges() {
-    if (!entryContent.trim() || !todayCardEntry) return
-    updateJournalEntry(todayCardEntry.id, entryContent)
+    if (!entryContent.trim() || !todayEntry) return
+    updateJournalEntry(todayEntry.id, entryContent)
     setIsEditingJournal(false)
   }
 
@@ -131,7 +168,7 @@ function JournalInner() {
             fontFamily: 'var(--font-body)',
             margin: '0 0 8px',
           }}>
-            Today&apos;s Prompt — Day {dayNumber}
+            Today&apos;s Prompt — Day {journalDay}
           </p>
           <p style={{
             fontFamily: 'var(--font-display)',
@@ -247,10 +284,10 @@ function JournalInner() {
           <div style={{ display: 'flex', gap: '8px' }}>
             <Button variant="outline" size="sm" onClick={handleDownload}>Download</Button>
 
-            {!todayCardEntry ? (
+            {!todayEntry ? (
               <button
                 onClick={handleSave}
-                disabled={!entryContent.trim() || !todayCard}
+                disabled={!entryContent.trim()}
                 style={{
                   padding: '6px 16px',
                   border: 'none',
@@ -260,8 +297,8 @@ function JournalInner() {
                   fontSize: '13px',
                   fontFamily: 'var(--font-body)',
                   fontWeight: 500,
-                  opacity: !entryContent.trim() || !todayCard ? 0.5 : 1,
-                  cursor: entryContent.trim() && todayCard ? 'pointer' : 'not-allowed',
+                  opacity: !entryContent.trim() ? 0.5 : 1,
+                  cursor: entryContent.trim() ? 'pointer' : 'not-allowed',
                 }}
               >
                 Save Entry →
@@ -304,7 +341,7 @@ function JournalInner() {
                   Save Changes →
                 </button>
                 <button
-                  onClick={() => { setEntryContent(todayCardEntry?.content ?? ''); setIsEditingJournal(false) }}
+                  onClick={() => { setEntryContent(todayEntry?.content ?? ''); setIsEditingJournal(false) }}
                   style={{
                     padding: '6px 14px',
                     border: '1px solid var(--line-md)',
@@ -341,12 +378,12 @@ function JournalInner() {
         <EyebrowLabel color="muted">Past Entries</EyebrowLabel>
 
         <div style={{ display: 'flex', flexDirection: 'column', marginTop: '16px' }}>
-          {cardJournalEntries.length === 0 ? (
+          {journalEntries.length === 0 ? (
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', fontFamily: 'var(--font-body)', margin: 0 }}>
               No entries yet. Start writing today.
             </p>
           ) : (
-            cardJournalEntries.map((entry) => {
+            journalEntries.map((entry) => {
               const isSelected = selectedEntryId === entry.id
               const parsed = parseEntry(entry.content)
 

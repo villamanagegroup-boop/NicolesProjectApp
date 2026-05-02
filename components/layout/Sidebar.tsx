@@ -46,10 +46,10 @@ const PROGRAMS: Record<ProgramKey, Program> = {
 }
 
 const SEAL_ITEMS: NavItem[] = [
-  { href: '/program',             label: 'The Work',          exact: true },
-  { href: '/program/today',       label: "Today's session",   exact: true },
-  { href: '/program/reflections', label: 'Daily journal',     exact: true },
-  { href: '/program/progress',    label: 'My progress',       exact: true },
+  { href: '/program',             label: 'The Work',         exact: true },
+  { href: '/program/today',       label: "Today's session",  exact: true },
+  { href: '/program/reflections', label: 'Reflections',      exact: true },
+  { href: '/program/progress',    label: 'My progress',      exact: true },
 ]
 
 const CIRCLE_ITEMS: NavItem[] = [

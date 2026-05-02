@@ -35,7 +35,9 @@ export interface DailyCard {
 export interface JournalEntry {
   id: string
   userId: string
-  cardId: string
+  // null when the entry is a universal-journal entry (not bound to a daily card).
+  // Card-bound entries (legacy + Path B card flow) keep the card id.
+  cardId: string | null
   dayNumber: number
   content: string
   createdAt: Date
