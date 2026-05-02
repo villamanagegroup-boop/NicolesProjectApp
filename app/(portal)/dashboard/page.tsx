@@ -1,12 +1,13 @@
 'use client'
 
 // app/(portal)/dashboard/page.tsx
-// Universal home dashboard. Shows a sneak peek of today's work for every
-// program the user has access to:
-//   - Seal the Leak (Path A)  — current day + today's session
-//   - 365 Cards    (Path B / Path A with cards add-on) — today's card
-//   - The Circle   (Path C)   — current week
-//   - Always: universal journal prompt
+// Universal home dashboard. Sneak-peek of every program the user is in,
+// plus the universal journal prompt and a "Latest" activity feed.
+//
+// Visual direction: clean row-based sections separated by hairline
+// dividers, with thin accent strips on the left of each program row
+// instead of full card borders. Reads more like a polished product app
+// than a stack of greeting cards.
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -15,11 +16,9 @@ import { useApp } from '@/context/AppContext'
 import { supabaseClient } from '@/lib/supabase/client'
 import { programRoutes, archetypeToRoute } from '@/data/sealTheLeakProgram'
 
-const SEAL   = { fg: '#3D3080', pale: 'rgba(61,48,128,0.08)' }
-const CARDS  = { fg: '#1A5230', pale: 'rgba(26,82,48,0.07)'  }
-const CIRCLE = { fg: '#C97D3A', pale: 'rgba(201,125,58,0.08)' }
-const INK    = { fg: 'var(--ink)', pale: 'rgba(0,0,0,0.04)' }
-
+const SEAL   = '#3D3080'
+const CARDS  = '#1A5230'
+const CIRCLE = '#C97D3A'
 const FALLBACK_PROMPT = 'What is calling for your attention today?'
 
 function computeJournalDay(signupDate: Date | null | undefined): number {
@@ -30,13 +29,16 @@ function computeJournalDay(signupDate: Date | null | undefined): number {
   return ((days) % 365) + 1
 }
 
+interface Announcement { id: string; title: string; body: string; created_at: string }
+interface NextCall { id: string; title: string; scheduled_at: string; zoom_url: string | null; call_number: number }
+
 export default function DashboardPage() {
   const {
     user, dayNumber, todayCard,
     hasWorkAccess, hasCardsAccess, hasCircleAccess,
   } = useApp()
 
-  // Universal journal prompt for today
+  // Journal prompt
   const journalDay = computeJournalDay(user.signupDate)
   const [universalPrompt, setUniversalPrompt] = useState<string>(FALLBACK_PROMPT)
   useEffect(() => {
@@ -54,11 +56,10 @@ export default function DashboardPage() {
     return () => { cancelled = true }
   }, [journalDay])
 
-  // Circle current week + announcements + next call + unread coach msg —
-  // only fetched if the user has Circle access (Path C).
+  // Circle data
   const [circleWeek, setCircleWeek]       = useState<{ week: number; title: string | null; phase: string | null } | null>(null)
-  const [announcements, setAnnouncements] = useState<Array<{ id: string; title: string; body: string; created_at: string }>>([])
-  const [nextCall, setNextCall]           = useState<{ id: string; title: string; scheduled_at: string; zoom_url: string | null; call_number: number } | null>(null)
+  const [announcements, setAnnouncements] = useState<Announcement[]>([])
+  const [nextCall, setNextCall]           = useState<NextCall | null>(null)
   const [unreadCoach, setUnreadCoach]     = useState(0)
 
   useEffect(() => {
@@ -76,20 +77,18 @@ export default function DashboardPage() {
         .maybeSingle()
       if (cancelled || !member?.cohort_id) return
 
-      const cohortId = member.cohort_id as string
+      const cohortId  = member.cohort_id as string
       const archetype = (member.archetype as string) ?? null
 
-      // Cohort week
       const { data: cohort } = await supabaseClient
         .from('circle_cohorts')
         .select('starts_at')
         .eq('id', cohortId)
         .maybeSingle()
       if (cancelled) return
-      let week = 1
       if (cohort?.starts_at) {
         const startMs = new Date(cohort.starts_at as string).getTime()
-        week = Math.max(1, Math.min(12, Math.floor((Date.now() - startMs) / (86400000 * 7)) + 1))
+        const week = Math.max(1, Math.min(12, Math.floor((Date.now() - startMs) / (86400000 * 7)) + 1))
         const phase = week <= 4 ? 'Root' : week <= 8 ? 'Rebuild' : 'Rise'
         const { data: content } = await supabaseClient
           .from('circle_weekly_content')
@@ -102,7 +101,6 @@ export default function DashboardPage() {
         setCircleWeek({ week, title: (content?.week_title as string | null) ?? null, phase })
       }
 
-      // Latest 3 announcements that target this user (any archetype OR theirs)
       const { data: anns } = await supabaseClient
         .from('admin_announcements')
         .select('id, title, body, created_at, target_archetype')
@@ -111,13 +109,13 @@ export default function DashboardPage() {
         .order('created_at', { ascending: false })
         .limit(8)
       if (!cancelled && anns) {
-        const filtered = (anns as Array<{ id: string; title: string; body: string; created_at: string; target_archetype: string | null }>)
-          .filter(a => !a.target_archetype || a.target_archetype === archetype)
-          .slice(0, 3)
-        setAnnouncements(filtered)
+        setAnnouncements(
+          (anns as Array<Announcement & { target_archetype: string | null }>)
+            .filter(a => !a.target_archetype || a.target_archetype === archetype)
+            .slice(0, 3)
+        )
       }
 
-      // Next upcoming live call (within the next 30 days)
       const { data: calls } = await supabaseClient
         .from('circle_live_calls')
         .select('id, title, scheduled_at, zoom_url, call_number')
@@ -126,10 +124,9 @@ export default function DashboardPage() {
         .order('scheduled_at', { ascending: true })
         .limit(1)
       if (!cancelled && calls && calls[0]) {
-        setNextCall(calls[0] as { id: string; title: string; scheduled_at: string; zoom_url: string | null; call_number: number })
+        setNextCall(calls[0] as NextCall)
       }
 
-      // Unread coach messages (sender_id !== authUser.id, read_at null)
       const { data: msgs } = await supabaseClient
         .from('circle_coach_messages')
         .select('id, sender_id, read_at')
@@ -149,332 +146,420 @@ export default function DashboardPage() {
   const hour = typeof window !== 'undefined' ? new Date().getHours() : 9
   const timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening'
 
-  // Seal data — only relevant if hasWorkAccess
+  // Today date
+  const [todayLabel, setTodayLabel] = useState('')
+  useEffect(() => {
+    setTodayLabel(new Date().toLocaleDateString('en-US', {
+      weekday: 'long', month: 'long', day: 'numeric',
+    }))
+  }, [])
+
+  // Seal data
   const sealRouteId = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
   const sealRoute = programRoutes[sealRouteId]
   const sealCurrentDay = Math.min(Math.max(1, dayNumber), 7)
   const sealToday = sealRoute?.days[sealCurrentDay - 1]
 
+  const programRowCount =
+    (hasWorkAccess && sealToday ? 1 : 0) +
+    (hasCardsAccess ? 1 : 0) +
+    (hasCircleAccess ? 1 : 0) +
+    1 // journal always counted
+
+  const hasActivity = announcements.length > 0 || !!nextCall || unreadCoach > 0
+
   return (
-    <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+    <div style={{ maxWidth: 920, margin: '0 auto' }}>
       {/* Hero */}
-      <div style={{ marginBottom: 28 }}>
+      <div style={{ marginBottom: 36 }}>
         <p style={{
-          fontSize: 11, fontWeight: 600, letterSpacing: '0.12em',
-          textTransform: 'uppercase', color: 'var(--text-muted)',
-          fontFamily: 'var(--font-body)', margin: '0 0 6px',
+          fontSize: 11, fontWeight: 500, letterSpacing: '0.06em',
+          color: 'var(--text-muted)',
+          fontFamily: 'var(--font-body)', margin: '0 0 10px',
         }}>
-          Good {timeOfDay}, {firstName}
+          {todayLabel}
         </p>
         <h1 style={{
-          fontFamily: 'var(--font-display)', fontSize: 36, fontWeight: 300,
-          color: 'var(--ink)', margin: 0, lineHeight: 1.2,
+          fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300,
+          color: 'var(--ink)', margin: 0, lineHeight: 1.15,
+          letterSpacing: '-0.01em',
         }}>
-          Here&apos;s what&apos;s waiting for you today.
+          Good {timeOfDay}, {firstName}.
         </h1>
+        <p style={{
+          fontSize: 14, color: 'var(--text-soft)',
+          fontFamily: 'var(--font-body)', margin: '8px 0 0',
+          lineHeight: 1.5,
+        }}>
+          {hasWorkAccess || hasCardsAccess || hasCircleAccess
+            ? "Here's what's waiting for you today."
+            : 'Pick a program below to get started.'}
+        </p>
       </div>
 
-      {/* Program sneak-peek cards */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
-
-        {/* Seal the Leak — Path A */}
-        {hasWorkAccess && sealToday && (
-          <ProgramCard
-            palette={SEAL}
-            eyebrow={`Seal the Leak · ${sealRoute.name}`}
-            day={`Day ${sealCurrentDay} of 7`}
-            phase={sealToday.phase}
-            title={sealToday.title}
-            preview={sealRoute.coreShift}
-            cta="Continue today's session"
-            href="/program/today"
-          />
-        )}
-
-        {/* 365 Cards — Path B (or A+addon) */}
-        {hasCardsAccess && (
-          <CardsTodayPeek
-            todayCard={todayCard}
-            dayNumber={dayNumber}
-          />
-        )}
-
-        {/* The Circle — Path C */}
-        {hasCircleAccess && (
-          <ProgramCard
-            palette={CIRCLE}
-            eyebrow={`The Circle${circleWeek ? ` · ${circleWeek.phase}` : ''}`}
-            day={circleWeek ? `Week ${circleWeek.week} of 12` : 'Your cohort'}
-            phase={circleWeek?.title ?? null}
-            title={circleWeek?.title ?? 'This week in the Circle'}
-            preview="Teaching, journal prompts, and your accountability partner thread are all here."
-            cta="Open this week"
-            href="/circle"
-            secondaryCta={{ label: 'Coach chat', href: '/circle/coach' }}
-          />
-        )}
-
-        {/* Empty access state — they have a path but nothing visible */}
-        {!hasWorkAccess && !hasCardsAccess && !hasCircleAccess && (
-          <div style={{
-            background: '#fff', border: '1px solid var(--line)',
-            borderRadius: 14, padding: 24, textAlign: 'center',
+      {/* Empty access */}
+      {!hasWorkAccess && !hasCardsAccess && !hasCircleAccess && (
+        <div style={{
+          padding: '48px 24px', textAlign: 'center',
+          borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)',
+          marginBottom: 32,
+        }}>
+          <p style={{
+            fontFamily: 'var(--font-display)', fontSize: 20, fontStyle: 'italic',
+            fontWeight: 300, color: 'var(--text-muted)',
+            margin: '0 0 12px',
           }}>
-            <p style={{
-              fontFamily: 'var(--font-display)', fontSize: 20, fontStyle: 'italic',
-              fontWeight: 300, color: 'var(--text-muted)',
-              margin: '0 0 8px',
-            }}>
-              No active program yet.
-            </p>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 16px' }}>
-              Pick a program to get started.
-            </p>
-            <Link href="/upgrade" style={{
-              display: 'inline-block', padding: '10px 18px', borderRadius: 999,
-              background: 'var(--ink)', color: '#fff',
-              fontSize: 13, fontWeight: 600, textDecoration: 'none',
-            }}>
-              See what&apos;s available →
-            </Link>
-          </div>
-        )}
-      </div>
-
-      {/* Latest — announcements, calls, messages.
-          Only shown when there's something to surface. */}
-      {(announcements.length > 0 || nextCall || unreadCoach > 0) && (
-        <div style={{ marginBottom: 24 }}>
-          <SectionHeader>Latest</SectionHeader>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-
-            {/* Next live call */}
-            {nextCall && (
-              <ActivityRow
-                icon="📞"
-                eyebrow={`Live call · #${nextCall.call_number}`}
-                title={nextCall.title}
-                meta={liveCallMeta(nextCall.scheduled_at)}
-                cta={nextCall.zoom_url ? { label: 'Open Zoom', href: nextCall.zoom_url, external: true } : undefined}
-                secondaryCta={{ label: 'Details', href: '/circle/calls' }}
-              />
-            )}
-
-            {/* Announcements */}
-            {announcements.map(a => (
-              <ActivityRow
-                key={a.id}
-                icon="📢"
-                eyebrow="Announcement"
-                title={a.title}
-                meta={
-                  <>
-                    {a.body.length > 140 ? a.body.slice(0, 140) + '…' : a.body}
-                    {' · '}
-                    <span style={{ color: 'var(--text-muted)' }}>{relativeTime(a.created_at)}</span>
-                  </>
-                }
-              />
-            ))}
-
-            {/* Unread coach messages */}
-            {unreadCoach > 0 && (
-              <ActivityRow
-                icon="✉️"
-                eyebrow="Coach chat"
-                title={`${unreadCoach} new ${unreadCoach === 1 ? 'message' : 'messages'} from Nicole`}
-                meta="Open the thread to read and reply."
-                cta={{ label: 'Open chat', href: '/circle/coach' }}
-                accent="#C97D3A"
-              />
-            )}
-          </div>
+            No active program yet.
+          </p>
+          <Link href="/upgrade" style={{
+            display: 'inline-block', padding: '10px 20px', borderRadius: 999,
+            background: 'var(--ink)', color: '#fff',
+            fontSize: 13, fontWeight: 600, textDecoration: 'none',
+          }}>
+            See what&apos;s available →
+          </Link>
         </div>
       )}
 
-      {/* Universal journal — always visible */}
-      <ProgramCard
-        palette={INK}
-        eyebrow="Always with you"
-        day={`Day ${journalDay}`}
-        phase="Universal journal"
-        title={universalPrompt.length > 90 ? universalPrompt.slice(0, 90) + '…' : universalPrompt}
-        preview="A new prompt every day. Same first day for everyone — the rhythm is yours to keep."
-        cta="Write today's entry"
-        href="/journal"
-        compact
-      />
+      {/* TODAY section */}
+      {programRowCount > 0 && (
+        <Section title="Today" count={programRowCount}>
+          {hasWorkAccess && sealToday && (
+            <Row
+              accent={SEAL}
+              eyebrow={`Seal the Leak · ${sealRoute.name}`}
+              badge={`Day ${sealCurrentDay} of 7`}
+              title={sealToday.title}
+              caption={sealToday.phase}
+              href="/program/today"
+            />
+          )}
+
+          {hasCardsAccess && (
+            <CardsRow todayCard={todayCard} dayNumber={dayNumber} />
+          )}
+
+          {hasCircleAccess && (
+            <Row
+              accent={CIRCLE}
+              eyebrow={`The Circle${circleWeek?.phase ? ` · ${circleWeek.phase}` : ''}`}
+              badge={circleWeek ? `Week ${circleWeek.week} of 12` : 'Cohort'}
+              title={circleWeek?.title ?? 'This week in the Circle'}
+              caption="Teaching, prompts, partner thread"
+              href="/circle"
+            />
+          )}
+
+          <Row
+            accent="var(--ink)"
+            eyebrow="Universal journal"
+            badge={`Day ${journalDay}`}
+            title={universalPrompt.length > 100 ? universalPrompt.slice(0, 100) + '…' : universalPrompt}
+            caption="A new prompt every day, looped at 365"
+            href="/journal"
+            italic
+          />
+        </Section>
+      )}
+
+      {/* LATEST section */}
+      {hasActivity && (
+        <Section title="Latest" count={announcements.length + (nextCall ? 1 : 0) + (unreadCoach > 0 ? 1 : 0)}>
+          {nextCall && (
+            <ActivityRow
+              kind="Call"
+              title={nextCall.title}
+              meta={liveCallMeta(nextCall.scheduled_at)}
+              cta={nextCall.zoom_url ? { label: 'Zoom', href: nextCall.zoom_url, external: true } : undefined}
+              link={{ label: 'Details', href: '/circle/calls' }}
+            />
+          )}
+          {announcements.map(a => (
+            <ActivityRow
+              key={a.id}
+              kind="Announcement"
+              title={a.title}
+              meta={
+                <>
+                  {a.body.length > 160 ? a.body.slice(0, 160) + '…' : a.body}
+                  {' · '}
+                  <span style={{ color: 'var(--text-muted)' }}>{relativeTime(a.created_at)}</span>
+                </>
+              }
+            />
+          ))}
+          {unreadCoach > 0 && (
+            <ActivityRow
+              kind="Coach"
+              title={`${unreadCoach} new ${unreadCoach === 1 ? 'message' : 'messages'} from Nicole`}
+              meta="Open the thread to read and reply."
+              cta={{ label: 'Open chat', href: '/circle/coach' }}
+            />
+          )}
+        </Section>
+      )}
     </div>
   )
 }
 
-// ── Components ───────────────────────────────────────────────────────────────
-
-function ProgramCard({
-  palette, eyebrow, day, phase, title, preview,
-  cta, href, secondaryCta, compact,
-}: {
-  palette: { fg: string; pale: string }
-  eyebrow: string
-  day: string
-  phase: string | null
-  title: string
-  preview: string
-  cta: string
-  href: string
-  secondaryCta?: { label: string; href: string }
-  compact?: boolean
-}) {
+// ── Section wrapper ──────────────────────────────────────────────────────────
+function Section({ title, count, children }: { title: string; count?: number; children: React.ReactNode }) {
   return (
-    <div style={{
-      background: '#fff',
-      border: `1px solid ${palette.fg}22`,
-      borderLeft: `3px solid ${palette.fg}`,
-      borderRadius: 14,
-      padding: compact ? 18 : 22,
-      display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap',
-    }}>
-      <div style={{ flex: 1, minWidth: 240 }}>
-        <p style={{
-          fontSize: 10, fontWeight: 600, letterSpacing: '0.1em',
-          textTransform: 'uppercase', color: palette.fg,
-          fontFamily: 'var(--font-body)', margin: '0 0 6px',
-        }}>
-          {eyebrow}
-        </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
-          <span style={{
-            fontSize: 11, fontWeight: 600,
-            padding: '3px 10px', borderRadius: 999,
-            background: palette.pale, color: palette.fg,
-            fontFamily: 'var(--font-body)',
-          }}>
-            {day}
-          </span>
-          {phase && (
-            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
-              {phase}
-            </span>
-          )}
-        </div>
-        <h3 style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: compact ? 18 : 22,
-          fontWeight: 300, color: 'var(--ink)',
-          margin: '0 0 8px', lineHeight: 1.3,
-        }}>
-          {title}
-        </h3>
-        <p style={{
-          fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.6,
+    <section style={{ marginBottom: 36 }}>
+      <header style={{
+        display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+        paddingBottom: 8, borderBottom: '1px solid var(--line)',
+        marginBottom: 4,
+      }}>
+        <h2 style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
+          textTransform: 'uppercase', color: 'var(--text-soft)',
           margin: 0, fontFamily: 'var(--font-body)',
         }}>
-          {preview}
-        </p>
-      </div>
-
-      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexShrink: 0, flexWrap: 'wrap' }}>
-        {secondaryCta && (
-          <Link
-            href={secondaryCta.href}
-            style={{
-              display: 'inline-block',
-              padding: '10px 16px', borderRadius: 8,
-              border: `1px solid ${palette.fg}33`,
-              color: palette.fg, background: '#fff',
-              fontSize: 12, fontWeight: 600,
-              textDecoration: 'none', fontFamily: 'var(--font-body)',
-            }}
-          >
-            {secondaryCta.label} →
-          </Link>
+          {title}
+        </h2>
+        {count !== undefined && (
+          <span style={{
+            fontSize: 11, color: 'var(--text-muted)',
+            fontFamily: 'var(--font-body)',
+          }}>
+            {count} {count === 1 ? 'item' : 'items'}
+          </span>
         )}
-        <Link
-          href={href}
-          style={{
-            display: 'inline-block',
-            padding: '10px 18px', borderRadius: 8,
-            background: palette.fg, color: '#fff',
-            fontSize: 12, fontWeight: 600,
-            textDecoration: 'none', fontFamily: 'var(--font-body)',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {cta} →
-        </Link>
-      </div>
-    </div>
+      </header>
+      <div>{children}</div>
+    </section>
   )
 }
 
-function SectionHeader({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{
-      fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
-      textTransform: 'uppercase', color: 'var(--text-muted)',
-      marginBottom: 10, paddingBottom: 6,
-      borderBottom: '1px solid var(--line)',
-      fontFamily: 'var(--font-body)',
-    }}>
-      {children}
-    </div>
-  )
-}
-
-function ActivityRow({
-  icon, eyebrow, title, meta, cta, secondaryCta, accent,
+// ── Program row (Seal / Circle / Journal) ────────────────────────────────────
+function Row({
+  accent, eyebrow, badge, title, caption, href, italic,
 }: {
-  icon: string
+  accent: string
   eyebrow: string
+  badge: string
+  title: string
+  caption?: string
+  href: string
+  italic?: boolean
+}) {
+  return (
+    <Link href={href} style={{ textDecoration: 'none', display: 'block' }}>
+      <div
+        style={{
+          display: 'flex', alignItems: 'center', gap: 16,
+          padding: '18px 4px 18px 16px',
+          borderBottom: '1px solid var(--line)',
+          position: 'relative',
+          transition: 'background 0.15s',
+        }}
+        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'var(--paper2)' }}
+        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent' }}
+      >
+        {/* Accent strip */}
+        <span style={{
+          position: 'absolute', left: 0, top: 18, bottom: 18,
+          width: 2, background: accent, borderRadius: 2,
+        }} />
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '0.09em',
+            textTransform: 'uppercase', color: accent,
+            fontFamily: 'var(--font-body)', marginBottom: 6,
+          }}>
+            {eyebrow}
+            <span style={{
+              marginLeft: 10, fontWeight: 500,
+              padding: '2px 8px', borderRadius: 999,
+              background: 'var(--paper2)', color: 'var(--text-muted)',
+              letterSpacing: '0.04em',
+            }}>
+              {badge}
+            </span>
+          </div>
+          <div style={{
+            fontFamily: italic ? 'var(--font-display)' : 'var(--font-body)',
+            fontStyle: italic ? 'italic' : 'normal',
+            fontSize: 16, fontWeight: italic ? 300 : 600,
+            color: 'var(--ink)', lineHeight: 1.4,
+          }}>
+            {title}
+          </div>
+          {caption && (
+            <div style={{
+              fontSize: 12, color: 'var(--text-soft)',
+              fontFamily: 'var(--font-body)', marginTop: 4, lineHeight: 1.5,
+            }}>
+              {caption}
+            </div>
+          )}
+        </div>
+
+        <span style={{
+          color: 'var(--text-muted)', fontSize: 16,
+          flexShrink: 0, paddingRight: 4,
+        }}>
+          ›
+        </span>
+      </div>
+    </Link>
+  )
+}
+
+// ── Cards row (special: includes thumbnail) ──────────────────────────────────
+function CardsRow({
+  todayCard, dayNumber,
+}: {
+  todayCard: { id: string; title: string; theme: string; bodyText: string; imageUrl: string | null; cardColor: string; emoji: string } | null
+  dayNumber: number
+}) {
+  if (!todayCard) {
+    return (
+      <Row
+        accent={CARDS}
+        eyebrow="365 Cards"
+        badge={`Day ${Math.max(1, dayNumber)}`}
+        title="Today's card is loading…"
+        caption="Your daily alignment card will appear here every morning."
+        href="/card"
+      />
+    )
+  }
+  return (
+    <Link href="/card" style={{ textDecoration: 'none', display: 'block' }}>
+      <div
+        style={{
+          display: 'flex', alignItems: 'center', gap: 16,
+          padding: '18px 4px 18px 16px',
+          borderBottom: '1px solid var(--line)',
+          position: 'relative',
+          transition: 'background 0.15s',
+        }}
+        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'var(--paper2)' }}
+        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent' }}
+      >
+        <span style={{
+          position: 'absolute', left: 0, top: 18, bottom: 18,
+          width: 2, background: CARDS, borderRadius: 2,
+        }} />
+
+        {/* Card thumbnail */}
+        <div style={{
+          width: 56, height: 56, borderRadius: 8,
+          background: todayCard.cardColor || 'rgba(26,82,48,0.07)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 22, flexShrink: 0,
+          position: 'relative', overflow: 'hidden',
+        }}>
+          {todayCard.imageUrl ? (
+            <Image src={todayCard.imageUrl} alt="" fill sizes="56px" style={{ objectFit: 'cover' }} />
+          ) : (
+            <span>{todayCard.emoji || '✦'}</span>
+          )}
+        </div>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '0.09em',
+            textTransform: 'uppercase', color: CARDS,
+            fontFamily: 'var(--font-body)', marginBottom: 6,
+          }}>
+            365 Cards · {todayCard.theme}
+            <span style={{
+              marginLeft: 10, fontWeight: 500,
+              padding: '2px 8px', borderRadius: 999,
+              background: 'var(--paper2)', color: 'var(--text-muted)',
+              letterSpacing: '0.04em',
+            }}>
+              Day {dayNumber}
+            </span>
+          </div>
+          <div style={{
+            fontSize: 16, fontWeight: 600,
+            color: 'var(--ink)', lineHeight: 1.4,
+            fontFamily: 'var(--font-body)',
+          }}>
+            {todayCard.title}
+          </div>
+          {todayCard.bodyText && (
+            <div style={{
+              fontSize: 12, color: 'var(--text-soft)',
+              fontFamily: 'var(--font-body)', marginTop: 4, lineHeight: 1.5,
+              display: '-webkit-box',
+              WebkitLineClamp: 1,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}>
+              {todayCard.bodyText}
+            </div>
+          )}
+        </div>
+
+        <span style={{
+          color: 'var(--text-muted)', fontSize: 16,
+          flexShrink: 0, paddingRight: 4,
+        }}>
+          ›
+        </span>
+      </div>
+    </Link>
+  )
+}
+
+// ── Activity row (Latest section) ────────────────────────────────────────────
+function ActivityRow({
+  kind, title, meta, cta, link,
+}: {
+  kind: 'Call' | 'Announcement' | 'Coach'
   title: string
   meta: React.ReactNode
   cta?: { label: string; href: string; external?: boolean }
-  secondaryCta?: { label: string; href: string }
-  accent?: string
+  link?: { label: string; href: string }
 }) {
-  const accentColor = accent ?? 'var(--ink)'
+  const accent = kind === 'Call' ? CIRCLE : kind === 'Coach' ? CIRCLE : 'var(--ink)'
+
   return (
     <div style={{
-      background: '#fff', border: '1px solid var(--line)',
-      borderRadius: 12, padding: '14px 16px',
-      display: 'flex', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap',
+      display: 'flex', alignItems: 'center', gap: 16,
+      padding: '14px 4px 14px 16px',
+      borderBottom: '1px solid var(--line)',
+      position: 'relative', flexWrap: 'wrap',
     }}>
-      <div style={{
-        width: 36, height: 36, borderRadius: 10,
-        background: 'var(--paper2)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 18, flexShrink: 0,
-      }}>
-        {icon}
-      </div>
+      <span style={{
+        position: 'absolute', left: 0, top: 14, bottom: 14,
+        width: 2, background: accent, borderRadius: 2,
+      }} />
+
       <div style={{ flex: 1, minWidth: 200 }}>
-        <p style={{
-          fontSize: 9, fontWeight: 700, letterSpacing: '0.1em',
-          textTransform: 'uppercase', color: accentColor,
-          fontFamily: 'var(--font-body)', margin: '0 0 4px',
-        }}>
-          {eyebrow}
-        </p>
         <div style={{
-          fontFamily: 'var(--font-body)',
+          fontSize: 10, fontWeight: 700, letterSpacing: '0.09em',
+          textTransform: 'uppercase', color: accent,
+          fontFamily: 'var(--font-body)', marginBottom: 4,
+        }}>
+          {kind}
+        </div>
+        <div style={{
           fontSize: 14, fontWeight: 600, color: 'var(--ink)',
-          marginBottom: 4, lineHeight: 1.4,
+          fontFamily: 'var(--font-body)', lineHeight: 1.4, marginBottom: 4,
         }}>
           {title}
         </div>
         <div style={{
-          fontSize: 12, color: 'var(--text-soft)', lineHeight: 1.55,
-          fontFamily: 'var(--font-body)',
+          fontSize: 12, color: 'var(--text-soft)',
+          fontFamily: 'var(--font-body)', lineHeight: 1.5,
         }}>
           {meta}
         </div>
       </div>
+
       <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
-        {secondaryCta && (
+        {link && (
           <Link
-            href={secondaryCta.href}
+            href={link.href}
             style={{
-              padding: '7px 12px', borderRadius: 7,
+              padding: '6px 11px', borderRadius: 6,
               border: '1px solid var(--line-md)',
               color: 'var(--text-soft)', background: '#fff',
               fontSize: 11, fontWeight: 600,
@@ -482,17 +567,15 @@ function ActivityRow({
               whiteSpace: 'nowrap',
             }}
           >
-            {secondaryCta.label}
+            {link.label}
           </Link>
         )}
         {cta && (cta.external ? (
           <a
-            href={cta.href}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={cta.href} target="_blank" rel="noopener noreferrer"
             style={{
-              padding: '7px 14px', borderRadius: 7,
-              background: accentColor, color: '#fff',
+              padding: '6px 12px', borderRadius: 6,
+              background: accent, color: '#fff',
               fontSize: 11, fontWeight: 600,
               textDecoration: 'none', fontFamily: 'var(--font-body)',
               whiteSpace: 'nowrap',
@@ -504,8 +587,8 @@ function ActivityRow({
           <Link
             href={cta.href}
             style={{
-              padding: '7px 14px', borderRadius: 7,
-              background: accentColor, color: '#fff',
+              padding: '6px 12px', borderRadius: 6,
+              background: accent, color: '#fff',
               fontSize: 11, fontWeight: 600,
               textDecoration: 'none', fontFamily: 'var(--font-body)',
               whiteSpace: 'nowrap',
@@ -519,6 +602,7 @@ function ActivityRow({
   )
 }
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
 function liveCallMeta(scheduledAt: string): React.ReactNode {
   const ms = new Date(scheduledAt).getTime() - Date.now()
   const days = Math.floor(ms / 86400000)
@@ -546,118 +630,4 @@ function relativeTime(iso: string): string {
   if (days < 7) return `${days}d ago`
   if (days < 30) return `${Math.floor(days / 7)}w ago`
   return `${Math.floor(days / 30)}mo ago`
-}
-
-function CardsTodayPeek({
-  todayCard, dayNumber,
-}: {
-  todayCard: { id: string; title: string; theme: string; bodyText: string; imageUrl: string | null; cardColor: string; emoji: string } | null
-  dayNumber: number
-}) {
-  if (!todayCard) {
-    return (
-      <ProgramCard
-        palette={CARDS}
-        eyebrow="365 Cards"
-        day={`Day ${Math.max(1, dayNumber)}`}
-        phase={null}
-        title="Today's card is loading…"
-        preview="Your daily alignment card will appear here every morning."
-        cta="Open today's card"
-        href="/card"
-      />
-    )
-  }
-  return (
-    <div style={{
-      background: '#fff',
-      border: `1px solid ${CARDS.fg}22`,
-      borderLeft: `3px solid ${CARDS.fg}`,
-      borderRadius: 14,
-      padding: 22,
-      display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap',
-    }}>
-      {/* Card image / color block (left) */}
-      <div style={{
-        width: 96, height: 96,
-        borderRadius: 12, overflow: 'hidden',
-        background: todayCard.cardColor || CARDS.pale,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 32, flexShrink: 0,
-        position: 'relative',
-      }}>
-        {todayCard.imageUrl ? (
-          <Image
-            src={todayCard.imageUrl}
-            alt=""
-            fill
-            sizes="96px"
-            style={{ objectFit: 'cover' }}
-          />
-        ) : (
-          <span>{todayCard.emoji || '✦'}</span>
-        )}
-      </div>
-
-      {/* Content (middle, flex) */}
-      <div style={{ flex: 1, minWidth: 240 }}>
-        <p style={{
-          fontSize: 10, fontWeight: 600, letterSpacing: '0.1em',
-          textTransform: 'uppercase', color: CARDS.fg,
-          fontFamily: 'var(--font-body)', margin: '0 0 6px',
-        }}>
-          365 Cards
-        </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
-          <span style={{
-            fontSize: 11, fontWeight: 600,
-            padding: '3px 10px', borderRadius: 999,
-            background: CARDS.pale, color: CARDS.fg,
-            fontFamily: 'var(--font-body)',
-          }}>
-            Day {dayNumber}
-          </span>
-          <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
-            {todayCard.theme}
-          </span>
-        </div>
-        <h3 style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 22, fontWeight: 300, color: 'var(--ink)',
-          margin: '0 0 8px', lineHeight: 1.3,
-        }}>
-          {todayCard.title}
-        </h3>
-        {todayCard.bodyText && (
-          <p style={{
-            fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.6,
-            margin: 0, fontFamily: 'var(--font-body)',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-          }}>
-            {todayCard.bodyText}
-          </p>
-        )}
-      </div>
-
-      {/* CTA (right) — matches other ProgramCards */}
-      <div style={{ display: 'flex', flexShrink: 0, alignItems: 'flex-start' }}>
-        <Link
-          href="/card"
-          style={{
-            display: 'inline-block',
-            padding: '10px 18px', borderRadius: 8,
-            background: CARDS.fg, color: '#fff',
-            fontSize: 12, fontWeight: 600,
-            textDecoration: 'none', fontFamily: 'var(--font-body)',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          Open today&apos;s card →
-        </Link>
-      </div>
-    </div>
-  )
 }
