@@ -13,6 +13,27 @@ import {
   type AdminUserRow, type PendingPurchase,
 } from '@/lib/admin/hooks'
 
+function useAdminFirstName(): string {
+  const [firstName, setFirstName] = useState('there')
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const { data: { user } } = await supabaseClient.auth.getUser()
+      if (!user || cancelled) return
+      const { data: profile } = await supabaseClient
+        .from('users')
+        .select('name')
+        .eq('id', user.id)
+        .maybeSingle()
+      if (cancelled) return
+      const full = (profile?.name as string | null)?.trim() || user.email?.split('@')[0] || 'there'
+      setFirstName(full.split(/\s+/)[0])
+    })()
+    return () => { cancelled = true }
+  }, [])
+  return firstName
+}
+
 const ARCHETYPE_COLORS: Record<string, string> = {
   door: 'var(--green)', throne: '#1a1a2e', engine: 'var(--red)', push: '#3d2c0e',
 }
@@ -59,6 +80,7 @@ function EngagementBar({ rate }: { rate: number }) {
 }
 
 export default function AdminDashboard() {
+  const firstName = useAdminFirstName()
   const [cohorts, setCohorts] = useState<AdminCohortSummary[]>([])
   const [alerts, setAlerts] = useState<AdminEngagementAlert[]>([])
   const [users, setUsers] = useState<AdminUserRow[]>([])
@@ -103,12 +125,29 @@ export default function AdminDashboard() {
     <div>
       {/* Header */}
       <div style={{ marginBottom: '28px' }}>
-        <div style={{ fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
-          {today}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
+              {today}
+            </div>
+            <h1 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--ink)', margin: 0 }}>
+              Welcome back, {firstName}
+            </h1>
+          </div>
+          <Link
+            href="/admin/redesign"
+            style={{
+              fontSize: 11, fontWeight: 600,
+              padding: '6px 12px', borderRadius: 999,
+              background: 'linear-gradient(135deg, var(--green-pale), var(--gold-pale))',
+              color: 'var(--ink)',
+              border: '1px solid var(--line)',
+              textDecoration: 'none', flexShrink: 0,
+            }}
+          >
+            ✦ Preview modern look
+          </Link>
         </div>
-        <h1 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--ink)', margin: 0 }}>
-          Good morning
-        </h1>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0' }}>
           {activeCohorts.length} active cohort{activeCohorts.length !== 1 ? 's' : ''}
           {totalAlerts > 0 && ` · ${totalAlerts} member${totalAlerts !== 1 ? 's' : ''} need${totalAlerts === 1 ? 's' : ''} attention`}
