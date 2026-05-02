@@ -174,7 +174,7 @@ export default function DashboardPage() {
   const hasActivity = announcements.length > 0 || !!nextCall || unreadCoach > 0
 
   return (
-    <div style={{ maxWidth: 920, margin: '0 auto' }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
       {/* Hero */}
       <div style={{ marginBottom: 36 }}>
         <p style={{
@@ -260,6 +260,15 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* TODAY (left) + LATEST (right) on desktop, stacked on mobile.
+          The dashboard-cols class falls back to a single column under 900px. */}
+      <div className="dashboard-cols" style={{
+        display: 'grid',
+        gridTemplateColumns: hasActivity ? 'minmax(0, 1.4fr) minmax(0, 1fr)' : '1fr',
+        gap: 28,
+        alignItems: 'start',
+      }}>
+      <div>
       {/* TODAY section */}
       {programRowCount > 0 && (
         <Section title="Today" count={programRowCount}>
@@ -301,8 +310,12 @@ export default function DashboardPage() {
         </Section>
       )}
 
-      {/* LATEST section */}
+      </div>
+
+      {/* Right column — only renders when there's something in LATEST */}
       {hasActivity && (
+      <div style={{ position: 'sticky', top: 24 }}>
+      {/* LATEST section */}
         <Section title="Latest" count={announcements.length + (nextCall ? 1 : 0) + (unreadCoach > 0 ? 1 : 0)}>
           {nextCall && (
             <ActivityRow
@@ -336,7 +349,18 @@ export default function DashboardPage() {
             />
           )}
         </Section>
+      </div>
       )}
+      </div>
+
+      <style>{`
+        @media (max-width: 900px) {
+          .dashboard-cols {
+            grid-template-columns: 1fr !important;
+          }
+          .dashboard-cols > div { position: static !important; }
+        }
+      `}</style>
     </div>
   )
 }

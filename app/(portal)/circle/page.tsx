@@ -186,7 +186,7 @@ export default function CirclePage() {
   const phase = currentWeek == null ? null : currentWeek <= 4 ? 'Root' : currentWeek <= 8 ? 'Rebuild' : 'Rise'
 
   return (
-    <div style={{ maxWidth: 920, margin: '0 auto' }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
       {/* Hero */}
       <div style={{ marginBottom: 28 }}>
@@ -272,6 +272,16 @@ export default function CirclePage() {
         </div>
       </Section>
 
+      {/* Below the wide blocks, split TODAY (left) from "Everything in
+          The Circle" (right) on desktop. Stacks back to single column
+          under 900px (see <style> at the bottom of the file). */}
+      <div className="circle-cols" style={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)',
+        gap: 28,
+        alignItems: 'start',
+      }}>
+      <div>
       {/* TODAY — current week + partner + next call as rows */}
       <Section title="Today">
         {currentWeek && (
@@ -324,6 +334,9 @@ export default function CirclePage() {
         )}
       </Section>
 
+      </div>
+
+      <div style={{ position: 'sticky', top: 24 }}>
       {/* EVERYTHING IN THE CIRCLE — directory of every surface */}
       <Section title="Everything in The Circle">
         <CircleRow
@@ -348,6 +361,17 @@ export default function CirclePage() {
           href={`/circle/week/${currentWeek ?? 1}`}
         />
       </Section>
+      </div>
+      </div>
+
+      <style>{`
+        @media (max-width: 900px) {
+          .circle-cols {
+            grid-template-columns: 1fr !important;
+          }
+          .circle-cols > div { position: static !important; }
+        }
+      `}</style>
     </div>
   )
 }
