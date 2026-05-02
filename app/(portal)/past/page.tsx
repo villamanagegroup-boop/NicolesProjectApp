@@ -88,8 +88,8 @@ export default function PastPage() {
           className="four-col-grid"
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: '16px',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))',
+            gap: '10px',
           }}
         >
           {filteredCards.map((card) => (
@@ -98,14 +98,14 @@ export default function PastPage() {
                 style={{
                   position: 'relative',
                   aspectRatio: '3/4',
-                  borderRadius: '10px',
+                  borderRadius: '8px',
                   overflow: 'hidden',
                   backgroundColor: card.cardColor,
                   cursor: 'pointer',
                   transition: 'transform 0.2s ease',
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.02)'
+                  (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.03)'
                 }}
                 onMouseLeave={(e) => {
                   (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)'
@@ -127,7 +127,7 @@ export default function PastPage() {
                       top: '50%',
                       left: '50%',
                       transform: 'translate(-50%, -50%)',
-                      fontSize: '36px',
+                      fontSize: '24px',
                     }}
                   >
                     {card.emoji}
@@ -144,15 +144,16 @@ export default function PastPage() {
                 />
 
                 {/* Bottom content */}
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px' }}>
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '8px 10px' }}>
                   <p
                     style={{
-                      fontSize: '10px',
+                      fontSize: '8px',
                       textTransform: 'uppercase',
                       letterSpacing: '0.08em',
                       color: 'var(--gold)',
                       fontFamily: 'var(--font-body)',
-                      margin: '0 0 4px 0',
+                      fontWeight: 600,
+                      margin: '0 0 2px 0',
                     }}
                   >
                     Day {card.dayNumber}
@@ -161,23 +162,17 @@ export default function PastPage() {
                     style={{
                       fontFamily: 'var(--font-display)',
                       fontStyle: 'italic',
-                      fontSize: '14px',
+                      fontSize: '11px',
                       color: '#ffffff',
                       margin: 0,
-                      lineHeight: 1.3,
+                      lineHeight: 1.25,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
                     }}
                   >
                     {card.title}
-                  </p>
-                  <p
-                    style={{
-                      fontSize: '10px',
-                      color: 'rgba(255,255,255,0.40)',
-                      fontFamily: 'var(--font-body)',
-                      margin: '2px 0 0 0',
-                    }}
-                  >
-                    {card.theme}
                   </p>
                 </div>
               </div>

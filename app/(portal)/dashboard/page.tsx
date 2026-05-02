@@ -15,6 +15,7 @@ import Image from 'next/image'
 import { useApp } from '@/context/AppContext'
 import { supabaseClient } from '@/lib/supabase/client'
 import { programRoutes, archetypeToRoute } from '@/data/sealTheLeakProgram'
+import DailyCheckIn from '@/components/cards/DailyCheckIn'
 
 const SEAL   = '#3D3080'
 const CARDS  = '#1A5230'
@@ -36,7 +37,11 @@ export default function DashboardPage() {
   const {
     user, dayNumber, todayCard,
     hasWorkAccess, hasCardsAccess, hasCircleAccess,
+    checkInToday, setCheckIn,
   } = useApp()
+
+  const [checkInDismissed, setCheckInDismissed] = useState(false)
+  const showCheckIn = !checkInToday && !checkInDismissed
 
   // Journal prompt
   const journalDay = computeJournalDay(user.signupDate)
@@ -196,6 +201,40 @@ export default function DashboardPage() {
             : 'Pick a program below to get started.'}
         </p>
       </div>
+
+      {/* Daily check-in — only when not already checked in today */}
+      {showCheckIn && (
+        <div style={{ marginBottom: 28 }}>
+          <DailyCheckIn
+            compact
+            onComplete={async (mood) => {
+              if (mood) await setCheckIn(mood)
+              setCheckInDismissed(true)
+            }}
+            onDismiss={() => setCheckInDismissed(true)}
+          />
+        </div>
+      )}
+
+      {checkInToday && !showCheckIn && (
+        <div style={{
+          padding: '10px 14px', marginBottom: 28,
+          background: 'var(--green-pale)', border: '1px solid rgba(31,92,58,0.18)',
+          borderRadius: 10,
+          display: 'flex', alignItems: 'center', gap: 10,
+          fontSize: 12, color: 'var(--ink)',
+          fontFamily: 'var(--font-body)',
+        }}>
+          <span style={{ fontSize: 14 }}>{
+            checkInToday === 'aligned' ? '🌿'
+            : checkInToday === 'clear' ? '✨'
+            : checkInToday === 'drained' ? '🌑'
+            : checkInToday === 'overwhelmed' ? '🌊'
+            : '🪨'
+          }</span>
+          <span>You checked in today as <strong style={{ textTransform: 'capitalize' }}>{checkInToday}</strong>.</span>
+        </div>
+      )}
 
       {/* Empty access */}
       {!hasWorkAccess && !hasCardsAccess && !hasCircleAccess && (

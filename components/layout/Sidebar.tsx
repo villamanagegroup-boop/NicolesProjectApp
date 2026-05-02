@@ -176,76 +176,41 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Home — universal landing showing every program at a glance */}
-      <div style={{ padding: '0 12px 10px' }}>
-        <Link
-          href="/dashboard"
-          style={{ textDecoration: 'none', display: 'block' }}
-        >
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '9px 12px', borderRadius: 8,
-            background: pathname === '/dashboard' ? 'var(--paper2)' : 'transparent',
-            border: `1px solid ${pathname === '/dashboard' ? 'var(--line-md)' : 'transparent'}`,
-            color: pathname === '/dashboard' ? 'var(--ink)' : 'var(--text-soft)',
-            fontFamily: 'var(--font-body)',
-            transition: 'background 0.15s, border-color 0.15s',
-          }}
-          onMouseEnter={e => {
-            if (pathname !== '/dashboard') (e.currentTarget as HTMLDivElement).style.background = 'var(--paper2)'
-          }}
-          onMouseLeave={e => {
-            if (pathname !== '/dashboard') (e.currentTarget as HTMLDivElement).style.background = 'transparent'
-          }}>
-            <span style={{ fontSize: 14, lineHeight: 1, flexShrink: 0 }}>◌</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{
-                fontSize: 13, fontWeight: pathname === '/dashboard' ? 600 : 500,
-                lineHeight: 1.2,
-              }}>
-                Home
-              </div>
-              <div style={{
-                fontSize: 10, color: 'var(--text-muted)',
-                marginTop: 1, lineHeight: 1.3,
-              }}>
-                Today across every program
-              </div>
-            </div>
-          </div>
-        </Link>
-      </div>
-
-      {/* Program picker */}
-      <div ref={dropRef} style={{ padding: '0 12px 14px', position: 'relative' }}>
+      {/* Program picker — primary nav element. Sits at the top so the
+          user's current program is always visible. */}
+      <div ref={dropRef} style={{ padding: '0 8px 4px', position: 'relative' }}>
         <button
           onClick={() => setDropOpen(o => !o)}
           aria-expanded={dropOpen}
           style={{
             display: 'flex', alignItems: 'center', gap: 10,
-            width: '100%', padding: '10px 12px', borderRadius: 10,
-            background: program.palette.pale,
-            border: `1px solid ${program.palette.fg}33`,
+            width: '100%', padding: '8px 12px', borderRadius: 7,
+            background: 'transparent',
+            border: 'none',
+            borderLeft: `3px solid ${program.palette.fg}`,
             color: program.palette.fg,
             fontFamily: 'var(--font-body)', cursor: 'pointer',
             textAlign: 'left',
+            transition: 'background 0.15s',
           }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = program.palette.hover }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
         >
           <span style={{ fontSize: 14, lineHeight: 1, flexShrink: 0 }}>{program.icon}</span>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.2 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2 }}>
               {program.title}
             </div>
-            <div style={{ fontSize: 10, opacity: 0.75, marginTop: 1, color: 'var(--text-muted)' }}>
+            <div style={{ fontSize: 10, opacity: 0.7, marginTop: 1, color: 'var(--text-muted)' }}>
               {program.subtitle}
             </div>
           </div>
-          <span style={{ fontSize: 9, opacity: 0.6 }}>{dropOpen ? '▲' : '▼'}</span>
+          <span style={{ fontSize: 9, opacity: 0.5 }}>{dropOpen ? '▲' : '▼'}</span>
         </button>
 
         {dropOpen && (
           <div style={{
-            position: 'absolute', top: 'calc(100% + 4px)', left: 12, right: 12,
+            position: 'absolute', top: 'calc(100% + 4px)', left: 8, right: 8,
             background: '#fff',
             border: '1px solid var(--line-md)',
             borderRadius: 10,
@@ -290,10 +255,54 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* Body — program nav + journey block, scrollable, fills available space */}
+      {/* Body — Home + program nav + journey block, scrollable, fills available space */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
-      {/* Program nav (single section based on selected program) */}
+      {/* Home — universal landing. Sits inside the same nav block as the
+          program items so it reads as part of the sidebar's core nav,
+          not a separate widget. Neutral ink color (no program palette). */}
       <nav style={{ padding: '0 8px' }}>
+        {(() => {
+          const active = pathname === '/dashboard'
+          return (
+            <Link href="/dashboard" style={{ textDecoration: 'none', display: 'block' }}>
+              <div
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '8px 12px', borderRadius: 7,
+                  margin: '1px 4px',
+                  backgroundColor: active ? 'rgba(0,0,0,0.05)' : 'transparent',
+                  color: active ? 'var(--ink)' : 'var(--text-soft)',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.15s, color 0.15s',
+                  fontFamily: 'var(--font-body)',
+                }}
+                onMouseEnter={e => {
+                  if (!active) (e.currentTarget as HTMLDivElement).style.backgroundColor = 'rgba(0,0,0,0.025)'
+                }}
+                onMouseLeave={e => {
+                  if (!active) (e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent'
+                }}
+              >
+                <span style={{
+                  width: 4, height: 4, borderRadius: '50%',
+                  background: active ? 'var(--ink)' : 'transparent',
+                  border: active ? 'none' : '1px solid var(--line-md)',
+                  flexShrink: 0,
+                }} />
+                <span style={{
+                  fontSize: 13, fontWeight: active ? 600 : 500,
+                  lineHeight: 1.2,
+                }}>
+                  Home
+                </span>
+              </div>
+            </Link>
+          )
+        })()}
+
+        {/* Subtle divider before the selected program's items */}
+        <div style={{ height: 1, background: 'var(--line)', margin: '8px 12px' }} />
+
         {items.map(item => {
           const active = isActive(item.href, pathname, item.exact)
           return (
