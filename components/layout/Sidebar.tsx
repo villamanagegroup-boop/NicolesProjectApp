@@ -119,8 +119,9 @@ export default function Sidebar() {
   // Vault unlock depends on dayNumber.
   const vaultUnlocked = dayNumber >= 30
   const cardsItems: NavItem[] = [
-    { href: '/card',      label: "Today's card", exact: true },
-    { href: '/past',      label: 'Past cards',   exact: true },
+    { href: '/dashboard', label: 'Your daily cards', exact: true },
+    { href: '/card',      label: "Today's card",     exact: true },
+    { href: '/past',      label: 'Past cards',       exact: true },
     ...(vaultUnlocked ? [{ href: '/vault', label: 'The Vault', exact: true }] : []),
   ]
 
