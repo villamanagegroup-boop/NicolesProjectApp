@@ -32,7 +32,8 @@ const SECTIONS: Section[] = [
     title: 'User portal — shared',
     desc: 'Pages every signed-in user sees regardless of path.',
     routes: [
-      { path: '/dashboard',       access: 'user', title: 'Dashboard',        desc: 'Path B home — today\'s card + recent activity.' },
+      { path: '/dashboard',       access: 'user', title: 'Dashboard',        desc: 'Universal home — sneak peeks across every program the user owns.' },
+      { path: '/cards',           access: 'user', title: 'Your daily cards', desc: 'Path B 365 Cards home — today\'s card preview, affirmation, streak, recent activity.' },
       { path: '/card',            access: 'user', title: 'Today\'s card',    desc: 'The current daily card with journal prompt.' },
       { path: '/past',            access: 'user', title: 'Past cards',       desc: 'Recent cards (last ~30).' },
       { path: '/vault',           access: 'user', title: 'Vault',            desc: 'Long-term card archive (Day 30+).' },

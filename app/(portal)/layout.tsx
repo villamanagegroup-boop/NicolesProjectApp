@@ -41,7 +41,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   // Admins bypass.
   useEffect(() => {
     if (loading || !isAuthed || user.isAdmin || !pathname) return
-    const CARDS_PREFIXES = ['/dashboard', '/card', '/past', '/vault', '/wins', '/journal']
+    const CARDS_PREFIXES = ['/dashboard', '/cards', '/card', '/past', '/vault', '/wins', '/journal']
     const inCards  = CARDS_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))
     const inWork   = pathname.startsWith('/program')
     const inCircle = pathname.startsWith('/circle')

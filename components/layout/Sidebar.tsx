@@ -41,7 +41,7 @@ interface Program {
 
 const PROGRAMS: Record<ProgramKey, Program> = {
   seal:   { key: 'seal',   title: 'Seal the Leak', subtitle: '7-day reset',      icon: '✦', home: '/program', palette: SEAL,   pathPrefix: '/program', upgradePath: 'A' },
-  cards:  { key: 'cards',  title: '365 Cards',     subtitle: 'Daily alignment',  icon: '◇', home: '/card',    palette: CARDS,  pathPrefix: '/card',    upgradePath: 'B' },
+  cards:  { key: 'cards',  title: '365 Cards',     subtitle: 'Daily alignment',  icon: '◇', home: '/cards',   palette: CARDS,  pathPrefix: '/cards',   upgradePath: 'B' },
   circle: { key: 'circle', title: 'The Circle',    subtitle: '90-day cohort',    icon: '○', home: '/circle',  palette: CIRCLE, pathPrefix: '/circle',  upgradePath: 'C' },
 }
 
@@ -80,7 +80,8 @@ function isActive(href: string, pathname: string, exact?: boolean): boolean {
 function programFromPath(pathname: string, fallback: ProgramKey): ProgramKey {
   if (pathname.startsWith('/program')) return 'seal'
   if (pathname.startsWith('/circle'))  return 'circle'
-  if (pathname === '/card'  || pathname.startsWith('/card')  ||
+  if (pathname === '/cards' || pathname.startsWith('/cards') ||
+      pathname === '/card'  || pathname.startsWith('/card')  ||
       pathname === '/past'  || pathname.startsWith('/past')  ||
       pathname === '/vault' || pathname.startsWith('/vault')) {
     return 'cards'
@@ -119,9 +120,9 @@ export default function Sidebar() {
   // Vault unlock depends on dayNumber.
   const vaultUnlocked = dayNumber >= 30
   const cardsItems: NavItem[] = [
-    { href: '/dashboard', label: 'Your daily cards', exact: true },
-    { href: '/card',      label: "Today's card",     exact: true },
-    { href: '/past',      label: 'Past cards',       exact: true },
+    { href: '/cards', label: 'Your daily cards', exact: true },
+    { href: '/card',  label: "Today's card",     exact: true },
+    { href: '/past',  label: 'Past cards',       exact: true },
     ...(vaultUnlocked ? [{ href: '/vault', label: 'The Vault', exact: true }] : []),
   ]
 
