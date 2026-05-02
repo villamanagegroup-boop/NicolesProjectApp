@@ -55,13 +55,13 @@ function ProgramOverviewInner() {
   const dayHref = (d: number) => `/program/today?day=${d}`
 
   return (
-    <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
       {/* Two-column grid */}
       <div className="two-col-grid" style={{
         display: 'grid',
         gridTemplateColumns: '340px 1fr',
-        gap: '24px',
+        gap: 28,
         alignItems: 'start',
       }}>
 
@@ -241,22 +241,24 @@ function ProgramOverviewInner() {
           {/* Day 1 view: clickable list of all 7 days */}
           {isFirstDay && (
             <div>
-              <div style={{ marginBottom: '16px' }}>
+              <header style={{
+                paddingBottom: 8, borderBottom: '1px solid var(--line)',
+                marginBottom: 4,
+                display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+              }}>
                 <h2 style={{
-                  fontFamily: 'var(--font-display)',
-                  fontSize: '20px',
-                  fontWeight: 300,
-                  color: 'var(--ink)',
-                  margin: '0 0 4px',
+                  fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
+                  textTransform: 'uppercase', color: 'var(--text-soft)',
+                  margin: 0, fontFamily: 'var(--font-body)',
                 }}>
                   Your 7-day journey
                 </h2>
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: 0, lineHeight: 1.6 }}>
-                  Each day builds on the last. Here&apos;s where you&apos;re headed.
-                </p>
-              </div>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
+                  7 days
+                </span>
+              </header>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4 }}>
                 {route.days.map((day, i) => {
                   const phaseColor = PHASE_COLOR[day.phase] ?? 'var(--ink)'
                   const isToday = day.day === 1
@@ -328,25 +330,26 @@ function ProgramOverviewInner() {
           {/* Day 2+: Where you've been */}
           {!isFirstDay && completedData.length > 0 && (
             <div>
-              <div style={{ marginBottom: '16px' }}>
+              <header style={{
+                paddingBottom: 8, borderBottom: '1px solid var(--line)',
+                marginBottom: 4,
+                display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+              }}>
                 <h2 style={{
-                  fontFamily: 'var(--font-display)',
-                  fontSize: '20px',
-                  fontWeight: 300,
-                  color: 'var(--ink)',
-                  margin: '0 0 4px',
+                  fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
+                  textTransform: 'uppercase', color: 'var(--text-soft)',
+                  margin: 0, fontFamily: 'var(--font-body)',
                 }}>
                   Where you&apos;ve been
                 </h2>
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: 0, lineHeight: 1.6 }}>
-                  {completedDays} {completedDays === 1 ? 'day' : 'days'} completed — tap any to review.
-                </p>
-              </div>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
+                  {completedDays} of 7 complete
+                </span>
+              </header>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 24 }}>
                 {completedData.map((day) => {
                   const phaseColor = PHASE_COLOR[day.phase] ?? 'var(--ink)'
-                  // Detect phase completion: this day is the last in its phase and all phase days are in completedData
                   const phaseDays = PHASE_DAYS[day.phase] ?? []
                   const isPhaseLastDay = day.day === Math.max(...phaseDays)
                   const phaseComplete = isPhaseLastDay && phaseDays.every(d => completedData.some(cd => cd.day === d))
@@ -354,36 +357,32 @@ function ProgramOverviewInner() {
 
                   return (
                     <React.Fragment key={day.day}>
-                      <Link href={dayHref(day.day)} style={{ textDecoration: 'none' }}>
+                      <Link href={dayHref(day.day)} style={{ textDecoration: 'none', display: 'block' }}>
                         <div
                           style={{
                             display: 'flex',
                             alignItems: 'flex-start',
-                            gap: '16px',
-                            padding: '16px 20px',
-                            borderRadius: '10px',
-                            background: 'white',
-                            border: '1px solid var(--line)',
-                            cursor: 'pointer',
-                            transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+                            gap: 14,
+                            padding: '16px 4px 16px 16px',
+                            borderBottom: '1px solid var(--line)',
+                            position: 'relative',
+                            transition: 'background 0.15s',
                           }}
-                          onMouseEnter={e => {
-                            const el = e.currentTarget as HTMLDivElement
-                            el.style.borderColor = `${route.color}50`
-                            el.style.boxShadow = `0 2px 12px ${route.color}12`
-                          }}
-                          onMouseLeave={e => {
-                            const el = e.currentTarget as HTMLDivElement
-                            el.style.borderColor = 'var(--line)'
-                            el.style.boxShadow = 'none'
-                          }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'var(--paper2)' }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent' }}
                         >
+                          {/* Accent strip */}
+                          <span style={{
+                            position: 'absolute', left: 0, top: 16, bottom: 16,
+                            width: 2, background: route.color, borderRadius: 2,
+                          }} />
+
                           <div style={{
-                            width: 32, height: 32,
+                            width: 26, height: 26,
                             borderRadius: '50%',
                             background: route.color,
                             color: 'white',
-                            fontSize: '14px',
+                            fontSize: 12,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -393,58 +392,52 @@ function ProgramOverviewInner() {
                           </div>
 
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
-                                Day {day.day}
-                              </span>
-                              <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.08em', color: phaseColor, fontFamily: 'var(--font-body)', opacity: 0.85 }}>
-                                · {day.phase}
-                              </span>
+                            <div style={{
+                              fontSize: 10, fontWeight: 700, letterSpacing: '0.09em',
+                              textTransform: 'uppercase', color: phaseColor,
+                              fontFamily: 'var(--font-body)', marginBottom: 6,
+                            }}>
+                              Day {day.day} · {day.phase}
                             </div>
-                            <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--ink)', fontFamily: 'var(--font-body)', margin: '0 0 8px' }}>
+                            <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', fontFamily: 'var(--font-body)', margin: '0 0 6px', lineHeight: 1.4 }}>
                               {day.title}
                             </p>
-                            <div style={{ background: `${route.color}06`, border: `1px solid ${route.color}20`, borderRadius: '6px', padding: '8px 12px', marginBottom: snippet ? '8px' : '0' }}>
-                              <p style={{ fontSize: '12px', fontStyle: 'italic', color: 'var(--ink)', margin: 0, fontFamily: 'var(--font-display)', lineHeight: 1.6 }}>
-                                &ldquo;{day.seal}&rdquo;
-                              </p>
-                            </div>
+                            <p style={{ fontSize: 13, fontStyle: 'italic', color: 'var(--text-soft)', margin: 0, fontFamily: 'var(--font-display)', lineHeight: 1.55 }}>
+                              &ldquo;{day.seal}&rdquo;
+                            </p>
                             {snippet && (
-                              <div style={{ padding: '6px 0 0' }}>
-                                <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 3px', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 500 }}>
-                                  You wrote
-                                </p>
-                                <p style={{ fontSize: '12px', color: 'var(--text-soft)', fontFamily: 'var(--font-body)', lineHeight: 1.6, margin: 0, fontStyle: 'italic' }}>
-                                  &ldquo;{snippet}{snippet.length >= 110 ? '…' : ''}&rdquo;
-                                </p>
-                              </div>
+                              <p style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'var(--font-body)', lineHeight: 1.55, margin: '8px 0 0', fontStyle: 'italic' }}>
+                                You wrote: &ldquo;{snippet}{snippet.length >= 110 ? '…' : ''}&rdquo;
+                              </p>
                             )}
                           </div>
 
-                          <span style={{ color: route.color, fontSize: '16px', alignSelf: 'center', flexShrink: 0, opacity: 0.6 }}>→</span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: 16, alignSelf: 'center', flexShrink: 0, paddingRight: 4 }}>›</span>
                         </div>
                       </Link>
 
-                      {/* Phase completion banner */}
+                      {/* Phase completion banner — hairline-style, no card border */}
                       {phaseComplete && (
                         <div style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '12px',
+                          gap: 10,
                           padding: '10px 16px',
-                          borderRadius: '8px',
-                          background: `${phaseColor}08`,
-                          border: `1px solid ${phaseColor}20`,
+                          background: `${phaseColor}06`,
+                          borderBottom: '1px solid var(--line)',
+                          position: 'relative',
                         }}>
-                          <span style={{ fontSize: '14px' }}>✦</span>
-                          <div>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: phaseColor, fontFamily: 'var(--font-body)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                              {day.phase} — phase complete
-                            </span>
-                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', marginLeft: '8px' }}>
-                              {phaseDays.length} {phaseDays.length === 1 ? 'day' : 'days'} done
-                            </span>
-                          </div>
+                          <span style={{
+                            position: 'absolute', left: 0, top: 8, bottom: 8,
+                            width: 2, background: phaseColor, borderRadius: 2,
+                          }} />
+                          <span style={{ fontSize: 13, color: phaseColor }}>✦</span>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: phaseColor, fontFamily: 'var(--font-body)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                            {day.phase} — phase complete
+                          </span>
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
+                            {phaseDays.length} {phaseDays.length === 1 ? 'day' : 'days'} done
+                          </span>
                         </div>
                       )}
                     </React.Fragment>
@@ -455,9 +448,18 @@ function ProgramOverviewInner() {
               {/* Still ahead */}
               {currentDay <= 7 && (
                 <div>
-                  <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 10px' }}>
-                    Still ahead
-                  </p>
+                  <header style={{
+                    paddingBottom: 8, borderBottom: '1px solid var(--line)',
+                    marginBottom: 4,
+                  }}>
+                    <h2 style={{
+                      fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
+                      textTransform: 'uppercase', color: 'var(--text-soft)',
+                      margin: 0, fontFamily: 'var(--font-body)',
+                    }}>
+                      Still ahead
+                    </h2>
+                  </header>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     {route.days.filter(d => d.day >= currentDay).map((day) => {
                       const phaseColor = PHASE_COLOR[day.phase] ?? 'var(--ink)'

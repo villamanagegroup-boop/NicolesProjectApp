@@ -241,7 +241,7 @@ function TodaysSessionInner() {
   )
 
   return (
-    <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
       {/* ── Top strip: breadcrumb + day dots ── */}
       <div style={{ marginBottom: '20px' }}>

@@ -308,13 +308,13 @@ export default function MyProgressPage() {
   const progressPercent   = Math.round((completedDays / 7) * 100)
 
   return (
-    <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
       {/* Two-column grid */}
       <div className="two-col-grid" style={{
         display: 'grid',
         gridTemplateColumns: '340px 1fr',
-        gap: '24px',
+        gap: 28,
         alignItems: 'start',
       }}>
 
@@ -354,50 +354,57 @@ export default function MyProgressPage() {
             </p>
           </div>
 
-          {/* Stats card */}
-          <div style={{
-            background: 'white',
-            border: '1px solid var(--line)',
-            borderRadius: '12px',
-            overflow: 'hidden',
-          }}>
-            <div style={{ height: '3px', background: route.color }} />
-            <div style={{ padding: '16px 20px' }}>
-              {/* Progress ring + stats */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div style={{ flexShrink: 0 }}>
-                  <ProgressRing value={progressPercent} size={84} strokeWidth={7} color={route.color} />
+          {/* Stats — hairline section, no card chrome */}
+          <section>
+            <header style={{
+              paddingBottom: 8, borderBottom: '1px solid var(--line)',
+              marginBottom: 14,
+            }}>
+              <h2 style={{
+                fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
+                textTransform: 'uppercase', color: 'var(--text-soft)',
+                margin: 0, fontFamily: 'var(--font-body)',
+              }}>
+                Your numbers
+              </h2>
+            </header>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '0 4px' }}>
+              <div style={{ flexShrink: 0 }}>
+                <ProgressRing value={progressPercent} size={84} strokeWidth={7} color={route.color} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ marginBottom: 12 }}>
+                  <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 4px' }}>
+                    Days done
+                  </p>
+                  <p style={{ fontSize: 22, fontWeight: 600, color: route.color, fontFamily: 'var(--font-body)', margin: 0, lineHeight: 1 }}>
+                    {completedDays}<span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 400 }}>/7</span>
+                  </p>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ marginBottom: '12px' }}>
-                    <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 4px' }}>
-                      Days done
-                    </p>
-                    <p style={{ fontSize: '22px', fontWeight: 600, color: route.color, fontFamily: 'var(--font-body)', margin: 0, lineHeight: 1 }}>
-                      {completedDays}<span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 400 }}>/7</span>
-                    </p>
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 6px' }}>
-                      Current phase
-                    </p>
-                    <PhaseTag phase={currentPhase} color={route.color} />
-                  </div>
+                <div>
+                  <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 6px' }}>
+                    Current phase
+                  </p>
+                  <PhaseTag phase={currentPhase} color={route.color} />
                 </div>
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* Day selector */}
-          <div style={{
-            background: 'white',
-            border: '1px solid var(--line)',
-            borderRadius: '12px',
-            padding: '16px 20px',
-          }}>
-            <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 14px' }}>
-              Your journey — tap a day to review
-            </p>
+          {/* Day selector — hairline section */}
+          <section>
+            <header style={{
+              paddingBottom: 8, borderBottom: '1px solid var(--line)',
+              marginBottom: 14,
+            }}>
+              <h2 style={{
+                fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
+                textTransform: 'uppercase', color: 'var(--text-soft)',
+                margin: 0, fontFamily: 'var(--font-body)',
+              }}>
+                Your journey
+              </h2>
+            </header>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {(['Awareness', 'Interruption', 'Reclamation', 'Identity'] as const).map((phase) => {
@@ -436,7 +443,7 @@ export default function MyProgressPage() {
                 )
               })}
             </div>
-          </div>
+          </section>
         </div>
 
         {/* ── RIGHT: day content ── */}
