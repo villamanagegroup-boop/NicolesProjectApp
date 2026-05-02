@@ -59,10 +59,14 @@ const CIRCLE_ITEMS: NavItem[] = [
   { href: '/circle/calls',     label: 'Live streams', exact: true },
 ]
 
-const JOURNEY_ITEMS: NavItem[] = [
-  { href: '/journal',   label: 'Journal' },
-  { href: '/wins',      label: 'My wins',  exact: true },
-  { href: '/profile',   label: 'Profile',  exact: true },
+interface JourneyItem extends NavItem {
+  icon: React.ReactNode
+}
+
+const JOURNEY_ITEMS: JourneyItem[] = [
+  { href: '/journal', label: 'Journal',  icon: <JournalIcon /> },
+  { href: '/wins',    label: 'My wins',  icon: <WinsIcon />,    exact: true },
+  { href: '/profile', label: 'Profile',  icon: <ProfileIcon />, exact: true },
 ]
 
 function isActive(href: string, pathname: string, exact?: boolean): boolean {
@@ -246,8 +250,10 @@ export default function Sidebar() {
         )}
       </div>
 
+      {/* Body — program nav + journey block, scrollable, fills available space */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
       {/* Program nav (single section based on selected program) */}
-      <nav style={{ flex: 1, padding: '0 8px' }}>
+      <nav style={{ padding: '0 8px' }}>
         {items.map(item => {
           const active = isActive(item.href, pathname, item.exact)
           return (
@@ -291,14 +297,29 @@ export default function Sidebar() {
           )
         })}
 
-        {/* My journey — cross-cutting links always visible */}
-        <div style={{ marginTop: 18, padding: '10px 16px 6px' }}>
+      </nav>
+
+      {/* My journey — universal data banks. Lives in its own boxed block
+          below the program nav so users see they don't change with the
+          program selector. Available to anyone signed in. */}
+      <div style={{
+        margin: '0 12px 14px',
+        padding: '10px 12px 8px',
+        background: '#ffffff',
+        border: '1px solid var(--line)',
+        borderRadius: 10,
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          padding: '0 4px 6px',
+        }}>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>·</span>
           <div style={{
-            fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
+            fontSize: 9, fontWeight: 700, letterSpacing: '0.1em',
             textTransform: 'uppercase', color: 'var(--text-muted)',
             fontFamily: 'var(--font-body)',
           }}>
-            My journey
+            Always with you
           </div>
         </div>
         {JOURNEY_ITEMS.map(item => {
@@ -312,27 +333,26 @@ export default function Sidebar() {
               <div
                 style={{
                   display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '8px 12px', borderRadius: 7,
-                  margin: '1px 4px',
-                  backgroundColor: active ? 'rgba(0,0,0,0.04)' : 'transparent',
+                  padding: '7px 8px', borderRadius: 6,
+                  backgroundColor: active ? 'rgba(0,0,0,0.05)' : 'transparent',
                   color: active ? 'var(--ink)' : 'var(--text-soft)',
                   cursor: 'pointer',
                   transition: 'background-color 0.15s, color 0.15s',
                   fontFamily: 'var(--font-body)',
                 }}
                 onMouseEnter={e => {
-                  if (!active) (e.currentTarget as HTMLDivElement).style.backgroundColor = 'rgba(0,0,0,0.02)'
+                  if (!active) (e.currentTarget as HTMLDivElement).style.backgroundColor = 'rgba(0,0,0,0.025)'
                 }}
                 onMouseLeave={e => {
                   if (!active) (e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent'
                 }}
               >
                 <span style={{
-                  width: 4, height: 4, borderRadius: '50%',
-                  background: active ? 'var(--ink)' : 'transparent',
-                  border: active ? 'none' : '1px solid var(--line-md)',
                   flexShrink: 0,
-                }} />
+                  color: active ? 'var(--ink)' : 'var(--text-muted)',
+                }}>
+                  {item.icon}
+                </span>
                 <span style={{
                   fontSize: 13, fontWeight: active ? 600 : 500,
                   lineHeight: 1.2,
@@ -343,13 +363,13 @@ export default function Sidebar() {
             </Link>
           )
         })}
-      </nav>
+      </div>
+      </div>
 
       {/* Bottom — settings + admin shortcut + sign out */}
       <div style={{
         padding: '14px 20px 18px',
         borderTop: '1px solid var(--line)',
-        marginTop: 12,
         display: 'flex', flexDirection: 'column', gap: 8,
       }}>
         <Link
@@ -460,6 +480,33 @@ function GearIcon() {
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="8" cy="8" r="2.5" />
       <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" />
+    </svg>
+  )
+}
+
+function JournalIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 2h8a1 1 0 011 1v10a1 1 0 01-1 1H3" />
+      <path d="M3 2a1 1 0 00-1 1v10a1 1 0 001 1" />
+      <path d="M6 6h4M6 9h4M6 12h2" />
+    </svg>
+  )
+}
+
+function WinsIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 2l1.5 3.1L13 5.6l-2.5 2.4.6 3.4L8 9.8l-3.1 1.6.6-3.4L3 5.6l3.5-.5L8 2z" />
+    </svg>
+  )
+}
+
+function ProfileIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="8" cy="5.5" r="2.5" />
+      <path d="M2.5 14c0-3.038 2.462-5.5 5.5-5.5s5.5 2.462 5.5 5.5" />
     </svg>
   )
 }
