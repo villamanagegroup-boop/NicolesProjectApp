@@ -38,15 +38,18 @@ export default function TakeTheQuizPage() {
   const router = useRouter()
   const [name, setName]             = useState<string | null>(null)
   const [path, setPath]             = useState<'A' | 'B' | 'C' | null>(null)
-  const [hasQuiz, setHasQuiz]       = useState<boolean | null>(null)
-  const [loading, setLoading]       = useState(true)
+  const [hasQuiz, setHasQuiz]       = useState(false)
+  const [authChecked, setAuthChecked] = useState(false)
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       const { data: { user: authUser } } = await supabaseClient.auth.getUser()
+      if (cancelled) return
       if (!authUser) {
-        router.replace('/login')
+        // No auth — page is meant for signed-in users, but we still render
+        // it (with generic copy) so the email CTA works. Don't force /login.
+        setAuthChecked(true)
         return
       }
       const { data: profile } = await supabaseClient
@@ -55,35 +58,21 @@ export default function TakeTheQuizPage() {
         .eq('id', authUser.id)
         .maybeSingle()
       if (cancelled) return
-      const safeName = (profile?.name as string | null) ?? null
-      const safePath = (profile?.selected_path as 'A' | 'B' | 'C' | null) ?? null
-      const safeQuiz = !!profile?.quiz_result
-      setName(safeName)
-      setPath(safePath)
-      setHasQuiz(safeQuiz)
-      setLoading(false)
-      // Already done? Bounce to their proper home.
-      if (safeQuiz && safePath) {
-        const dest = safePath === 'A' ? '/program' : safePath === 'C' ? '/circle' : '/dashboard'
-        router.replace(dest)
-      }
+      setName((profile?.name as string | null) ?? null)
+      setPath((profile?.selected_path as 'A' | 'B' | 'C' | null) ?? null)
+      setHasQuiz(!!profile?.quiz_result)
+      setAuthChecked(true)
     })()
     return () => { cancelled = true }
-  }, [router])
+  }, [])
 
-  if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fdfcfa' }}>
-        <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>Loading…</p>
-      </div>
-    )
-  }
-
-  // If hasQuiz === true the redirect above is in flight; render nothing.
-  if (hasQuiz) return null
+  // Render the welcome letter regardless of state — admins previewing it
+  // and users retaking the quiz both need to see it. The portal layout
+  // handles routing legitimate users in; this page just needs to load.
 
   const firstName = name?.trim()?.split(/\s+/)[0] ?? 'friend'
   const programName = path ? PATH_NAMES[path] : 'your program'
+  const dashboardHref = path === 'A' ? '/program' : path === 'C' ? '/circle' : '/dashboard'
 
   return (
     <div style={{
@@ -194,6 +183,27 @@ export default function TakeTheQuizPage() {
           Already took the quiz somewhere else? Just retake it — we&apos;ll
           use your latest result.
         </p>
+
+        {/* Escape hatch for users who already have a quiz result —
+            they're here either by retaking or by accident. */}
+        {authChecked && hasQuiz && (
+          <p style={{
+            fontSize: 12, color: 'var(--text-muted)',
+            textAlign: 'center', margin: '12px 0 0', lineHeight: 1.6,
+          }}>
+            Looks like you&apos;ve already taken the quiz.{' '}
+            <button
+              onClick={() => router.push(dashboardHref)}
+              style={{
+                background: 'none', border: 'none', padding: 0,
+                color: 'var(--green)', textDecoration: 'underline',
+                cursor: 'pointer', fontSize: 12, fontFamily: 'inherit',
+              }}
+            >
+              Back to {programName} →
+            </button>
+          </p>
+        )}
       </div>
     </div>
   )
