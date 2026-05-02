@@ -44,6 +44,7 @@ const NAV_ITEMS: NavEntry[] = [
     groupKey: 'tools', label: 'Tools', icon: '⬡',
     items: [
       { href: '/admin/preview', icon: '·', label: 'Preview as user', sub: 'Walk in their shoes' },
+      { href: '/admin/sitemap', icon: '·', label: 'Site map',        sub: 'Open any page directly' },
       { href: '/admin/support', icon: '·', label: 'Bug reports',     sub: 'Member-submitted issues' },
       { href: '/admin/audit',   icon: '·', label: 'History',         sub: 'Admin action log' },
     ],
