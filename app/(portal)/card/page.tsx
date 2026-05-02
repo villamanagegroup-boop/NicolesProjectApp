@@ -6,7 +6,6 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 import Button from '@/components/ui/Button'
 import EyebrowLabel from '@/components/ui/EyebrowLabel'
-import DailyCheckIn from '@/components/cards/DailyCheckIn'
 
 function getCardPillStyle(cardColor: string) {
   const colorMap: Record<string, { bg: string; color: string; border: string }> = {
@@ -32,7 +31,7 @@ function CardPageInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const dayParam = searchParams.get('day')
-  const { user, cards, dayNumber, todayCard, cardsAccess, checkInToday, setCheckIn, journalEntries, addJournalEntry, updateJournalEntry } = useApp()
+  const { user, cards, dayNumber, todayCard, cardsAccess, journalEntries, addJournalEntry, updateJournalEntry } = useApp()
 
   // If ?day= param exists, find that card; otherwise show today's card
   const displayCard = dayParam
@@ -86,20 +85,6 @@ function CardPageInner() {
   useEffect(() => {
     setIsEditingReflection(false)
   }, [displayCard?.id])
-
-  // 'open' = full widget, 'minimized' = pill button at top
-  const [checkInState, setCheckInState] = useState<'open' | 'minimized'>(
-    !checkInToday && !isHistoricalView ? 'open' : 'minimized'
-  )
-  const [savedMood, setSavedMood] = useState<string | null>(checkInToday || null)
-
-  const moodMeta: Record<string, { emoji: string; label: string }> = {
-    aligned:      { emoji: '🌿', label: 'Aligned' },
-    clear:        { emoji: '✨', label: 'Clear' },
-    drained:      { emoji: '🌑', label: 'Drained' },
-    overwhelmed:  { emoji: '🌊', label: 'Overwhelmed' },
-    disconnected: { emoji: '🪨', label: 'Disconnected' },
-  }
 
   // Locked — cards don't open for Path A users until program Day 6.
   if (cardsAccess.state === 'locked-not-yet') {
@@ -429,60 +414,6 @@ function CardPageInner() {
 
       {/* ── RIGHT COLUMN ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '32px' }}>
-
-        {/* Optional daily check-in widget */}
-        {checkInState === 'open' && (
-          <DailyCheckIn
-            compact
-            onComplete={(mood) => {
-              if (mood) { setCheckIn(mood); setSavedMood(mood) }
-              setCheckInState('minimized')
-            }}
-            onDismiss={() => setCheckInState('minimized')}
-          />
-        )}
-
-        {/* Minimized check-in pill — inline at top of right column */}
-        {checkInState === 'minimized' && (() => {
-          const confirmed = savedMood ? moodMeta[savedMood] : null
-          return (
-            <button
-              onClick={() => setCheckInState('open')}
-              style={{
-                alignSelf: 'flex-start',
-                padding: '7px 14px',
-                background: confirmed ? 'var(--paper2)' : 'var(--paper)',
-                border: confirmed ? '1px solid var(--green)' : '1px solid var(--gold)',
-                borderRadius: '24px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '7px',
-                fontFamily: 'var(--font-body)',
-                fontSize: '12px',
-                fontWeight: 500,
-                color: confirmed ? 'var(--green)' : 'var(--gold)',
-                transition: 'background 0.15s ease',
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = confirmed ? '#edf6ef' : 'var(--gold-pale)' }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = confirmed ? 'var(--paper2)' : 'var(--paper)' }}
-            >
-              {confirmed ? (
-                <>
-                  <span style={{ fontSize: '13px' }}>{confirmed.emoji}</span>
-                  {confirmed.label} — confirmed
-                  <span style={{ fontSize: '10px', opacity: 0.5 }}>✓</span>
-                </>
-              ) : (
-                <>
-                  <span style={{ fontSize: '13px' }}>✦</span>
-                  Daily Check-In
-                  <span style={{ fontSize: '10px', opacity: 0.5 }}>+</span>
-                </>
-              )}
-            </button>
-          )
-        })()}
 
         {/* Historical view banner */}
         {isHistoricalView && (
