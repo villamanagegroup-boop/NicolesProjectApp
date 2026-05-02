@@ -54,8 +54,13 @@ export default function DashboardPage() {
     return () => { cancelled = true }
   }, [journalDay])
 
-  // Circle current week — only fetched if the user has Circle access
-  const [circleWeek, setCircleWeek] = useState<{ week: number; title: string | null; phase: string | null } | null>(null)
+  // Circle current week + announcements + next call + unread coach msg —
+  // only fetched if the user has Circle access (Path C).
+  const [circleWeek, setCircleWeek]       = useState<{ week: number; title: string | null; phase: string | null } | null>(null)
+  const [announcements, setAnnouncements] = useState<Array<{ id: string; title: string; body: string; created_at: string }>>([])
+  const [nextCall, setNextCall]           = useState<{ id: string; title: string; scheduled_at: string; zoom_url: string | null; call_number: number } | null>(null)
+  const [unreadCoach, setUnreadCoach]     = useState(0)
+
   useEffect(() => {
     if (!hasCircleAccess) return
     let cancelled = false
@@ -70,24 +75,71 @@ export default function DashboardPage() {
         .limit(1)
         .maybeSingle()
       if (cancelled || !member?.cohort_id) return
+
+      const cohortId = member.cohort_id as string
+      const archetype = (member.archetype as string) ?? null
+
+      // Cohort week
       const { data: cohort } = await supabaseClient
         .from('circle_cohorts')
         .select('starts_at')
-        .eq('id', member.cohort_id)
-        .maybeSingle()
-      if (cancelled || !cohort?.starts_at) return
-      const startMs = new Date(cohort.starts_at as string).getTime()
-      const week = Math.max(1, Math.min(12, Math.floor((Date.now() - startMs) / (86400000 * 7)) + 1))
-      const phase = week <= 4 ? 'Root' : week <= 8 ? 'Rebuild' : 'Rise'
-      const { data: content } = await supabaseClient
-        .from('circle_weekly_content')
-        .select('week_title')
-        .eq('cohort_id', member.cohort_id)
-        .eq('week_number', week)
-        .eq('archetype', 'universal')
+        .eq('id', cohortId)
         .maybeSingle()
       if (cancelled) return
-      setCircleWeek({ week, title: (content?.week_title as string | null) ?? null, phase })
+      let week = 1
+      if (cohort?.starts_at) {
+        const startMs = new Date(cohort.starts_at as string).getTime()
+        week = Math.max(1, Math.min(12, Math.floor((Date.now() - startMs) / (86400000 * 7)) + 1))
+        const phase = week <= 4 ? 'Root' : week <= 8 ? 'Rebuild' : 'Rise'
+        const { data: content } = await supabaseClient
+          .from('circle_weekly_content')
+          .select('week_title')
+          .eq('cohort_id', cohortId)
+          .eq('week_number', week)
+          .eq('archetype', 'universal')
+          .maybeSingle()
+        if (cancelled) return
+        setCircleWeek({ week, title: (content?.week_title as string | null) ?? null, phase })
+      }
+
+      // Latest 3 announcements that target this user (any archetype OR theirs)
+      const { data: anns } = await supabaseClient
+        .from('admin_announcements')
+        .select('id, title, body, created_at, target_archetype')
+        .eq('cohort_id', cohortId)
+        .not('sent_at', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(8)
+      if (!cancelled && anns) {
+        const filtered = (anns as Array<{ id: string; title: string; body: string; created_at: string; target_archetype: string | null }>)
+          .filter(a => !a.target_archetype || a.target_archetype === archetype)
+          .slice(0, 3)
+        setAnnouncements(filtered)
+      }
+
+      // Next upcoming live call (within the next 30 days)
+      const { data: calls } = await supabaseClient
+        .from('circle_live_calls')
+        .select('id, title, scheduled_at, zoom_url, call_number')
+        .eq('cohort_id', cohortId)
+        .gt('scheduled_at', new Date().toISOString())
+        .order('scheduled_at', { ascending: true })
+        .limit(1)
+      if (!cancelled && calls && calls[0]) {
+        setNextCall(calls[0] as { id: string; title: string; scheduled_at: string; zoom_url: string | null; call_number: number })
+      }
+
+      // Unread coach messages (sender_id !== authUser.id, read_at null)
+      const { data: msgs } = await supabaseClient
+        .from('circle_coach_messages')
+        .select('id, sender_id, read_at')
+        .eq('user_id', authUser.id)
+        .is('read_at', null)
+      if (!cancelled && msgs) {
+        const unread = (msgs as Array<{ id: string; sender_id: string; read_at: string | null }>)
+          .filter(m => m.sender_id !== authUser.id)
+        setUnreadCoach(unread.length)
+      }
     })()
     return () => { cancelled = true }
   }, [hasCircleAccess])
@@ -188,6 +240,57 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Latest — announcements, calls, messages.
+          Only shown when there's something to surface. */}
+      {(announcements.length > 0 || nextCall || unreadCoach > 0) && (
+        <div style={{ marginBottom: 24 }}>
+          <SectionHeader>Latest</SectionHeader>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+            {/* Next live call */}
+            {nextCall && (
+              <ActivityRow
+                icon="📞"
+                eyebrow={`Live call · #${nextCall.call_number}`}
+                title={nextCall.title}
+                meta={liveCallMeta(nextCall.scheduled_at)}
+                cta={nextCall.zoom_url ? { label: 'Open Zoom', href: nextCall.zoom_url, external: true } : undefined}
+                secondaryCta={{ label: 'Details', href: '/circle/calls' }}
+              />
+            )}
+
+            {/* Announcements */}
+            {announcements.map(a => (
+              <ActivityRow
+                key={a.id}
+                icon="📢"
+                eyebrow="Announcement"
+                title={a.title}
+                meta={
+                  <>
+                    {a.body.length > 140 ? a.body.slice(0, 140) + '…' : a.body}
+                    {' · '}
+                    <span style={{ color: 'var(--text-muted)' }}>{relativeTime(a.created_at)}</span>
+                  </>
+                }
+              />
+            ))}
+
+            {/* Unread coach messages */}
+            {unreadCoach > 0 && (
+              <ActivityRow
+                icon="✉️"
+                eyebrow="Coach chat"
+                title={`${unreadCoach} new ${unreadCoach === 1 ? 'message' : 'messages'} from Nicole`}
+                meta="Open the thread to read and reply."
+                cta={{ label: 'Open chat', href: '/circle/coach' }}
+                accent="#C97D3A"
+              />
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Universal journal — always visible */}
       <ProgramCard
@@ -304,6 +407,147 @@ function ProgramCard({
   )
 }
 
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
+      textTransform: 'uppercase', color: 'var(--text-muted)',
+      marginBottom: 10, paddingBottom: 6,
+      borderBottom: '1px solid var(--line)',
+      fontFamily: 'var(--font-body)',
+    }}>
+      {children}
+    </div>
+  )
+}
+
+function ActivityRow({
+  icon, eyebrow, title, meta, cta, secondaryCta, accent,
+}: {
+  icon: string
+  eyebrow: string
+  title: string
+  meta: React.ReactNode
+  cta?: { label: string; href: string; external?: boolean }
+  secondaryCta?: { label: string; href: string }
+  accent?: string
+}) {
+  const accentColor = accent ?? 'var(--ink)'
+  return (
+    <div style={{
+      background: '#fff', border: '1px solid var(--line)',
+      borderRadius: 12, padding: '14px 16px',
+      display: 'flex', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap',
+    }}>
+      <div style={{
+        width: 36, height: 36, borderRadius: 10,
+        background: 'var(--paper2)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 18, flexShrink: 0,
+      }}>
+        {icon}
+      </div>
+      <div style={{ flex: 1, minWidth: 200 }}>
+        <p style={{
+          fontSize: 9, fontWeight: 700, letterSpacing: '0.1em',
+          textTransform: 'uppercase', color: accentColor,
+          fontFamily: 'var(--font-body)', margin: '0 0 4px',
+        }}>
+          {eyebrow}
+        </p>
+        <div style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: 14, fontWeight: 600, color: 'var(--ink)',
+          marginBottom: 4, lineHeight: 1.4,
+        }}>
+          {title}
+        </div>
+        <div style={{
+          fontSize: 12, color: 'var(--text-soft)', lineHeight: 1.55,
+          fontFamily: 'var(--font-body)',
+        }}>
+          {meta}
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+        {secondaryCta && (
+          <Link
+            href={secondaryCta.href}
+            style={{
+              padding: '7px 12px', borderRadius: 7,
+              border: '1px solid var(--line-md)',
+              color: 'var(--text-soft)', background: '#fff',
+              fontSize: 11, fontWeight: 600,
+              textDecoration: 'none', fontFamily: 'var(--font-body)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {secondaryCta.label}
+          </Link>
+        )}
+        {cta && (cta.external ? (
+          <a
+            href={cta.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              padding: '7px 14px', borderRadius: 7,
+              background: accentColor, color: '#fff',
+              fontSize: 11, fontWeight: 600,
+              textDecoration: 'none', fontFamily: 'var(--font-body)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {cta.label} ↗
+          </a>
+        ) : (
+          <Link
+            href={cta.href}
+            style={{
+              padding: '7px 14px', borderRadius: 7,
+              background: accentColor, color: '#fff',
+              fontSize: 11, fontWeight: 600,
+              textDecoration: 'none', fontFamily: 'var(--font-body)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {cta.label} →
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function liveCallMeta(scheduledAt: string): React.ReactNode {
+  const ms = new Date(scheduledAt).getTime() - Date.now()
+  const days = Math.floor(ms / 86400000)
+  const hours = Math.floor((ms % 86400000) / 3600000)
+  const formatted = new Date(scheduledAt).toLocaleString('en-US', {
+    weekday: 'short', month: 'short', day: 'numeric',
+    hour: 'numeric', minute: '2-digit',
+  })
+  let when: string
+  if (days >= 1) when = `in ${days} ${days === 1 ? 'day' : 'days'}`
+  else if (hours >= 1) when = `in ${hours} ${hours === 1 ? 'hour' : 'hours'}`
+  else when = 'starting soon'
+  return <>{formatted} · <span style={{ color: 'var(--gold)', fontWeight: 600 }}>{when}</span></>
+}
+
+function relativeTime(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime()
+  const days = Math.floor(ms / 86400000)
+  if (days < 1) {
+    const hours = Math.floor(ms / 3600000)
+    if (hours < 1) return 'just now'
+    return `${hours}h ago`
+  }
+  if (days === 1) return 'yesterday'
+  if (days < 7) return `${days}d ago`
+  if (days < 30) return `${Math.floor(days / 7)}w ago`
+  return `${Math.floor(days / 30)}mo ago`
+}
+
 function CardsTodayPeek({
   todayCard, dayNumber,
 }: {
@@ -330,16 +574,16 @@ function CardsTodayPeek({
       border: `1px solid ${CARDS.fg}22`,
       borderLeft: `3px solid ${CARDS.fg}`,
       borderRadius: 14,
-      padding: 0,
-      display: 'flex', alignItems: 'stretch', flexWrap: 'wrap',
-      overflow: 'hidden',
+      padding: 22,
+      display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap',
     }}>
-      {/* Card image / color block */}
+      {/* Card image / color block (left) */}
       <div style={{
-        width: 140, minHeight: 140,
+        width: 96, height: 96,
+        borderRadius: 12, overflow: 'hidden',
         background: todayCard.cardColor || CARDS.pale,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 40, flexShrink: 0,
+        fontSize: 32, flexShrink: 0,
         position: 'relative',
       }}>
         {todayCard.imageUrl ? (
@@ -347,7 +591,7 @@ function CardsTodayPeek({
             src={todayCard.imageUrl}
             alt=""
             fill
-            sizes="140px"
+            sizes="96px"
             style={{ objectFit: 'cover' }}
           />
         ) : (
@@ -355,11 +599,8 @@ function CardsTodayPeek({
         )}
       </div>
 
-      {/* Content */}
-      <div style={{
-        flex: 1, minWidth: 240, padding: 22,
-        display: 'flex', flexDirection: 'column', justifyContent: 'center',
-      }}>
+      {/* Content (middle, flex) */}
+      <div style={{ flex: 1, minWidth: 240 }}>
         <p style={{
           fontSize: 10, fontWeight: 600, letterSpacing: '0.1em',
           textTransform: 'uppercase', color: CARDS.fg,
@@ -390,7 +631,7 @@ function CardsTodayPeek({
         {todayCard.bodyText && (
           <p style={{
             fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.6,
-            margin: '0 0 14px', fontFamily: 'var(--font-body)',
+            margin: 0, fontFamily: 'var(--font-body)',
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
@@ -399,14 +640,19 @@ function CardsTodayPeek({
             {todayCard.bodyText}
           </p>
         )}
+      </div>
+
+      {/* CTA (right) — matches other ProgramCards */}
+      <div style={{ display: 'flex', flexShrink: 0, alignItems: 'flex-start' }}>
         <Link
           href="/card"
           style={{
-            display: 'inline-block', alignSelf: 'flex-start',
+            display: 'inline-block',
             padding: '10px 18px', borderRadius: 8,
             background: CARDS.fg, color: '#fff',
             fontSize: 12, fontWeight: 600,
             textDecoration: 'none', fontFamily: 'var(--font-body)',
+            whiteSpace: 'nowrap',
           }}
         >
           Open today&apos;s card →
