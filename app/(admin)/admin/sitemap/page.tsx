@@ -29,31 +29,39 @@ interface Section {
 const SECTIONS: Section[] = [
   {
     key: 'portal-shared',
-    title: 'User portal — shared',
-    desc: 'Pages every signed-in user sees regardless of path.',
+    title: 'User portal — universal',
+    desc: 'Pages every signed-in user sees regardless of program.',
     routes: [
-      { path: '/dashboard',       access: 'user', title: 'Dashboard',        desc: 'Universal home — sneak peeks across every program the user owns.' },
-      { path: '/cards',           access: 'user', title: 'Your daily cards', desc: 'Path B 365 Cards home — today\'s card preview, affirmation, streak, recent activity.' },
-      { path: '/card',            access: 'user', title: 'Today\'s card',    desc: 'The current daily card with journal prompt.' },
-      { path: '/past',            access: 'user', title: 'Past cards',       desc: 'Recent cards (last ~30).' },
-      { path: '/vault',           access: 'user', title: 'Vault',            desc: 'Long-term card archive (Day 30+).' },
-      { path: '/journal',         access: 'user', title: 'Journal',          desc: 'All journal entries list.' },
-      { path: '/journal/new',     access: 'user', title: 'New journal entry', desc: 'Free-write or voice journal.' },
-      { path: '/wins',            access: 'user', title: 'Wins',             desc: 'Log boundaries, choices, moments, growth wins.' },
-      { path: '/settings',        access: 'user', title: 'Settings',         desc: 'Account, password, preferences.' },
-      { path: '/profile',         access: 'user', title: 'Profile',          desc: 'Public profile (avatar, bio, milestones).' },
-      { path: '/upgrade',         access: 'user', title: 'Upgrade',          desc: 'Locked-path landing — buy the next program.' },
+      { path: '/dashboard',  access: 'user', title: 'Home (dashboard)', desc: 'Universal home — sneak peeks across every program the user owns. Daily check-in lives here. Latest sidebar surfaces announcements / live calls / coach DMs for Circle members.' },
+      { path: '/journal',    access: 'user', title: 'Journal',          desc: 'Universal daily journal. Prompt rotates daily by signup-anchored day, looped at 365. Backed by daily_cards.journal_prompt under the hood.' },
+      { path: '/wins',       access: 'user', title: 'Wins',             desc: 'Log boundaries, choices, moments, growth wins. Cross-program.' },
+      { path: '/profile',    access: 'user', title: 'Profile',          desc: 'Avatar, bio, theme compass, full reflections archive (every journal entry kept on file).' },
+      { path: '/settings',   access: 'user', title: 'Settings',         desc: 'Account, password, preferences.' },
+      { path: '/upgrade',    access: 'user', title: 'Upgrade',          desc: 'Locked-path landing — pricing for programs the user does not yet own.' },
+      { path: '/take-the-quiz',  access: 'user', title: 'Take-the-quiz failsafe', desc: 'Friendly landing for users who reached a program without a quiz_result. Two CTAs: standalone quiz or email Nicole.' },
+      { path: '/quiz/standalone', access: 'user', title: 'Standalone quiz',         desc: '12 questions for already-signed-in users. Writes archetype to user row, then redirects to their dashboard.' },
     ],
   },
   {
     key: 'portal-pathA',
     title: 'User portal — Path A (Seal the Leak)',
-    desc: '7-day program for users on Path A. Content varies by archetype.',
+    desc: '7-day program. All pages render content for the user\'s archetype track (door / throne / engine / push). Path B users without the cards add-on cannot reach these routes — the portal layout redirects to /upgrade.',
     routes: [
       { path: '/program',             access: 'user', title: 'Program home',          desc: '7-day journey overview, archetype-specific.' },
-      { path: '/program/today',       access: 'user', title: 'Today\'s session',      desc: 'Current day\'s prompts and exercises.' },
+      { path: '/program/today',       access: 'user', title: 'Today\'s session',      desc: 'Current day\'s prompts and exercises. Saves answers to localStorage by route + day + item.' },
       { path: '/program/progress',    access: 'user', title: 'Progress',              desc: 'Completion grid for all 7 days.' },
-      { path: '/program/reflections', access: 'user', title: 'Reflections',           desc: 'View / download all program reflections as PDF.' },
+      { path: '/program/reflections', access: 'user', title: 'Reflections',           desc: 'Review past program prompts. Seal-only — no longer shows universal journal entries.' },
+    ],
+  },
+  {
+    key: 'portal-pathB',
+    title: 'User portal — Path B (365 Cards)',
+    desc: 'Daily Alignment cards. Reachable by Path B users always, and by Path A users with the cards add-on (cards_addon_started_at).',
+    routes: [
+      { path: '/cards', access: 'user', title: 'Your daily cards', desc: 'Path B home — today\'s card preview + affirmation + streak + recent strip (5 slots, dashed outlines for upcoming days).' },
+      { path: '/card',  access: 'user', title: 'Today\'s card',    desc: 'The current daily card with journal prompt and reflection editor. Day nav lets users jump back through past cards.' },
+      { path: '/past',  access: 'user', title: 'Past cards',       desc: 'Compact grid of every unlocked past card (auto-fill at minmax 110px). Filter by theme.' },
+      { path: '/vault', access: 'user', title: 'Vault',            desc: 'Long-term archive — the user\'s earliest cards. Locked until Day 30; before that, shows a progress ring.' },
     ],
   },
   {
@@ -85,8 +93,6 @@ const SECTIONS: Section[] = [
       { path: '/login',        access: 'public', title: 'Log in',        desc: 'Email + password sign in.' },
       { path: '/signup',       access: 'public', title: 'Sign up',       desc: 'Quiz-gated account creation.' },
       { path: '/onboarding',   access: 'public', title: 'Onboarding',    desc: 'Path C cohort enrollment intake.' },
-      { path: '/take-the-quiz',  access: 'user', title: 'Take-the-quiz failsafe', desc: 'Friendly landing for users who reached a program without a quiz result. Two CTAs: standalone quiz or email Nicole.' },
-      { path: '/quiz/standalone', access: 'user', title: 'Standalone quiz',         desc: '12 questions for already-signed-in users. Writes archetype to user row, then redirects to their dashboard.' },
     ],
   },
   {
@@ -141,10 +147,21 @@ export default function SitemapPage() {
     <div style={{ color: 'var(--ink)' }}>
       <div style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink)', margin: '0 0 4px' }}>Site map</h1>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 12px' }}>
           Every user-facing page — portal, marketing, quiz funnel, welcome flows.
-          {' '}{visibleRoutes} of {totalRoutes} shown. (Admin tools live in the sidebar.)
+          {' '}{visibleRoutes} of {totalRoutes} shown. Admin tools live in the sidebar.
         </p>
+        <div style={{
+          background: 'var(--paper2)', border: '1px solid var(--line)',
+          borderRadius: 10, padding: '10px 14px',
+          fontSize: 12, color: 'var(--text-soft)', lineHeight: 1.6,
+        }}>
+          <strong style={{ color: 'var(--ink)' }}>Access reminder:</strong> the portal layout enforces path
+          isolation — Path A sees /program + (with add-on) /cards routes, Path B sees /cards routes,
+          Path C sees /circle. Admins bypass these guards and can open any page directly. To experience
+          a page <em>as a specific member</em>, use{' '}
+          <Link href="/admin/preview" style={{ color: 'var(--gold)' }}>Preview as user</Link>.
+        </div>
       </div>
 
       {/* Filters */}

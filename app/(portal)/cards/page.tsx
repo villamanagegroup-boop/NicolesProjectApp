@@ -43,8 +43,19 @@ export default function CardsHomePage() {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 3)
 
-  // Recent past cards — last 6
-  const recentPast = pastCards.slice(0, 6)
+  // Recent past cards — show 5 slots. Fill from real past cards first;
+  // any unfilled slots become outlined Day-N placeholders so the strip
+  // always reads as "5 cards across the start of your year".
+  const RECENT_LIMIT = 5
+  const recentPast = pastCards.slice(0, RECENT_LIMIT)
+  const placeholderSlots: number[] = []
+  for (let i = recentPast.length; i < RECENT_LIMIT; i++) {
+    // Fill upward from current visible day so placeholders line up with
+    // the days the user is about to unlock. Fall back to sequential 1..5
+    // if the user is brand new (visibleDay = 1) and has no past cards.
+    const targetDay = visibleDay > 0 ? visibleDay + (i - recentPast.length + 1) : i + 1
+    placeholderSlots.push(Math.min(365, targetDay))
+  }
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
@@ -108,63 +119,96 @@ export default function CardsHomePage() {
             <TodayCardRow card={todayCard} dayNumber={visibleDay} />
           </Section>
 
-          {recentPast.length > 0 && (
-            <Section title="Recent" right={<Link href="/past" style={subtleLink}>See all →</Link>}>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))',
-                gap: 10,
-                paddingTop: 14,
-              }}>
-                {recentPast.map(card => (
-                  <Link key={card.id} href={`/card?day=${card.dayNumber}`} style={{ textDecoration: 'none' }}>
+          <Section title="Recent" right={<Link href="/past" style={subtleLink}>See all →</Link>}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(5, 1fr)',
+              gap: 10,
+              paddingTop: 14,
+            }}>
+              {recentPast.map(card => (
+                <Link key={card.id} href={`/card?day=${card.dayNumber}`} style={{ textDecoration: 'none' }}>
+                  <div style={{
+                    aspectRatio: '3/4', borderRadius: 8, overflow: 'hidden',
+                    background: card.cardColor, position: 'relative',
+                    transition: 'transform 0.2s',
+                    cursor: 'pointer',
+                  }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.03)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)' }}
+                  >
+                    {card.imageUrl ? (
+                      <Image src={card.imageUrl} alt="" fill unoptimized style={{ objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{
+                        position: 'absolute', top: '50%', left: '50%',
+                        transform: 'translate(-50%, -50%)', fontSize: 24,
+                      }}>{card.emoji}</div>
+                    )}
                     <div style={{
-                      aspectRatio: '3/4', borderRadius: 8, overflow: 'hidden',
-                      background: card.cardColor, position: 'relative',
-                      transition: 'transform 0.2s',
-                      cursor: 'pointer',
-                    }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.03)' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)' }}
-                    >
-                      {card.imageUrl ? (
-                        <Image src={card.imageUrl} alt="" fill unoptimized style={{ objectFit: 'cover' }} />
-                      ) : (
-                        <div style={{
-                          position: 'absolute', top: '50%', left: '50%',
-                          transform: 'translate(-50%, -50%)', fontSize: 24,
-                        }}>{card.emoji}</div>
-                      )}
-                      <div style={{
-                        position: 'absolute', inset: 0,
-                        background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent 55%)',
-                      }} />
-                      <div style={{
-                        position: 'absolute', bottom: 0, left: 0, right: 0,
-                        padding: '8px 10px',
+                      position: 'absolute', inset: 0,
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent 55%)',
+                    }} />
+                    <div style={{
+                      position: 'absolute', bottom: 0, left: 0, right: 0,
+                      padding: '8px 10px',
+                    }}>
+                      <p style={{
+                        fontSize: 8, fontWeight: 600, letterSpacing: '0.08em',
+                        textTransform: 'uppercase', color: 'var(--gold)',
+                        margin: '0 0 2px', fontFamily: 'var(--font-body)',
                       }}>
-                        <p style={{
-                          fontSize: 8, fontWeight: 600, letterSpacing: '0.08em',
-                          textTransform: 'uppercase', color: 'var(--gold)',
-                          margin: '0 0 2px', fontFamily: 'var(--font-body)',
-                        }}>
-                          Day {card.dayNumber}
-                        </p>
-                        <p style={{
-                          fontFamily: 'var(--font-display)', fontStyle: 'italic',
-                          fontSize: 11, color: '#fff', margin: 0, lineHeight: 1.25,
-                          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                        }}>
-                          {card.title}
-                        </p>
-                      </div>
+                        Day {card.dayNumber}
+                      </p>
+                      <p style={{
+                        fontFamily: 'var(--font-display)', fontStyle: 'italic',
+                        fontSize: 11, color: '#fff', margin: 0, lineHeight: 1.25,
+                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }}>
+                        {card.title}
+                      </p>
                     </div>
-                  </Link>
-                ))}
-              </div>
-            </Section>
-          )}
+                  </div>
+                </Link>
+              ))}
+
+              {/* Outline placeholders — same shape as filled cards but
+                  dashed border + muted "Day N · Coming" copy. Same pattern
+                  used on the locked Vault state. */}
+              {placeholderSlots.map((d, i) => (
+                <div
+                  key={`placeholder-${i}`}
+                  style={{
+                    aspectRatio: '3/4', borderRadius: 8,
+                    border: '1.5px dashed var(--line-md)',
+                    background: '#fff',
+                    display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', justifyContent: 'center',
+                    padding: 10, textAlign: 'center',
+                    opacity: 0.7,
+                  }}
+                >
+                  <div style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: 18, fontWeight: 300,
+                    color: CARDS_GREEN, opacity: 0.5,
+                    lineHeight: 1,
+                  }}>
+                    Day {d}
+                  </div>
+                  <div style={{
+                    fontSize: 9, fontWeight: 600,
+                    letterSpacing: '0.08em', textTransform: 'uppercase',
+                    color: 'var(--text-muted)',
+                    marginTop: 6, fontFamily: 'var(--font-body)',
+                  }}>
+                    Coming
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Section>
         </div>
 
         {/* RIGHT — Stats, recent journal + wins, vault peek */}

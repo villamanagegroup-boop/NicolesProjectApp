@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 import Button from '@/components/ui/Button'
-import EyebrowLabel from '@/components/ui/EyebrowLabel'
 
 function getCardPillStyle(cardColor: string) {
   const colorMap: Record<string, { bg: string; color: string; border: string }> = {
@@ -484,49 +483,29 @@ function CardPageInner() {
           </p>
         </div>
 
-        {/* Section 2 — Affirmation */}
-        <div
-          style={{
-            backgroundColor: 'var(--paper2)',
-            borderRadius: '10px 10px 10px 3px',
-            padding: '20px',
-            borderLeft: '2px solid var(--gold)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <div
-              style={{
-                width: '5px',
-                height: '5px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--green)',
-                flexShrink: 0,
-              }}
-            />
-            <span
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: '10px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.15em',
-                color: 'var(--green)',
-              }}
-            >
-              Daily Affirmation
-            </span>
-          </div>
-          <p
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontStyle: 'italic',
-              fontSize: '18px',
-              fontWeight: 300,
-              color: 'var(--ink)',
-              lineHeight: 1.6,
-              margin: 0,
-            }}
-          >
-            {card.affirmation}
+        {/* Section 2 — Affirmation. Wide gradient block matching /cards
+            and /circle homes; reads as the centerpiece, not a side card. */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(26,82,48,0.07) 0%, #fff 70%)',
+          borderTop: '2px solid var(--green)',
+          borderBottom: '1px solid var(--line)',
+          padding: '24px 4px 24px 20px',
+          margin: '0 -8px',
+        }}>
+          <p style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '0.14em',
+            textTransform: 'uppercase', color: 'var(--green)',
+            margin: '0 0 10px', fontFamily: 'var(--font-body)',
+          }}>
+            Daily affirmation
+          </p>
+          <p style={{
+            fontFamily: 'var(--font-display)', fontStyle: 'italic',
+            fontSize: 22, fontWeight: 300,
+            color: 'var(--ink)', margin: 0,
+            lineHeight: 1.45, maxWidth: 560,
+          }}>
+            &ldquo;{card.affirmation}&rdquo;
           </p>
         </div>
 
@@ -788,74 +767,59 @@ function CardPageInner() {
           </div>
         </div>
 
-        {/* Section 5 — Locked upcoming cards */}
-        <div style={{ borderTop: '1px solid var(--line)', paddingTop: '24px' }}>
-          <EyebrowLabel color="muted">Coming Next</EyebrowLabel>
-
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px',
-              marginTop: '16px',
-            }}
-          >
-            {upcomingCards.map(upCard => (
-              <div
-                key={upCard.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '16px',
-                  border: '1.5px dashed var(--line-md)',
-                  borderRadius: '8px',
-                  padding: '12px 16px',
-                }}
-              >
-                {/* Lock icon */}
-                <span style={{ fontSize: '18px', lineHeight: 1, flexShrink: 0 }}>🔒</span>
-
-                {/* Middle */}
-                <div style={{ flex: 1 }}>
-                  <p
-                    style={{
-                      fontFamily: 'var(--font-body)',
-                      fontSize: '10px',
-                      textTransform: 'uppercase',
-                      color: 'var(--text-muted)',
-                      margin: '0 0 2px 0',
-                      letterSpacing: '0.08em',
-                    }}
-                  >
-                    Day {upCard.dayNumber}
-                  </p>
-                  <p
-                    style={{
-                      fontFamily: 'var(--font-body)',
-                      fontSize: '14px',
-                      color: 'var(--text-soft)',
-                      margin: 0,
-                    }}
-                  >
-                    Day {upCard.dayNumber} · {upCard.theme}
-                  </p>
+        {/* Section 5 — Coming next */}
+        <section>
+          <header style={{
+            paddingBottom: 8, borderBottom: '1px solid var(--line)',
+            marginBottom: 4,
+          }}>
+            <h2 style={{
+              fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
+              textTransform: 'uppercase', color: 'var(--text-soft)',
+              margin: 0, fontFamily: 'var(--font-body)',
+            }}>
+              Coming next
+            </h2>
+          </header>
+          {upcomingCards.map(upCard => (
+            <div
+              key={upCard.id}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 14,
+                padding: '14px 4px 14px 16px',
+                borderBottom: '1px solid var(--line)',
+                position: 'relative',
+              }}
+            >
+              <span style={{
+                position: 'absolute', left: 0, top: 14, bottom: 14,
+                width: 2, background: 'var(--line-md)', borderRadius: 2,
+              }} />
+              <span style={{ fontSize: 14, opacity: 0.55, flexShrink: 0 }}>🔒</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: '0.09em',
+                  textTransform: 'uppercase', color: 'var(--text-muted)',
+                  marginBottom: 4, fontFamily: 'var(--font-body)',
+                }}>
+                  Day {upCard.dayNumber}
                 </div>
-
-                {/* Right */}
-                <span
-                  style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '10px',
-                    color: 'var(--text-muted)',
-                    flexShrink: 0,
-                  }}
-                >
-                  {getLockedLabel(upCard.dayNumber, dayNumber)}
-                </span>
+                <div style={{
+                  fontSize: 14, fontWeight: 500, color: 'var(--text-soft)',
+                  fontFamily: 'var(--font-body)', lineHeight: 1.4,
+                }}>
+                  {upCard.theme}
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
+              <span style={{
+                fontSize: 11, color: 'var(--text-muted)',
+                fontFamily: 'var(--font-body)', flexShrink: 0,
+              }}>
+                {getLockedLabel(upCard.dayNumber, dayNumber)}
+              </span>
+            </div>
+          ))}
+        </section>
 
       </div>
     </div>
