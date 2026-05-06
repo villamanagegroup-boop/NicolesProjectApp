@@ -208,7 +208,7 @@ function TodaysSessionInner() {
   const [celebratingDay, setCelebratingDay] = useState(false)
   const [unlockResult, setUnlockResult] = useState<
     | { granted: true; expiresAt: string }
-    | { granted: false }
+    | { granted: false; alreadySealed: boolean }
     | null
   >(null)
   const [showUnlockModal, setShowUnlockModal] = useState(false)
@@ -232,21 +232,28 @@ function TodaysSessionInner() {
     // For Path A, this also grants the 30-day Cards window. Idempotent — fine
     // to call again on a re-seal. Fire-and-forget on errors (the local seal
     // animation already happened).
-    if (isDay7 && !isFuture) {
+    if (isDay7 && (!isFuture || user.isAdmin)) {
       try {
         const res = await fetch('/api/program/seal-day-7', { method: 'POST' })
         if (res.ok) {
-          const data = await res.json() as { granted: boolean; expiresAt: string | null }
+          const data = await res.json() as {
+            granted: boolean
+            expiresAt: string | null
+            alreadySealed: boolean
+          }
           if (data.granted && data.expiresAt) {
             setUnlockResult({ granted: true, expiresAt: data.expiresAt })
-            // Open the celebratory modal a beat after the seal animation
-            // settles — gives the seal reveal room to breathe before we
-            // hijack the screen.
-            setTimeout(() => setShowUnlockModal(true), 700)
           } else {
-            setUnlockResult({ granted: false })
+            setUnlockResult({ granted: false, alreadySealed: data.alreadySealed })
           }
+          // Open the modal regardless of grant. Path A first-time sealers
+          // see the 30-day unlock celebration; admins, Path B/C testers,
+          // or Path A users with an existing add-on see a simpler "Day 7
+          // sealed" screen. Beat lets the seal reveal animation finish.
+          setTimeout(() => setShowUnlockModal(true), 700)
           await refreshUser()
+        } else {
+          console.error('seal-day-7 non-OK', res.status, await res.text().catch(() => ''))
         }
       } catch (err) {
         console.error('seal-day-7 failed', err)
@@ -662,11 +669,14 @@ function TodaysSessionInner() {
       {/* ── Recorded section ── */}
       <RecordedSection routeId={routeId} route={route} currentDay={currentDay} />
 
-      {/* ── Unlock modal — fires when Day 7 seal grants the 30-day window ── */}
-      {showUnlockModal && unlockResult?.granted && (
+      {/* ── Unlock modal — fires after a Day 7 seal call returns OK ──
+          Path A first-time sealers see the 30-day unlock celebration.
+          Anyone else (admins testing, Path B/C, or Path A users who
+          already had the add-on) gets a simpler "Day 7 sealed" view. */}
+      {showUnlockModal && unlockResult && (
         <UnlockModal
           accent={route.color}
-          expiresAt={unlockResult.expiresAt}
+          result={unlockResult}
           onClose={() => setShowUnlockModal(false)}
         />
       )}
@@ -706,21 +716,33 @@ function TodaysSessionInner() {
 }
 
 // ── Unlock modal ──────────────────────────────────────────────────────────────
-// Full-screen celebratory popup that fires the moment a Path A user seals
-// Day 7 and the server grants the 30-day Cards window. One-shot per seal —
-// dismiss closes it; the page-level callout below the hero remains as a
-// quieter persistent reminder for return visits.
+// Full-screen celebratory popup that fires after a Day 7 seal API call.
+// Two faces:
+//   granted = true  → 30-day Cards unlock celebration (Path A first-time)
+//   granted = false → simpler "Day 7 sealed" view for admins testing,
+//                     Path B/C users, or Path A users who already have an
+//                     add-on (no new grant happened).
+// One-shot per seal; dismiss closes it. The persistent pill below the day
+// title still shows the unlock window for return visits.
+type UnlockResult =
+  | { granted: true; expiresAt: string }
+  | { granted: false; alreadySealed: boolean }
+
 function UnlockModal({
-  accent, expiresAt, onClose,
+  accent, result, onClose,
 }: {
   accent: string
-  expiresAt: string
+  result: UnlockResult
   onClose: () => void
 }) {
-  const daysLeft = Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-  const expiryDate = new Date(expiresAt).toLocaleDateString('en-US', {
-    weekday: 'long', month: 'long', day: 'numeric',
-  })
+  const granted    = result.granted
+  const expiresAt  = granted ? result.expiresAt : null
+  const daysLeft   = granted
+    ? Math.max(0, Math.ceil((new Date(result.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : 0
+  const expiryDate = expiresAt
+    ? new Date(expiresAt).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+    : ''
 
   // ESC to close
   useEffect(() => {
@@ -838,7 +860,7 @@ function UnlockModal({
             fontSize: 28, fontWeight: 300, fontStyle: 'italic',
             margin: 0, lineHeight: 1.2, letterSpacing: '-0.01em',
           }}>
-            30 days of Alignment, unlocked.
+            {granted ? '30 days of Alignment, unlocked.' : 'You sealed the leak.'}
           </h2>
         </div>
 
@@ -848,32 +870,38 @@ function UnlockModal({
             fontSize: 14, color: 'var(--text-soft)',
             lineHeight: 1.65, margin: '0 0 18px', textAlign: 'center',
           }}>
-            You did the work. Starting now, you have <strong style={{ color: 'var(--ink)' }}>{daysLeft} {daysLeft === 1 ? 'day' : 'days'}</strong> of full access to the 365 Alignment app — daily cards, journal, win tracker, and the vault.
+            {granted ? (
+              <>You did the work. Starting now, you have <strong style={{ color: 'var(--ink)' }}>{daysLeft} {daysLeft === 1 ? 'day' : 'days'}</strong> of full access to the 365 Alignment app — daily cards, journal, win tracker, and the vault.</>
+            ) : (
+              <>Seven days, every prompt, every action. The shift is yours to keep — head back to your daily practice whenever you&apos;re ready.</>
+            )}
           </p>
 
-          {/* Expiry pill */}
-          <div style={{
-            background: `${accent}10`,
-            border: `1px solid ${accent}25`,
-            borderRadius: 10,
-            padding: '12px 16px',
-            marginBottom: 20,
-            display: 'flex', alignItems: 'center', gap: 10,
-            flexWrap: 'wrap', justifyContent: 'center',
-          }}>
-            <span style={{ fontSize: 16 }}>📅</span>
-            <span style={{
-              fontSize: 12, fontWeight: 600, color: accent,
-              letterSpacing: '0.02em',
+          {/* Expiry pill — only when a real grant happened */}
+          {granted && (
+            <div style={{
+              background: `${accent}10`,
+              border: `1px solid ${accent}25`,
+              borderRadius: 10,
+              padding: '12px 16px',
+              marginBottom: 20,
+              display: 'flex', alignItems: 'center', gap: 10,
+              flexWrap: 'wrap', justifyContent: 'center',
             }}>
-              Window ends {expiryDate}
-            </span>
-          </div>
+              <span style={{ fontSize: 16 }}>📅</span>
+              <span style={{
+                fontSize: 12, fontWeight: 600, color: accent,
+                letterSpacing: '0.02em',
+              }}>
+                Window ends {expiryDate}
+              </span>
+            </div>
+          )}
 
           {/* CTAs */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <Link
-              href="/cards"
+              href={granted ? '/cards' : '/dashboard'}
               onClick={onClose}
               style={{
                 display: 'block', textAlign: 'center',
@@ -895,7 +923,7 @@ function UnlockModal({
                 (e.currentTarget as HTMLAnchorElement).style.boxShadow = `0 4px 14px ${accent}40`;
               }}
             >
-              Open today&apos;s card →
+              {granted ? "Open today's card →" : 'Back to dashboard →'}
             </Link>
             <button
               onClick={onClose}
@@ -910,13 +938,15 @@ function UnlockModal({
             </button>
           </div>
 
-          <p style={{
-            fontSize: 11, color: 'var(--text-muted)',
-            textAlign: 'center', margin: '14px 0 0',
-            lineHeight: 1.5,
-          }}>
-            We&apos;ll remind you before your window ends so you don&apos;t lose your streak.
-          </p>
+          {granted && (
+            <p style={{
+              fontSize: 11, color: 'var(--text-muted)',
+              textAlign: 'center', margin: '14px 0 0',
+              lineHeight: 1.5,
+            }}>
+              We&apos;ll remind you before your window ends so you don&apos;t lose your streak.
+            </p>
+          )}
         </div>
       </div>
     </div>
