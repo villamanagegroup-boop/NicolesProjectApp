@@ -14,6 +14,9 @@ import {
   type PostType,
 } from '@/lib/circle'
 import AttachmentPicker, { type AttachmentSlots, type AttachmentSlot } from '@/components/circle/AttachmentPicker'
+import CommentThread from '@/components/circle/CommentThread'
+import EmojiPickerPopover from '@/components/circle/EmojiPickerPopover'
+import GifPicker from '@/components/circle/GifPicker'
 
 const ORANGE      = '#C97D3A'
 const ORANGE_PALE = '#fdf6f2'
@@ -34,7 +37,7 @@ const EMOJIS = ['❤️', '🔥', '✨', '👏', '💪']
 
 export default function CommunityPage() {
   const router = useRouter()
-  const { loading, isAuthed } = useApp()
+  const { loading, isAuthed, authUser } = useApp()
 
   const [posts, setPosts]           = useState<CirclePost[]>([])
   const [cohortId, setCohortId]     = useState<string>('')
@@ -47,6 +50,10 @@ export default function CommunityPage() {
   const [posting, setPosting]       = useState(false)
   const [showCompose, setShowCompose] = useState(false)
   const [attachments, setAttachments] = useState<AttachmentSlots>({ audio: null, video: null, image: null, doc: null })
+  /** Tenor GIF URL — separate from `attachments` because GIFs are external
+   *  CDN links, not files that need uploading. Mutually exclusive with the
+   *  uploaded image slot in handlePost. */
+  const [gifUrl, setGifUrl]         = useState<string | null>(null)
   const [uploading, setUploading]     = useState(false)
   const [postError, setPostError]     = useState<string | null>(null)
 
@@ -93,7 +100,7 @@ export default function CommunityPage() {
   }, [posts, filter])
 
   async function handlePost() {
-    if (!newBody.trim()) return
+    if (!newBody.trim() && !gifUrl) return
     if (!cohortId) return
     setPosting(true)
     setPostError(null)
@@ -125,9 +132,15 @@ export default function CommunityPage() {
       }
     }
 
+    // Tenor GIF picker writes directly into image_url (no upload needed).
+    // If both an uploaded image and a GIF were chosen, the GIF wins —
+    // last-action-wins is the intuitive behavior here.
+    if (gifUrl) urls.image_url = gifUrl
+
     const ok = await createPost(cohortId, newType, newBody.trim(), weekNumber, urls)
     if (ok) {
       setNewBody('')
+      setGifUrl(null)
       clearAttachments()
       setShowCompose(false)
       const data = await getCommunityPosts(cohortId, filter === 'all' ? undefined : filter)
@@ -220,20 +233,51 @@ export default function CommunityPage() {
             onFocus={e => { e.currentTarget.style.borderColor = ORANGE }}
             onBlur={e => { e.currentTarget.style.borderColor = 'var(--line-md)' }}
           />
+          {/* GIF preview — appears after user picks one */}
+          {gifUrl && (
+            <div style={{
+              position: 'relative',
+              alignSelf: 'flex-start',
+              border: '1px solid var(--line-md)', borderRadius: 10,
+              overflow: 'hidden',
+            }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={gifUrl} alt="" style={{ display: 'block', maxHeight: 200, maxWidth: 300 }} />
+              <button
+                type="button"
+                onClick={() => setGifUrl(null)}
+                aria-label="Remove GIF"
+                style={{
+                  position: 'absolute', top: 8, right: 8,
+                  width: 24, height: 24, borderRadius: '50%',
+                  border: 'none', background: 'rgba(0,0,0,0.65)',
+                  color: '#fff', fontSize: 12, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: 'inherit',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           <AttachmentPicker slots={attachments} onChange={setSlot} />
 
           {postError && <p style={{ fontSize: 12, color: 'var(--red)', margin: 0 }}>{postError}</p>}
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-              {uploading ? 'Uploading…' : `Tagged to Week ${weekNumber}`}
-            </span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <GifPicker onPick={url => setGifUrl(url)} />
+              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                {uploading ? 'Uploading…' : `Tagged to Week ${weekNumber}`}
+              </span>
+            </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => { setShowCompose(false); setNewBody(''); clearAttachments() }} style={ghostBtn}>Cancel</button>
-              <button onClick={handlePost} disabled={posting || !newBody.trim()} style={{
+              <button onClick={() => { setShowCompose(false); setNewBody(''); setGifUrl(null); clearAttachments() }} style={ghostBtn}>Cancel</button>
+              <button onClick={handlePost} disabled={posting || (!newBody.trim() && !gifUrl)} style={{
                 ...primaryBtn,
-                background: posting || !newBody.trim() ? 'var(--paper3)' : ORANGE,
-                cursor: posting || !newBody.trim() ? 'not-allowed' : 'pointer',
+                background: posting || (!newBody.trim() && !gifUrl) ? 'var(--paper3)' : ORANGE,
+                cursor: posting || (!newBody.trim() && !gifUrl) ? 'not-allowed' : 'pointer',
               }}>
                 {posting ? (uploading ? 'Uploading…' : 'Posting…') : 'Post'}
               </button>
@@ -255,6 +299,7 @@ export default function CommunityPage() {
           <PostCard
             key={post.id}
             post={post}
+            currentUserId={authUser?.id ?? null}
             onReact={emoji => handleReaction(post.id, emoji)}
           />
         ))}
@@ -362,10 +407,24 @@ function FilterRow({ active, onClick, dot, children }: {
 
 // ─── Sub-components ─────────────────────────────────────────────────────────
 
-function PostCard({ post, onReact }: { post: CirclePost; onReact: (emoji: string) => void }) {
+function PostCard({
+  post, currentUserId, onReact,
+}: {
+  post: CirclePost
+  currentUserId: string | null
+  onReact: (emoji: string) => void
+}) {
   const typeMeta = POST_TYPES.find(t => t.id === post.post_type)
   const isCoach = post.post_type === 'coach_note'
   const authorName = post.author?.name ?? 'Member'
+
+  // Replies expand inline. We track count locally so the row label updates
+  // as the user posts/deletes inside the thread without a full feed refetch.
+  const [showThread, setShowThread] = useState(false)
+  const [commentCount, setCommentCount] = useState(post.comment_count ?? 0)
+
+  // Emojis the user has already reacted with — used to highlight in the picker.
+  const userReacted = (post.reactions ?? []).filter(r => r.user_reacted).map(r => r.emoji)
 
   return (
     <div style={{
@@ -376,11 +435,11 @@ function PostCard({ post, onReact }: { post: CirclePost; onReact: (emoji: string
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
         <div style={{
-          width: 32, height: 32, borderRadius: '50%',
+          width: 36, height: 36, borderRadius: '50%',
           background: isCoach ? ORANGE : avatarColorFor(authorName),
           color: '#fff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 13, fontWeight: 700, flexShrink: 0,
+          fontSize: 14, fontWeight: 700, flexShrink: 0,
         }}>
           {authorName.charAt(0).toUpperCase()}
         </div>
@@ -450,9 +509,9 @@ function PostCard({ post, onReact }: { post: CirclePost; onReact: (emoji: string
         </div>
       )}
 
-      {/* Reactions */}
+      {/* Reactions row + Reply toggle */}
       <div style={{
-        display: 'flex', gap: 6, flexWrap: 'wrap',
+        display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center',
         marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--line)',
       }}>
         {EMOJIS.map(emoji => {
@@ -477,7 +536,64 @@ function PostCard({ post, onReact }: { post: CirclePost; onReact: (emoji: string
             </button>
           )
         })}
+
+        {/* Reactions the user picked from the extended palette that aren't
+            in the always-visible quick row — render them inline so they
+            stay clickable + countable without forcing the quick row to grow. */}
+        {(post.reactions ?? [])
+          .filter(r => !EMOJIS.includes(r.emoji))
+          .map(r => (
+            <button
+              key={r.emoji}
+              onClick={() => onReact(r.emoji)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4,
+                fontSize: 13, padding: '4px 10px', borderRadius: 999,
+                border: `1px solid ${r.user_reacted ? ORANGE : 'var(--line-md)'}`,
+                background: r.user_reacted ? ORANGE_PALE : 'transparent',
+                color: r.user_reacted ? ORANGE : 'var(--text-muted)',
+                cursor: 'pointer', fontFamily: 'inherit',
+                transition: 'all .15s',
+              }}
+            >
+              <span>{r.emoji}</span>
+              {r.count > 0 && <span style={{ fontSize: 11, fontWeight: 600 }}>{r.count}</span>}
+            </button>
+          ))}
+
+        {/* Extended emoji picker */}
+        <EmojiPickerPopover activeEmojis={userReacted} onPick={onReact} />
+
+        {/* Reply toggle pushed to the right */}
+        <button
+          onClick={() => setShowThread(s => !s)}
+          style={{
+            marginLeft: 'auto',
+            display: 'flex', alignItems: 'center', gap: 6,
+            fontSize: 12, padding: '5px 12px', borderRadius: 999,
+            border: `1px solid ${showThread ? ORANGE : 'var(--line-md)'}`,
+            background: showThread ? ORANGE_PALE : 'transparent',
+            color: showThread ? ORANGE : 'var(--text-soft)',
+            cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
+            transition: 'all .15s',
+          }}
+        >
+          <span style={{ fontSize: 13 }}>💬</span>
+          {commentCount > 0
+            ? `${commentCount} ${commentCount === 1 ? 'reply' : 'replies'}`
+            : 'Reply'}
+          <span style={{ fontSize: 10, marginLeft: 2 }}>{showThread ? '▴' : '▾'}</span>
+        </button>
       </div>
+
+      {/* Inline thread — lazy-mounted on first expand */}
+      {showThread && (
+        <CommentThread
+          postId={post.id}
+          userId={currentUserId}
+          onCountChange={setCommentCount}
+        />
+      )}
     </div>
   )
 }

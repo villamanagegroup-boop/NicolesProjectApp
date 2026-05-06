@@ -54,6 +54,19 @@ export interface CirclePost {
   created_at: string
   author?: { name: string; avatar_url: string | null }
   reactions?: { emoji: string; count: number; user_reacted: boolean }[]
+  comment_count?: number
+}
+
+export interface CircleComment {
+  id: string
+  post_id: string
+  author_id: string
+  body: string
+  /** GIFs (Tenor) and uploaded images both land here. */
+  image_url: string | null
+  created_at: string
+  author?: { name: string; avatar_url: string | null }
+  reactions?: { emoji: string; count: number; user_reacted: boolean }[]
 }
 
 export interface PartnerMessage {
@@ -242,7 +255,8 @@ export async function getCommunityPosts(
       circle_reactions (
         emoji,
         user_id
-      )
+      ),
+      circle_post_comments ( id )
     `)
     .eq('cohort_id', cohortId)
     .order('created_at', { ascending: false })
@@ -260,6 +274,9 @@ export async function getCommunityPosts(
   return data.map(post => ({
     ...post,
     reactions: buildReactionSummary(post.circle_reactions ?? [], userId),
+    comment_count: Array.isArray(post.circle_post_comments)
+      ? post.circle_post_comments.length
+      : 0,
   })) as CirclePost[]
 }
 
@@ -349,6 +366,100 @@ export async function toggleReaction(postId: string, emoji: string): Promise<boo
       .insert({ post_id: postId, user_id: user.id, emoji })
     return !error
   }
+}
+
+// ─── POST COMMENTS (replies) ─────────────────────────────────
+
+/**
+ * Fetch all replies on a post, with author + reactions.
+ * Cohort-scoped at the RLS layer so we only see what we're allowed to.
+ */
+export async function getCommentsForPost(postId: string): Promise<CircleComment[]> {
+  const { data, error } = await supabase
+    .from('circle_post_comments')
+    .select(`
+      *,
+      author:author_id ( name, avatar_url ),
+      circle_comment_reactions ( emoji, user_id )
+    `)
+    .eq('post_id', postId)
+    .order('created_at', { ascending: true })
+
+  if (error || !data) return []
+
+  const { data: { user } } = await supabase.auth.getUser()
+  const userId = user?.id ?? ''
+
+  return (data as Array<CircleComment & { circle_comment_reactions?: { emoji: string; user_id: string }[] }>).map(c => ({
+    ...c,
+    reactions: buildReactionSummary(c.circle_comment_reactions ?? [], userId),
+  })) as CircleComment[]
+}
+
+/**
+ * Create a reply on a post. Body OR image_url is required (a GIF-only reply
+ * is fine). Returns the new comment's id, or null on failure.
+ */
+export async function createComment(
+  postId: string,
+  body: string,
+  imageUrl?: string | null,
+): Promise<string | null> {
+  const trimmed = body.trim()
+  if (!trimmed && !imageUrl) return null
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data, error } = await supabase
+    .from('circle_post_comments')
+    .insert({
+      post_id: postId,
+      author_id: user.id,
+      body: trimmed,
+      image_url: imageUrl ?? null,
+    })
+    .select('id')
+    .single()
+
+  if (error || !data) return null
+  return data.id as string
+}
+
+/** Delete the caller's own comment. Admins can delete any (RLS enforces this). */
+export async function deleteComment(commentId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('circle_post_comments')
+    .delete()
+    .eq('id', commentId)
+  return !error
+}
+
+/**
+ * Toggle a reaction on a comment. Same shape as toggleReaction for posts.
+ */
+export async function toggleCommentReaction(commentId: string, emoji: string): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
+
+  const { data: existing } = await supabase
+    .from('circle_comment_reactions')
+    .select('id')
+    .eq('comment_id', commentId)
+    .eq('user_id', user.id)
+    .eq('emoji', emoji)
+    .maybeSingle()
+
+  if (existing) {
+    const { error } = await supabase
+      .from('circle_comment_reactions')
+      .delete()
+      .eq('id', existing.id)
+    return !error
+  }
+  const { error } = await supabase
+    .from('circle_comment_reactions')
+    .insert({ comment_id: commentId, user_id: user.id, emoji })
+  return !error
 }
 
 // ─── PARTNER MESSAGES ───────────────────────────────────────
