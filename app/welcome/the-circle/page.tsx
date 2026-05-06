@@ -161,6 +161,12 @@ export default function WelcomeTheCirclePage() {
             Or jump to your{' '}
             <Link href="/dashboard" style={{ color: INK, textDecoration: 'underline', opacity: 0.7 }}>dashboard →</Link>
           </p>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0' }}>
+            Haven&apos;t taken the archetype quiz yet?{' '}
+            <Link href="/quiz/standalone" style={{ color: INK, textDecoration: 'underline', opacity: 0.7 }}>
+              Take it now →
+            </Link>
+          </p>
         </div>
 
       </div>

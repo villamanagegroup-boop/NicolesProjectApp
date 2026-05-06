@@ -56,20 +56,21 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   // path-isolation guard above already gates them to the previewed path's
   // routes, so we don't also want to push them through the quiz/path-chooser
   // flow they may not have personally completed.
+  //
+  // Note: we deliberately do NOT auto-redirect users without a quiz_result
+  // to /take-the-quiz. Some users took the quiz before signing up and the
+  // result didn't get persisted (sessionStorage cleared, fresh tab from
+  // Stripe, etc.) — bouncing them out of the dashboard turned the welcome
+  // experience into a maze. The welcome pages now expose an optional
+  // "Take the quiz →" button so anyone who actually missed it can do it
+  // on their own terms; otherwise they just land in the portal.
   useEffect(() => {
     if (loading || !isAuthed || user.isAdmin) return
-    // Quiz funnel for users without a path yet.
-    if (!user.selectedPath && !user.quizResult) { router.replace('/quiz'); return }
-    if (!user.selectedPath)                     { router.replace('/quiz/paths'); return }
-    // Failsafe: a user who has a path but no quiz result reached the portal
-    // through some out-of-funnel route (admin claim, manual path assignment).
-    // Send them to the friendly /take-the-quiz landing where they can take a
-    // standalone version of the quiz or email Nicole for help.
-    if (!user.quizResult)                       { router.replace('/take-the-quiz'); return }
+    if (!user.selectedPath) { router.replace('/quiz/paths'); return }
     if (user.selectedPath === 'C' && !user.onboardingComplete) {
       router.replace('/onboarding'); return
     }
-  }, [loading, isAuthed, user.isAdmin, user.quizResult, user.selectedPath, user.onboardingComplete, router])
+  }, [loading, isAuthed, user.isAdmin, user.selectedPath, user.onboardingComplete, router])
 
   return (
     <div className="portal-shell" style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#ffffff' }}>

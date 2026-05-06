@@ -84,13 +84,6 @@ export default function StandaloneQuizPage() {
         router.replace('/login')
         return
       }
-      // Look up the user's path so we know where to send them next.
-      const { data: profile } = await supabaseClient
-        .from('users')
-        .select('selected_path')
-        .eq('id', authUser.id)
-        .maybeSingle()
-
       const { error: updateError } = await supabaseClient
         .from('users')
         .update({ quiz_result: result })
@@ -101,11 +94,9 @@ export default function StandaloneQuizPage() {
         return
       }
 
-      const path = profile?.selected_path as 'A' | 'B' | 'C' | null
-      const dest = path === 'A' ? '/program'
-                 : path === 'C' ? '/circle'
-                 : '/dashboard'
-      router.replace(dest)
+      // Universal landing — /dashboard works for every path. The portal
+      // layout handles per-path navigation from there.
+      router.replace('/dashboard')
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Unexpected error saving your result.')
       setSubmitting(false)

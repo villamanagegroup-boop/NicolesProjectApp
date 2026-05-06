@@ -132,6 +132,12 @@ export default function WelcomeCardsPage() {
             Or jump to your{' '}
             <Link href="/dashboard" style={{ color: GREEN, textDecoration: 'underline' }}>dashboard →</Link>
           </p>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0' }}>
+            Haven&apos;t taken the archetype quiz yet?{' '}
+            <Link href="/quiz/standalone" style={{ color: GREEN, textDecoration: 'underline' }}>
+              Take it now →
+            </Link>
+          </p>
         </div>
 
       </div>

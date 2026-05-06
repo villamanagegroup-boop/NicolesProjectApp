@@ -125,6 +125,12 @@ function SignupForm() {
       console.warn('claim-purchase failed', err)
     }
 
+    // Fire welcome + admin emails (Emailit). Fire-and-forget — never block
+    // the redirect on email delivery. Idempotency keys on the route prevent
+    // doubles if the user re-enters this flow.
+    fetch('/api/signup-complete', { method: 'POST' })
+      .catch(err => console.warn('signup-complete email call failed', err))
+
     // Post-signup flow:  signup → welcome page → portal.
     // The welcome page is the user's first experience after creating their
     // account — it explains what they just unlocked, then forwards them
