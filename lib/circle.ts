@@ -52,6 +52,7 @@ export interface CirclePost {
   file_url:  string | null
   file_name: string | null
   created_at: string
+  edited_at: string | null
   author?: { name: string; avatar_url: string | null }
   reactions?: { emoji: string; count: number; user_reacted: boolean }[]
   comment_count?: number
@@ -65,6 +66,7 @@ export interface CircleComment {
   /** GIFs (Tenor) and uploaded images both land here. */
   image_url: string | null
   created_at: string
+  edited_at: string | null
   author?: { name: string; avatar_url: string | null }
   reactions?: { emoji: string; count: number; user_reacted: boolean }[]
 }
@@ -339,6 +341,29 @@ export async function uploadCircleAttachment(file: File): Promise<string | null>
 }
 
 /**
+ * Update the body of a post. Author-only at the RLS layer (admins can also
+ * update via the admin override). Sets edited_at so the UI can show "(edited)".
+ */
+export async function updatePost(postId: string, body: string): Promise<boolean> {
+  const trimmed = body.trim()
+  if (!trimmed) return false
+  const { error } = await supabase
+    .from('circle_posts')
+    .update({ body: trimmed, edited_at: new Date().toISOString() })
+    .eq('id', postId)
+  return !error
+}
+
+/** Delete a post. Author-only at the RLS layer; admins can delete any. */
+export async function deletePost(postId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('circle_posts')
+    .delete()
+    .eq('id', postId)
+  return !error
+}
+
+/**
  * Toggle a reaction on a post.
  * If the user already reacted with that emoji, remove it. Otherwise add it.
  */
@@ -430,6 +455,20 @@ export async function deleteComment(commentId: string): Promise<boolean> {
   const { error } = await supabase
     .from('circle_post_comments')
     .delete()
+    .eq('id', commentId)
+  return !error
+}
+
+/**
+ * Update the body of a comment. Author-only via RLS, admins can also update.
+ * Sets edited_at so the UI can show "(edited)".
+ */
+export async function updateComment(commentId: string, body: string): Promise<boolean> {
+  const trimmed = body.trim()
+  if (!trimmed) return false
+  const { error } = await supabase
+    .from('circle_post_comments')
+    .update({ body: trimmed, edited_at: new Date().toISOString() })
     .eq('id', commentId)
   return !error
 }

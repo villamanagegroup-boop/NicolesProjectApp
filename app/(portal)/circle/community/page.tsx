@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabaseClient } from '@/lib/supabase/client'
 import { useApp } from '@/context/AppContext'
@@ -7,6 +7,8 @@ import {
   getMyCircleMember,
   getCommunityPosts,
   createPost,
+  updatePost,
+  deletePost,
   toggleReaction,
   getCurrentWeekNumber,
   uploadCircleAttachment,
@@ -37,7 +39,7 @@ const EMOJIS = ['❤️', '🔥', '✨', '👏', '💪']
 
 export default function CommunityPage() {
   const router = useRouter()
-  const { loading, isAuthed, authUser } = useApp()
+  const { loading, isAuthed, authUser, user } = useApp()
 
   const [posts, setPosts]           = useState<CirclePost[]>([])
   const [cohortId, setCohortId]     = useState<string>('')
@@ -154,6 +156,24 @@ export default function CommunityPage() {
   async function handleReaction(postId: string, emoji: string) {
     await toggleReaction(postId, emoji)
     if (cohortId) {
+      const data = await getCommunityPosts(cohortId, filter === 'all' ? undefined : filter)
+      setPosts(data)
+    }
+  }
+
+  async function handleUpdatePost(postId: string, body: string): Promise<boolean> {
+    const ok = await updatePost(postId, body)
+    if (ok && cohortId) {
+      const data = await getCommunityPosts(cohortId, filter === 'all' ? undefined : filter)
+      setPosts(data)
+    }
+    return ok
+  }
+
+  async function handleDeletePost(postId: string) {
+    if (!confirm('Delete this post? This will also remove its replies and reactions.')) return
+    const ok = await deletePost(postId)
+    if (ok && cohortId) {
       const data = await getCommunityPosts(cohortId, filter === 'all' ? undefined : filter)
       setPosts(data)
     }
@@ -300,7 +320,10 @@ export default function CommunityPage() {
             key={post.id}
             post={post}
             currentUserId={authUser?.id ?? null}
+            isAdmin={user.isAdmin}
             onReact={emoji => handleReaction(post.id, emoji)}
+            onUpdate={body => handleUpdatePost(post.id, body)}
+            onDelete={() => handleDeletePost(post.id)}
           />
         ))}
       </div>
@@ -408,20 +431,56 @@ function FilterRow({ active, onClick, dot, children }: {
 // ─── Sub-components ─────────────────────────────────────────────────────────
 
 function PostCard({
-  post, currentUserId, onReact,
+  post, currentUserId, isAdmin, onReact, onUpdate, onDelete,
 }: {
   post: CirclePost
   currentUserId: string | null
+  isAdmin: boolean
   onReact: (emoji: string) => void
+  onUpdate: (body: string) => Promise<boolean>
+  onDelete: () => void
 }) {
   const typeMeta = POST_TYPES.find(t => t.id === post.post_type)
   const isCoach = post.post_type === 'coach_note'
   const authorName = post.author?.name ?? 'Member'
+  const isOwn = !!currentUserId && post.author_id === currentUserId
+  const canManage = isOwn || isAdmin
 
   // Replies expand inline. We track count locally so the row label updates
   // as the user posts/deletes inside the thread without a full feed refetch.
   const [showThread, setShowThread] = useState(false)
   const [commentCount, setCommentCount] = useState(post.comment_count ?? 0)
+
+  // Edit state — inline textarea swap.
+  const [editing, setEditing]   = useState(false)
+  const [editBody, setEditBody] = useState(post.body)
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement | null>(null)
+
+  // Close kebab menu on outside click + ESC
+  useEffect(() => {
+    if (!menuOpen) return
+    function onDocClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
+    }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setMenuOpen(false) }
+    window.addEventListener('mousedown', onDocClick)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('mousedown', onDocClick)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [menuOpen])
+
+  async function saveEdit() {
+    const trimmed = editBody.trim()
+    if (!trimmed || savingEdit) return
+    setSavingEdit(true)
+    const ok = await onUpdate(trimmed)
+    setSavingEdit(false)
+    if (ok) setEditing(false)
+  }
 
   // Emojis the user has already reacted with — used to highlight in the picker.
   const userReacted = (post.reactions ?? []).filter(r => r.user_reacted).map(r => r.emoji)
@@ -456,6 +515,11 @@ function PostCard({
           <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
             {relativeTime(post.created_at)}
             {post.week_number ? ` · Week ${post.week_number}` : ''}
+            {post.edited_at && (
+              <span title={`Edited ${new Date(post.edited_at).toLocaleString()}`} style={{ marginLeft: 6, fontStyle: 'italic' }}>
+                · edited
+              </span>
+            )}
           </p>
         </div>
         {typeMeta && (
@@ -470,15 +534,119 @@ function PostCard({
             {typeMeta.label}
           </span>
         )}
+
+        {/* Kebab menu — only for author or admin */}
+        {canManage && !editing && (
+          <div ref={menuRef} style={{ position: 'relative' }}>
+            <button
+              type="button"
+              onClick={() => setMenuOpen(o => !o)}
+              aria-label="Post actions"
+              style={{
+                background: 'transparent', border: 'none',
+                color: 'var(--text-muted)', cursor: 'pointer',
+                padding: '4px 8px', borderRadius: 6, fontSize: 16,
+                lineHeight: 1, fontFamily: 'inherit',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--paper2)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+            >
+              ⋯
+            </button>
+            {menuOpen && (
+              <div role="menu" style={{
+                position: 'absolute', top: 'calc(100% + 4px)', right: 0,
+                zIndex: 30,
+                background: '#fff',
+                border: '1px solid var(--line-md)', borderRadius: 10,
+                boxShadow: '0 8px 24px rgba(12,12,10,0.12)',
+                minWidth: 140, padding: 4,
+              }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false)
+                    setEditBody(post.body)
+                    setEditing(true)
+                  }}
+                  style={menuItemStyle}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--paper2)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+                >
+                  ✏ Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setMenuOpen(false); onDelete() }}
+                  style={{ ...menuItemStyle, color: 'var(--red)' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(180,40,40,0.08)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+                >
+                  🗑 Delete
+                </button>
+                {!isOwn && isAdmin && (
+                  <p style={{
+                    fontSize: 10, color: 'var(--text-muted)',
+                    margin: '4px 8px 2px', fontStyle: 'italic',
+                  }}>
+                    Acting as admin
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Body */}
-      <p style={{
-        fontSize: 14, lineHeight: 1.7, color: 'var(--text-soft)',
-        whiteSpace: 'pre-wrap', margin: 0,
-      }}>
-        {post.body}
-      </p>
+      {/* Body — text or inline editor */}
+      {editing ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <textarea
+            value={editBody}
+            onChange={e => setEditBody(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void saveEdit() }
+              if (e.key === 'Escape') { setEditing(false); setEditBody(post.body) }
+            }}
+            rows={4}
+            autoFocus
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              padding: '12px 14px',
+              border: `1px solid ${ORANGE}`, borderRadius: 10,
+              fontSize: 14, lineHeight: 1.6, fontFamily: 'inherit',
+              resize: 'vertical', background: '#fff', color: 'var(--ink)',
+              outline: 'none',
+            }}
+          />
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => { setEditing(false); setEditBody(post.body) }}
+              style={ghostBtn}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => void saveEdit()}
+              disabled={savingEdit || !editBody.trim() || editBody.trim() === post.body}
+              style={{
+                ...primaryBtn,
+                background: savingEdit || !editBody.trim() || editBody.trim() === post.body ? 'var(--paper3)' : ORANGE,
+                cursor: savingEdit || !editBody.trim() || editBody.trim() === post.body ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {savingEdit ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p style={{
+          fontSize: 14, lineHeight: 1.7, color: 'var(--text-soft)',
+          whiteSpace: 'pre-wrap', margin: 0,
+        }}>
+          {post.body}
+        </p>
+      )}
 
       {/* Attachments */}
       {(post.video_url || post.audio_url || post.image_url || post.file_url) && (
@@ -591,6 +759,7 @@ function PostCard({
         <CommentThread
           postId={post.id}
           userId={currentUserId}
+          isAdmin={isAdmin}
           onCountChange={setCommentCount}
         />
       )}
@@ -676,5 +845,17 @@ const ghostBtn: React.CSSProperties = {
   padding: '8px 16px', borderRadius: 10,
   fontSize: 12, fontWeight: 600,
   cursor: 'pointer', fontFamily: 'inherit',
+}
+
+const menuItemStyle: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: 10,
+  width: '100%',
+  padding: '8px 12px', borderRadius: 6,
+  border: 'none', background: 'transparent',
+  color: 'var(--ink)',
+  fontSize: 13, fontWeight: 500,
+  cursor: 'pointer', fontFamily: 'inherit',
+  textAlign: 'left',
+  transition: 'background 0.12s',
 }
 

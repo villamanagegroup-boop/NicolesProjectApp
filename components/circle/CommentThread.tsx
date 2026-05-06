@@ -13,6 +13,7 @@ import {
   getCommentsForPost,
   createComment,
   deleteComment,
+  updateComment,
   toggleCommentReaction,
   type CircleComment,
 } from '@/lib/circle'
@@ -25,13 +26,15 @@ const QUICK_EMOJIS = ['❤️', '🔥', '✨', '👏', '💪']
 
 interface CommentThreadProps {
   postId: string
-  /** Current user's id, for "delete own" affordance. */
+  /** Current user's id, for "delete own" / "edit own" affordances. */
   userId: string | null
+  /** Admin override — admins can edit + delete any reply. */
+  isAdmin?: boolean
   /** Called whenever the comment count changes (for the post-card label). */
   onCountChange?: (count: number) => void
 }
 
-export default function CommentThread({ postId, userId, onCountChange }: CommentThreadProps) {
+export default function CommentThread({ postId, userId, isAdmin = false, onCountChange }: CommentThreadProps) {
   const [comments, setComments] = useState<CircleComment[]>([])
   const [loading, setLoading]   = useState(true)
   const [body, setBody]         = useState('')
@@ -81,6 +84,12 @@ export default function CommentThread({ postId, userId, onCountChange }: Comment
     if (ok) await refresh()
   }
 
+  async function onUpdate(commentId: string, body: string): Promise<boolean> {
+    const ok = await updateComment(commentId, body)
+    if (ok) await refresh()
+    return ok
+  }
+
   return (
     <div style={{
       marginTop: 14, paddingTop: 14,
@@ -100,8 +109,10 @@ export default function CommentThread({ postId, userId, onCountChange }: Comment
             key={c.id}
             comment={c}
             isOwn={!!userId && c.author_id === userId}
+            isAdmin={isAdmin}
             onReact={emoji => onReact(c.id, emoji)}
             onDelete={() => onDelete(c.id)}
+            onUpdate={body => onUpdate(c.id, body)}
           />
         ))
       )}
@@ -191,19 +202,35 @@ export default function CommentThread({ postId, userId, onCountChange }: Comment
 }
 
 function CommentRow({
-  comment, isOwn, onReact, onDelete,
+  comment, isOwn, isAdmin, onReact, onDelete, onUpdate,
 }: {
   comment: CircleComment
   isOwn: boolean
+  isAdmin: boolean
   onReact: (emoji: string) => void
   onDelete: () => void
+  onUpdate: (body: string) => Promise<boolean>
 }) {
   const authorName = comment.author?.name ?? 'Member'
+  const canManage  = isOwn || isAdmin
+  const [editing, setEditing]       = useState(false)
+  const [editBody, setEditBody]     = useState(comment.body)
+  const [savingEdit, setSavingEdit] = useState(false)
+
   // The full set of emojis the user has already reacted with on this comment,
   // so the popover can highlight them too.
   const userReacted = (comment.reactions ?? [])
     .filter(r => r.user_reacted)
     .map(r => r.emoji)
+
+  async function saveEdit() {
+    const trimmed = editBody.trim()
+    if (!trimmed || savingEdit) return
+    setSavingEdit(true)
+    const ok = await onUpdate(trimmed)
+    setSavingEdit(false)
+    if (ok) setEditing(false)
+  }
 
   return (
     <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
@@ -223,41 +250,98 @@ function CommentRow({
           </span>
           <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
             {relativeTime(comment.created_at)}
+            {comment.edited_at && (
+              <span title={`Edited ${new Date(comment.edited_at).toLocaleString()}`} style={{ marginLeft: 4, fontStyle: 'italic' }}>
+                · edited
+              </span>
+            )}
           </span>
-          {isOwn && (
-            <button
-              onClick={onDelete}
-              style={{
-                marginLeft: 'auto', background: 'transparent', border: 'none',
-                color: 'var(--text-muted)', fontSize: 10, cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--red)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)' }}
-            >
-              Delete
-            </button>
+          {canManage && !editing && (
+            <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+              <button
+                onClick={() => { setEditBody(comment.body); setEditing(true) }}
+                style={rowActionBtn}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = ORANGE }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)' }}
+              >
+                Edit
+              </button>
+              <button
+                onClick={onDelete}
+                style={rowActionBtn}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--red)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)' }}
+              >
+                Delete
+              </button>
+            </span>
           )}
         </div>
-        {comment.body && (
-          <p style={{
-            fontSize: 13, lineHeight: 1.6, color: 'var(--text-soft)',
-            margin: '4px 0 8px', whiteSpace: 'pre-wrap',
-          }}>
-            {comment.body}
-          </p>
-        )}
-        {comment.image_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={comment.image_url}
-            alt=""
-            style={{
-              display: 'block', maxWidth: 320, maxHeight: 240,
-              borderRadius: 10, margin: comment.body ? '4px 0 8px' : '4px 0 8px',
-              border: '1px solid var(--line)',
-            }}
-          />
+        {editing ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, margin: '6px 0 8px' }}>
+            <textarea
+              value={editBody}
+              onChange={e => setEditBody(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void saveEdit() }
+                if (e.key === 'Escape') { setEditing(false); setEditBody(comment.body) }
+              }}
+              rows={2}
+              autoFocus
+              style={{
+                width: '100%', boxSizing: 'border-box',
+                background: '#fff',
+                border: `1px solid ${ORANGE}`,
+                borderRadius: 8, padding: '8px 10px',
+                fontSize: 13, lineHeight: 1.6,
+                fontFamily: 'inherit', color: 'var(--ink)',
+                resize: 'vertical', outline: 'none',
+              }}
+            />
+            <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => { setEditing(false); setEditBody(comment.body) }}
+                style={smallGhostBtn}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => void saveEdit()}
+                disabled={savingEdit || !editBody.trim() || editBody.trim() === comment.body}
+                style={{
+                  ...smallPrimaryBtn,
+                  background: savingEdit || !editBody.trim() || editBody.trim() === comment.body ? 'var(--paper3)' : ORANGE,
+                  color:      savingEdit || !editBody.trim() || editBody.trim() === comment.body ? 'var(--text-muted)' : '#fff',
+                  cursor:     savingEdit || !editBody.trim() || editBody.trim() === comment.body ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {savingEdit ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {comment.body && (
+              <p style={{
+                fontSize: 13, lineHeight: 1.6, color: 'var(--text-soft)',
+                margin: '4px 0 8px', whiteSpace: 'pre-wrap',
+              }}>
+                {comment.body}
+              </p>
+            )}
+            {comment.image_url && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={comment.image_url}
+                alt=""
+                style={{
+                  display: 'block', maxWidth: 320, maxHeight: 240,
+                  borderRadius: 10, margin: comment.body ? '4px 0 8px' : '4px 0 8px',
+                  border: '1px solid var(--line)',
+                }}
+              />
+            )}
+          </>
         )}
         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
           {QUICK_EMOJIS.map(e => {
@@ -329,6 +413,28 @@ function relativeTime(iso: string): string {
   if (h < 24) return `${h}h ago`
   if (d < 7)  return `${d}d ago`
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+const rowActionBtn: React.CSSProperties = {
+  background: 'transparent', border: 'none',
+  color: 'var(--text-muted)', fontSize: 10, cursor: 'pointer',
+  fontFamily: 'inherit', padding: 0,
+  transition: 'color 0.12s',
+}
+
+const smallGhostBtn: React.CSSProperties = {
+  background: '#fff', border: '1px solid var(--line-md)',
+  color: 'var(--text-soft)',
+  padding: '5px 12px', borderRadius: 7,
+  fontSize: 11, fontWeight: 600,
+  cursor: 'pointer', fontFamily: 'inherit',
+}
+
+const smallPrimaryBtn: React.CSSProperties = {
+  background: '#C97D3A', color: '#fff',
+  border: 'none', borderRadius: 7,
+  padding: '5px 14px', fontSize: 11, fontWeight: 600,
+  cursor: 'pointer', fontFamily: 'inherit',
 }
 
 // Keep the export so callers can import the curated set if they want to
