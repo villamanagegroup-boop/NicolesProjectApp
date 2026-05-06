@@ -16,6 +16,13 @@ export interface User {
   // Path A only: when they bought Daily Cards as an add-on. Null = no add-on yet.
   // This date becomes Cards Day 1 for Path A add-on users.
   cardsAddOnAt: Date | null
+  // Hard cutoff when the add-on flips into upgrade-prompt mode. Null = no expiry
+  // (legacy add-on or admin-marked-as-paid). Driven by Day-7 unlock + admin grants.
+  cardsAddOnExpiresAt: Date | null
+  // How the add-on was granted: 'seal_day7' | 'stripe' | 'manual' (or null = legacy).
+  cardsAddOnSource: 'seal_day7' | 'stripe' | 'manual' | null
+  // First time the user sealed Day 7 on their own archetype path.
+  sealCompletedAt: Date | null
   hasSeenWelcome: boolean
 }
 

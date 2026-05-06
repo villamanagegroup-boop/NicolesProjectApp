@@ -1,7 +1,5 @@
 'use client'
 
-'use client'
-
 import Link from 'next/link'
 import PathTile from '@/components/result/PathTile'
 import ComparisonChart from '@/components/result/ComparisonChart'
@@ -35,42 +33,45 @@ export default function QuizPathsPage() {
         </Link>
       </div>
 
-      <div style={{ maxWidth: '1020px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
 
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '52px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
           <p style={{
             fontSize: '10px',
-            letterSpacing: '2px',
+            letterSpacing: '0.18em',
             textTransform: 'uppercase',
             color: 'var(--green)',
             margin: '0 0 16px',
-            fontWeight: 500,
+            fontWeight: 600,
           }}>
-            Your Path
+            ✦ Pick your path
           </p>
           <h1
             className="paths-heading"
             style={{
               fontFamily: 'var(--font-display)',
-              fontSize: '44px',
+              fontSize: '48px',
               fontWeight: 300,
               color: 'var(--ink)',
-              margin: '0 0 16px',
-              lineHeight: 1.1,
+              margin: '0 0 18px',
+              lineHeight: 1.05,
+              letterSpacing: '-0.02em',
             }}
           >
-            Three ways to begin.
+            Three ways in.
+            <br />
+            <em style={{ color: 'var(--gold)', fontStyle: 'italic' }}>One that&apos;s yours.</em>
           </h1>
           <p style={{
             fontSize: '15px',
             color: 'var(--text-soft)',
-            margin: 0,
+            margin: '0 auto',
             lineHeight: 1.7,
+            maxWidth: 540,
           }}>
-            Every path is built around your archetype.
-            <br />
-            Choose the one that meets you where you are.
+            Every path is built around your archetype. Pick the one that meets you where you are —
+            you can always upgrade later.
           </p>
         </div>
 
@@ -79,10 +80,10 @@ export default function QuizPathsPage() {
           className="paths-grid"
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1.08fr 1fr',
-            gap: '20px',
-            alignItems: 'start',
-            marginBottom: '44px',
+            gridTemplateColumns: '1fr 1.1fr 1fr',
+            gap: '22px',
+            alignItems: 'stretch',
+            marginBottom: '64px',
           }}
         >
           {PATH_ORDER.map((id) => {
@@ -96,7 +97,10 @@ export default function QuizPathsPage() {
 
         {/* Footer */}
         <div style={{ textAlign: 'center' }}>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 12px' }}>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 10px' }}>
+            🔒 Secure checkout · Stripe · Cancel anytime on monthly plans
+          </p>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 40px' }}>
             Not ready yet?{' '}
             <a
               href="mailto:hello@clarity.com"
@@ -106,9 +110,6 @@ export default function QuizPathsPage() {
               Join the waitlist →
             </a>
           </p>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 40px' }}>
-            🔒 Secure checkout via Stripe
-          </p>
         </div>
       </div>
 
@@ -117,15 +118,14 @@ export default function QuizPathsPage() {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        @media (max-width: 900px) {
+        @media (max-width: 960px) {
           .paths-grid {
             grid-template-columns: 1fr !important;
             max-width: 480px;
             margin-left: auto;
             margin-right: auto;
           }
-          .paths-heading { font-size: 32px !important; }
-          .path-tile { padding: 28px 24px !important; }
+          .paths-heading { font-size: 36px !important; }
         }
         @media (max-width: 900px) {
           div[style*="padding: 64px 40px"] {

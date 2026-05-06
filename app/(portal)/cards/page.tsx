@@ -57,8 +57,102 @@ export default function CardsHomePage() {
     placeholderSlots.push(Math.min(365, targetDay))
   }
 
+  // 30-day window expired — fully lock the home view behind the upgrade
+  // prompt. Same component pattern as /card so users who land on either
+  // surface see the same conversion moment.
+  if (cardsAccess.state === 'expired-upgrade') {
+    const monthlyHref = process.env.NEXT_PUBLIC_STRIPE_CARDS_MONTHLY ?? '/upgrade'
+    const yearlyHref  = process.env.NEXT_PUBLIC_STRIPE_CARDS_YEARLY  ?? '/upgrade'
+    return (
+      <div style={{ padding: '60px 20px', maxWidth: 560, margin: '0 auto', textAlign: 'center' }}>
+        <p style={{
+          fontSize: 10, fontWeight: 700, letterSpacing: '0.14em',
+          textTransform: 'uppercase', color: CARDS_GREEN,
+          fontFamily: 'var(--font-body)', margin: '0 0 14px',
+        }}>
+          ✦ Your 30-day window has ended
+        </p>
+        <h1 style={{
+          fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300,
+          color: 'var(--ink)', margin: '0 0 12px',
+          lineHeight: 1.15, letterSpacing: '-0.01em',
+        }}>
+          Keep the practice going.
+        </h1>
+        <p style={{ fontSize: 14, color: 'var(--text-soft)', margin: '0 auto 28px', lineHeight: 1.7, maxWidth: 460 }}>
+          You&apos;ve been doing the work for 30 days. Pick a plan to keep your daily card,
+          journal, win tracker, and streak running without missing a beat.
+        </p>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
+          <a href={monthlyHref} target="_blank" rel="noopener noreferrer" style={{
+            display: 'inline-block', padding: '13px 24px',
+            background: 'white', border: `1.5px solid ${CARDS_GREEN}`, color: CARDS_GREEN,
+            borderRadius: 9, fontSize: 14, fontWeight: 600, textDecoration: 'none',
+            fontFamily: 'var(--font-body)', minWidth: 180,
+          }}>
+            $9/month →
+          </a>
+          <a href={yearlyHref} target="_blank" rel="noopener noreferrer" style={{
+            display: 'inline-block', padding: '13px 24px',
+            background: CARDS_GREEN, color: 'white',
+            borderRadius: 9, fontSize: 14, fontWeight: 600, textDecoration: 'none',
+            fontFamily: 'var(--font-body)', minWidth: 180,
+          }}>
+            $67/year · Save 38% →
+          </a>
+        </div>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0, fontFamily: 'var(--font-body)' }}>
+          Cancel anytime · Secure checkout via Stripe
+        </p>
+      </div>
+    )
+  }
+
+  // Show a soft countdown banner during the last 7 days of the window so
+  // users aren't surprised when access ends. Only renders for users with
+  // the seal_day7 add-on; paid Path B subs / admin grants have no expiry.
+  const showExpiryBanner =
+    cardsAccess.state === 'open' &&
+    typeof cardsAccess.daysRemaining === 'number' &&
+    cardsAccess.daysRemaining <= 7
+
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+
+      {showExpiryBanner && (
+        <div style={{
+          background: '#fffdf7',
+          border: `1px solid ${CARDS_GREEN}30`,
+          borderLeft: `3px solid ${CARDS_GREEN}`,
+          borderRadius: 8,
+          padding: '12px 18px',
+          marginBottom: 24,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 14,
+          flexWrap: 'wrap',
+        }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: CARDS_GREEN, margin: '0 0 3px', fontFamily: 'var(--font-body)' }}>
+              {cardsAccess.daysRemaining === 0
+                ? 'Last day of your 30-day window'
+                : `${cardsAccess.daysRemaining} ${cardsAccess.daysRemaining === 1 ? 'day' : 'days'} left in your window`}
+            </p>
+            <p style={{ fontSize: 13, color: 'var(--text-soft)', margin: 0, lineHeight: 1.5, fontFamily: 'var(--font-body)' }}>
+              Pick a plan now and your streak keeps running — no break.
+            </p>
+          </div>
+          <Link href="/upgrade" style={{
+            padding: '8px 14px',
+            background: CARDS_GREEN, color: 'white',
+            borderRadius: 7, fontSize: 12, fontWeight: 600,
+            textDecoration: 'none', whiteSpace: 'nowrap',
+            fontFamily: 'var(--font-body)',
+          }}>
+            See plans →
+          </Link>
+        </div>
+      )}
 
       {/* Hero */}
       <div style={{ marginBottom: 28 }}>

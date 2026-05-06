@@ -141,9 +141,11 @@ export default function WelcomeTheCirclePage() {
           </p>
         </div>
 
-        {/* CTA */}
+        {/* CTA — Path C still needs an intake assessment before they can
+            enter the cohort, so this links into /onboarding rather than
+            straight to /circle. The intake form lives there. */}
         <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
-          <Link href="/signup?path=C" style={{ textDecoration: 'none' }}>
+          <Link href="/onboarding" style={{ textDecoration: 'none' }}>
             <button style={{
               width: '100%',
               background: INK, color: '#fff',
@@ -152,12 +154,12 @@ export default function WelcomeTheCirclePage() {
               border: 'none', cursor: 'pointer',
               fontFamily: 'inherit', letterSpacing: '0.01em',
             }}>
-              Create your account &amp; enter The Circle →
+              Start your Circle intake →
             </button>
           </Link>
           <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-            Already have an account?{' '}
-            <Link href="/login" style={{ color: INK, textDecoration: 'underline', opacity: 0.7 }}>Log in →</Link>
+            Or jump to your{' '}
+            <Link href="/dashboard" style={{ color: INK, textDecoration: 'underline', opacity: 0.7 }}>dashboard →</Link>
           </p>
         </div>
 

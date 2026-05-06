@@ -114,9 +114,9 @@ export default function WelcomeCardsPage() {
           </p>
         </div>
 
-        {/* CTA */}
+        {/* CTA — into the portal */}
         <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
-          <Link href="/signup?path=B" style={{ textDecoration: 'none' }}>
+          <Link href="/cards" style={{ textDecoration: 'none' }}>
             <button style={{
               width: '100%',
               background: GREEN, color: '#fff',
@@ -125,12 +125,12 @@ export default function WelcomeCardsPage() {
               border: 'none', cursor: 'pointer',
               fontFamily: 'inherit', letterSpacing: '0.01em',
             }}>
-              Create your account &amp; access your cards →
+              Open today&apos;s card →
             </button>
           </Link>
           <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-            Already have an account?{' '}
-            <Link href="/login" style={{ color: GREEN, textDecoration: 'underline' }}>Log in →</Link>
+            Or jump to your{' '}
+            <Link href="/dashboard" style={{ color: GREEN, textDecoration: 'underline' }}>dashboard →</Link>
           </p>
         </div>
 

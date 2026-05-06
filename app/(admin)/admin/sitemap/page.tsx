@@ -91,7 +91,7 @@ const SECTIONS: Section[] = [
       { path: '/quiz/result',  access: 'public', title: 'Quiz result',   desc: 'Shows the archetype reveal.' },
       { path: '/quiz/paths',   access: 'public', title: 'Quiz paths',    desc: 'Three program comparison after quiz.' },
       { path: '/login',        access: 'public', title: 'Log in',        desc: 'Email + password sign in.' },
-      { path: '/signup',       access: 'public', title: 'Sign up',       desc: 'Quiz-gated account creation.' },
+      { path: '/signup?path=A', access: 'public', title: 'Sign up',       desc: 'Post-payment account creation. Requires ?path=A|B|C to render — Stripe success URLs hand the path back. Admins can preview the form here even when signed in.' },
       { path: '/onboarding',   access: 'public', title: 'Onboarding',    desc: 'Path C cohort enrollment intake.' },
     ],
   },

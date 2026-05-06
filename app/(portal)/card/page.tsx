@@ -85,6 +85,58 @@ function CardPageInner() {
     setIsEditingReflection(false)
   }, [displayCard?.id])
 
+  // 30-day Cards window has run out. Fully locks Cards behind a two-button
+  // upgrade prompt — same pattern lives in /cards. Source = 'seal_day7'
+  // means they got here via finishing the 7-day program; admins editing the
+  // expiry manually still hit this branch.
+  if (cardsAccess.state === 'expired-upgrade') {
+    const monthlyHref = process.env.NEXT_PUBLIC_STRIPE_CARDS_MONTHLY ?? '/upgrade'
+    const yearlyHref  = process.env.NEXT_PUBLIC_STRIPE_CARDS_YEARLY  ?? '/upgrade'
+    return (
+      <div style={{ padding: '60px 20px', maxWidth: 560, margin: '0 auto', textAlign: 'center' }}>
+        <p style={{
+          fontSize: 10, fontWeight: 700, letterSpacing: '0.14em',
+          textTransform: 'uppercase', color: '#1f5c3a',
+          fontFamily: 'var(--font-body)', margin: '0 0 14px',
+        }}>
+          ✦ Your 30-day window has ended
+        </p>
+        <h1 style={{
+          fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300,
+          color: 'var(--ink)', margin: '0 0 12px',
+          lineHeight: 1.15, letterSpacing: '-0.01em',
+        }}>
+          Keep the practice going.
+        </h1>
+        <p style={{ fontSize: 14, color: 'var(--text-soft)', margin: '0 auto 28px', lineHeight: 1.7, maxWidth: 460 }}>
+          You&apos;ve been doing the work for 30 days. Pick a plan to keep your daily card,
+          journal, win tracker, and streak running without missing a beat.
+        </p>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
+          <a href={monthlyHref} target="_blank" rel="noopener noreferrer" style={{
+            display: 'inline-block', padding: '13px 24px',
+            background: 'white', border: '1.5px solid #1f5c3a', color: '#1f5c3a',
+            borderRadius: 9, fontSize: 14, fontWeight: 600, textDecoration: 'none',
+            fontFamily: 'var(--font-body)', minWidth: 180,
+          }}>
+            $9/month →
+          </a>
+          <a href={yearlyHref} target="_blank" rel="noopener noreferrer" style={{
+            display: 'inline-block', padding: '13px 24px',
+            background: '#1f5c3a', color: 'white',
+            borderRadius: 9, fontSize: 14, fontWeight: 600, textDecoration: 'none',
+            fontFamily: 'var(--font-body)', minWidth: 180,
+          }}>
+            $67/year · Save 38% →
+          </a>
+        </div>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0, fontFamily: 'var(--font-body)' }}>
+          Cancel anytime · Secure checkout via Stripe
+        </p>
+      </div>
+    )
+  }
+
   // Locked — cards don't open for Path A users until program Day 6.
   if (cardsAccess.state === 'locked-not-yet') {
     const daysLeft = (cardsAccess.unlocksOnDay ?? 6) - dayNumber

@@ -114,9 +114,9 @@ export default function WelcomeSealTheLeak() {
           </p>
         </div>
 
-        {/* CTA */}
+        {/* CTA — into the portal */}
         <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
-          <Link href="/signup?path=A" style={{ textDecoration: 'none' }}>
+          <Link href="/program" style={{ textDecoration: 'none' }}>
             <button style={{
               width: '100%',
               background: GOLD, color: '#fff',
@@ -125,12 +125,12 @@ export default function WelcomeSealTheLeak() {
               border: 'none', cursor: 'pointer',
               fontFamily: 'inherit', letterSpacing: '0.01em',
             }}>
-              Create your account &amp; start Day 1 →
+              Start Day 1 →
             </button>
           </Link>
           <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-            Already have an account?{' '}
-            <Link href="/login" style={{ color: GOLD, textDecoration: 'underline' }}>Log in →</Link>
+            Or jump to your{' '}
+            <Link href="/dashboard" style={{ color: GOLD, textDecoration: 'underline' }}>dashboard →</Link>
           </p>
         </div>
 

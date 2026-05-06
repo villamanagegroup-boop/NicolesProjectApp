@@ -187,7 +187,7 @@ function PromptItems({
 }
 
 function TodaysSessionInner() {
-  const { user, dayNumber, streakCount } = useApp()
+  const { user, dayNumber, streakCount, refreshUser } = useApp()
   const searchParams = useSearchParams()
 
   // The user is always on their own archetype track. The cross-path preview
@@ -206,6 +206,12 @@ function TodaysSessionInner() {
   const [viewingDay, setViewingDay] = useState(initialDay)
   const [sealedDays, setSealedDays] = useState<Set<number>>(new Set())
   const [celebratingDay, setCelebratingDay] = useState(false)
+  const [unlockResult, setUnlockResult] = useState<
+    | { granted: true; expiresAt: string }
+    | { granted: false }
+    | null
+  >(null)
+  const [showUnlockModal, setShowUnlockModal] = useState(false)
 
   const day = route.days[viewingDay - 1]
   if (!day) return null
@@ -217,10 +223,35 @@ function TodaysSessionInner() {
   const isPreview = isFuture
   const isSealed  = sealedDays.has(viewingDay)
 
-  function handleSeal() {
+  async function handleSeal() {
     setSealedDays(prev => new Set(prev).add(viewingDay))
     setCelebratingDay(true)
     setTimeout(() => setCelebratingDay(false), 1400)
+
+    // Day 7 on the user's own path triggers the server-side completion record.
+    // For Path A, this also grants the 30-day Cards window. Idempotent — fine
+    // to call again on a re-seal. Fire-and-forget on errors (the local seal
+    // animation already happened).
+    if (isDay7 && !isFuture) {
+      try {
+        const res = await fetch('/api/program/seal-day-7', { method: 'POST' })
+        if (res.ok) {
+          const data = await res.json() as { granted: boolean; expiresAt: string | null }
+          if (data.granted && data.expiresAt) {
+            setUnlockResult({ granted: true, expiresAt: data.expiresAt })
+            // Open the celebratory modal a beat after the seal animation
+            // settles — gives the seal reveal room to breathe before we
+            // hijack the screen.
+            setTimeout(() => setShowUnlockModal(true), 700)
+          } else {
+            setUnlockResult({ granted: false })
+          }
+          await refreshUser()
+        }
+      } catch (err) {
+        console.error('seal-day-7 failed', err)
+      }
+    }
   }
 
   const sealContent = (
@@ -398,6 +429,49 @@ function TodaysSessionInner() {
           </div>
         </div>
       )}
+
+      {/* ── 30-day Cards unlock pill (persistent reminder) ──
+          Quiet inline reminder for return visits. The big celebratory popup
+          fires from handleSeal() — this strip is what keeps the unlock
+          discoverable after the modal is dismissed. Hidden once the window
+          expires; the upgrade prompt then lives in /cards. */}
+      {isDay7 && (isPast || isSealed) && user.selectedPath === 'A' && (() => {
+        const unlocked = user.cardsAddOnSource === 'seal_day7' && user.cardsAddOnExpiresAt && user.cardsAddOnExpiresAt.getTime() > Date.now()
+          ? user.cardsAddOnExpiresAt.toISOString()
+          : null
+        if (!unlocked) return null
+        const daysLeft = Math.max(0, Math.ceil((new Date(unlocked).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+        return (
+          <div style={{
+            background: `${route.color}08`,
+            border: `1px solid ${route.color}25`,
+            borderRadius: '999px',
+            padding: '8px 16px 8px 14px',
+            marginBottom: '20px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '10px',
+            fontSize: '12px',
+            fontFamily: 'var(--font-body)',
+          }}>
+            <span style={{ fontSize: '14px' }}>✦</span>
+            <span style={{ color: 'var(--ink)', fontWeight: 500 }}>
+              <strong style={{ color: route.color, fontWeight: 700 }}>{daysLeft} {daysLeft === 1 ? 'day' : 'days'}</strong> of Alignment unlocked
+            </span>
+            <Link
+              href="/cards"
+              style={{
+                color: route.color,
+                fontWeight: 600,
+                textDecoration: 'none',
+                marginLeft: '4px',
+              }}
+            >
+              Open cards →
+            </Link>
+          </div>
+        )
+      })()}
 
       {/* ── Two-column main layout ── */}
       <div className="two-col-grid" style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '20px', alignItems: 'start' }}>
@@ -588,6 +662,15 @@ function TodaysSessionInner() {
       {/* ── Recorded section ── */}
       <RecordedSection routeId={routeId} route={route} currentDay={currentDay} />
 
+      {/* ── Unlock modal — fires when Day 7 seal grants the 30-day window ── */}
+      {showUnlockModal && unlockResult?.granted && (
+        <UnlockModal
+          accent={route.color}
+          expiresAt={unlockResult.expiresAt}
+          onClose={() => setShowUnlockModal(false)}
+        />
+      )}
+
       <style>{`
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(8px); }
@@ -597,6 +680,20 @@ function TodaysSessionInner() {
           from { transform: scale(0.93); opacity: 0; }
           to   { transform: scale(1);    opacity: 1; }
         }
+        @keyframes unlockBackdrop {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes unlockPop {
+          0%   { transform: scale(0.8) translateY(20px); opacity: 0; }
+          60%  { transform: scale(1.04) translateY(-4px); opacity: 1; }
+          100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        @keyframes confettiFloat {
+          0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+          15%  { opacity: 1; }
+          100% { transform: translateY(-180px) rotate(720deg); opacity: 0; }
+        }
         @media (max-width: 768px) {
           .dots-fade { display: none; }
         }
@@ -604,6 +701,224 @@ function TodaysSessionInner() {
           .dots-fade { display: none; }
         }
       `}</style>
+    </div>
+  )
+}
+
+// ── Unlock modal ──────────────────────────────────────────────────────────────
+// Full-screen celebratory popup that fires the moment a Path A user seals
+// Day 7 and the server grants the 30-day Cards window. One-shot per seal —
+// dismiss closes it; the page-level callout below the hero remains as a
+// quieter persistent reminder for return visits.
+function UnlockModal({
+  accent, expiresAt, onClose,
+}: {
+  accent: string
+  expiresAt: string
+  onClose: () => void
+}) {
+  const daysLeft = Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+  const expiryDate = new Date(expiresAt).toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric',
+  })
+
+  // ESC to close
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  // Lock body scroll while open
+  useEffect(() => {
+    const original = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = original }
+  }, [])
+
+  // Confetti — 16 small dots, randomized
+  const confetti = Array.from({ length: 16 }, (_, i) => ({
+    left: `${(i / 16) * 100 + (Math.random() * 5)}%`,
+    delay: Math.random() * 0.4,
+    duration: 1.4 + Math.random() * 1.2,
+    size: 6 + Math.floor(Math.random() * 6),
+    color: i % 3 === 0 ? accent : i % 3 === 1 ? '#1f5c3a' : '#b8922a',
+  }))
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="unlock-modal-title"
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 1000,
+        background: 'rgba(12,12,10,0.62)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 20,
+        animation: 'unlockBackdrop 0.25s ease forwards',
+      }}
+    >
+      {/* Confetti layer behind the card */}
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+        {confetti.map((c, i) => (
+          <span key={i} style={{
+            position: 'absolute',
+            bottom: '40%',
+            left: c.left,
+            width: c.size, height: c.size,
+            borderRadius: '50%',
+            background: c.color,
+            animation: `confettiFloat ${c.duration}s ease-out ${c.delay}s forwards`,
+          }} />
+        ))}
+      </div>
+
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          position: 'relative',
+          width: '100%', maxWidth: 480,
+          background: '#fffdf7',
+          borderRadius: 20,
+          overflow: 'hidden',
+          boxShadow: `0 24px 80px rgba(12,12,10,0.4), 0 0 0 1px ${accent}30`,
+          animation: 'unlockPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+          fontFamily: 'var(--font-body)',
+        }}
+      >
+        {/* Top gradient header with seal */}
+        <div style={{
+          background: `linear-gradient(135deg, ${accent} 0%, ${accent}cc 100%)`,
+          padding: '36px 32px 28px',
+          textAlign: 'center',
+          position: 'relative',
+          color: 'white',
+        }}>
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            style={{
+              position: 'absolute', top: 14, right: 14,
+              width: 32, height: 32, borderRadius: '50%',
+              border: 'none',
+              background: 'rgba(255,255,255,0.18)',
+              color: 'white',
+              fontSize: 16, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.3)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.18)' }}
+          >
+            ✕
+          </button>
+
+          <div style={{
+            width: 64, height: 64, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.18)',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 32,
+            margin: '0 auto 16px',
+          }}>
+            ✦
+          </div>
+          <p style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '0.18em',
+            textTransform: 'uppercase', color: 'rgba(255,255,255,0.85)',
+            margin: '0 0 8px',
+          }}>
+            Day 7 sealed
+          </p>
+          <h2 id="unlock-modal-title" style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 28, fontWeight: 300, fontStyle: 'italic',
+            margin: 0, lineHeight: 1.2, letterSpacing: '-0.01em',
+          }}>
+            30 days of Alignment, unlocked.
+          </h2>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: '24px 32px 28px' }}>
+          <p style={{
+            fontSize: 14, color: 'var(--text-soft)',
+            lineHeight: 1.65, margin: '0 0 18px', textAlign: 'center',
+          }}>
+            You did the work. Starting now, you have <strong style={{ color: 'var(--ink)' }}>{daysLeft} {daysLeft === 1 ? 'day' : 'days'}</strong> of full access to the 365 Alignment app — daily cards, journal, win tracker, and the vault.
+          </p>
+
+          {/* Expiry pill */}
+          <div style={{
+            background: `${accent}10`,
+            border: `1px solid ${accent}25`,
+            borderRadius: 10,
+            padding: '12px 16px',
+            marginBottom: 20,
+            display: 'flex', alignItems: 'center', gap: 10,
+            flexWrap: 'wrap', justifyContent: 'center',
+          }}>
+            <span style={{ fontSize: 16 }}>📅</span>
+            <span style={{
+              fontSize: 12, fontWeight: 600, color: accent,
+              letterSpacing: '0.02em',
+            }}>
+              Window ends {expiryDate}
+            </span>
+          </div>
+
+          {/* CTAs */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <Link
+              href="/cards"
+              onClick={onClose}
+              style={{
+                display: 'block', textAlign: 'center',
+                background: accent, color: 'white',
+                padding: '14px 20px',
+                borderRadius: 10,
+                fontSize: 14, fontWeight: 600,
+                textDecoration: 'none',
+                letterSpacing: '0.02em',
+                boxShadow: `0 4px 14px ${accent}40`,
+                transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-1px)';
+                (e.currentTarget as HTMLAnchorElement).style.boxShadow = `0 6px 18px ${accent}55`;
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(0)';
+                (e.currentTarget as HTMLAnchorElement).style.boxShadow = `0 4px 14px ${accent}40`;
+              }}
+            >
+              Open today&apos;s card →
+            </Link>
+            <button
+              onClick={onClose}
+              style={{
+                background: 'transparent', border: 'none',
+                color: 'var(--text-muted)', fontSize: 12, fontWeight: 500,
+                padding: '8px', cursor: 'pointer',
+                fontFamily: 'var(--font-body)',
+              }}
+            >
+              I&apos;ll explore later
+            </button>
+          </div>
+
+          <p style={{
+            fontSize: 11, color: 'var(--text-muted)',
+            textAlign: 'center', margin: '14px 0 0',
+            lineHeight: 1.5,
+          }}>
+            We&apos;ll remind you before your window ends so you don&apos;t lose your streak.
+          </p>
+        </div>
+      </div>
     </div>
   )
 }

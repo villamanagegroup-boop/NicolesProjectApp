@@ -3,14 +3,10 @@ import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 
-const STRIPE_PATH_A = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK ?? '#'
-const STRIPE_PATH_B = process.env.NEXT_PUBLIC_STRIPE_PATH_B_LINK ?? '#'
-const STRIPE_PATH_C = process.env.NEXT_PUBLIC_STRIPE_PATH_C_LINK ?? '#'
-
 const PATH_LABELS: Record<string, string> = {
-  A: 'Fix This Now — Seal the Leak Program ($27)',
-  B: 'Stay Aligned Daily — Daily Clarity App ($12/mo)',
-  C: 'Go Deeper With Me — Coaching Experience (Premium)',
+  A: 'Seal the Leak — 7-day archetype reset ($37)',
+  B: '365 Days of Alignment — Daily cards ($9/mo)',
+  C: 'The Circle — 12-week coaching ($497)',
 }
 
 function SignupForm() {
@@ -18,7 +14,6 @@ function SignupForm() {
   const router = useRouter()
   const rawPath = searchParams.get('path')
   const path = (rawPath === 'A' || rawPath === 'B' || rawPath === 'C' ? rawPath : null) as 'A' | 'B' | 'C' | null
-  const stripeLink = path === 'B' ? STRIPE_PATH_B : path === 'C' ? STRIPE_PATH_C : STRIPE_PATH_A
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -28,27 +23,51 @@ function SignupForm() {
   const [submitting, setSubmitting] = useState(false)
   const [ready, setReady] = useState(false)
 
-  // Guard: must have completed the quiz AND chosen a path before signing up.
-  // Also pre-fills name/email captured during the quiz lead step.
+  const [isAdminPreview, setIsAdminPreview] = useState(false)
+
+  // Guard: this page is the post-Stripe landing for new accounts. The only
+  // hard requirement is `?path=A|B|C` so we know which welcome to send them
+  // to next. Quiz-result is *prefilled* from sessionStorage when present, but
+  // not required — users coming back from Stripe in a fresh tab still get in.
+  //
+  // Authed visitors are bounced to the dashboard, EXCEPT admins — admins can
+  // preview the form (linked from /admin/sitemap) without losing their
+  // session. The form submit is disabled in that mode.
   useEffect(() => {
-    const quizResult = sessionStorage.getItem('clarity_quiz_result')
-    if (!quizResult) {
-      router.replace('/quiz')
-      return
-    }
-    if (!path) {
-      router.replace('/quiz/paths')
-      return
-    }
-    const savedName = sessionStorage.getItem('clarity_lead_name') ?? ''
-    const savedEmail = sessionStorage.getItem('clarity_lead_email') ?? ''
-    if (savedName) setName(savedName)
-    if (savedEmail) setEmail(savedEmail)
-    setReady(true)
+    (async () => {
+      const { supabaseClient } = await import('@/lib/supabase/client')
+      const { data: { user: authed } } = await supabaseClient.auth.getUser()
+      if (authed) {
+        const { data: row } = await supabaseClient
+          .from('users')
+          .select('is_admin')
+          .eq('id', authed.id)
+          .maybeSingle()
+        if (row?.is_admin) {
+          setIsAdminPreview(true)
+        } else {
+          router.replace('/dashboard')
+          return
+        }
+      }
+      if (!path) {
+        router.replace('/quiz/paths')
+        return
+      }
+      const savedName  = sessionStorage.getItem('clarity_lead_name')  ?? ''
+      const savedEmail = sessionStorage.getItem('clarity_lead_email') ?? ''
+      if (savedName)  setName(savedName)
+      if (savedEmail) setEmail(savedEmail)
+      setReady(true)
+    })()
   }, [router, path])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    if (isAdminPreview) {
+      setError('Admin preview mode — submit is disabled to protect your session. Sign out to test the real flow.')
+      return
+    }
     if (password !== confirmPassword) {
       setError('Passwords do not match.')
       return
@@ -106,7 +125,15 @@ function SignupForm() {
       console.warn('claim-purchase failed', err)
     }
 
-    const dest = path === 'A' ? '/program' : path === 'C' ? '/onboarding' : '/dashboard'
+    // Post-signup flow:  signup → welcome page → portal.
+    // The welcome page is the user's first experience after creating their
+    // account — it explains what they just unlocked, then forwards them
+    // into the portal via its CTA.
+    const dest = path === 'A'
+      ? '/welcome/seal-the-leak'
+      : path === 'C'
+        ? '/welcome/the-circle'
+        : '/welcome/cards'
     window.location.href = dest
   }
 
@@ -234,6 +261,24 @@ function SignupForm() {
         justifyContent: 'center',
         padding: '64px 56px',
       }}>
+        {isAdminPreview && (
+          <div style={{
+            background: '#fffaeb',
+            border: '1px solid rgba(184,146,42,0.4)',
+            borderLeft: '3px solid #b8922a',
+            borderRadius: 6,
+            padding: '10px 14px',
+            marginBottom: 24,
+            fontSize: 12,
+            color: '#b8922a',
+            fontFamily: 'var(--font-body)',
+            lineHeight: 1.5,
+          }}>
+            <strong style={{ display: 'block', marginBottom: 2 }}>👁 Admin preview</strong>
+            You&apos;re signed in. Submit is disabled — sign out to test the real flow.
+          </div>
+        )}
+
         {/* Selected path badge */}
         <div style={{
           display: 'inline-flex',

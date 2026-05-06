@@ -13,7 +13,9 @@ import type { Path } from '@/types'
  *     day 8+:   same 2 cards + upgrade prompt
  *   with add-on → full access starting the day they added it.
  *     That day becomes their Cards Day 1; the Day-6 teaser gate no
- *     longer applies.
+ *     longer applies. If `cardsAddOnExpiresAt` is set and in the past,
+ *     access flips back to 'expired-upgrade' and the user is prompted
+ *     to subscribe ($9/mo or $67/yr).
  * Admins: full access regardless.
  */
 
@@ -21,13 +23,25 @@ export const PATH_A_CARDS_UNLOCK_DAY = 6
 export const PATH_A_MAX_CARDS = 2
 export const PATH_A_PROGRAM_LENGTH = 7
 
-export type CardsAccessState = 'open' | 'locked-not-yet' | 'locked-upgrade'
+export type CardsAccessState =
+  | 'open'
+  | 'locked-not-yet'
+  | 'locked-upgrade'
+  | 'expired-upgrade'
 
 export interface CardsAccess {
   unlocked: boolean            // at least one card visible
   maxDay: number               // highest day_number they can see (0 when locked)
   state: CardsAccessState
   unlocksOnDay?: number        // set only when state = 'locked-not-yet'
+  /**
+   * For state = 'open' or 'expired-upgrade' on a Path A add-on user:
+   * how many days remain in their 30-day window. 0 once expired,
+   * undefined when no expiry applies (legacy add-on / admin-paid / Path B).
+   */
+  daysRemaining?: number
+  /** ISO timestamp of the expiry, mirrored from the user row when present. */
+  expiresAt?: string
 }
 
 function daysSince(d: Date): number {
@@ -35,19 +49,27 @@ function daysSince(d: Date): number {
   return Math.floor((now - d.getTime()) / (1000 * 60 * 60 * 24))
 }
 
+function daysUntil(d: Date): number {
+  const now = Date.now()
+  return Math.ceil((d.getTime() - now) / (1000 * 60 * 60 * 24))
+}
+
 /**
- * @param selectedPath     the user's path
- * @param isAdmin          effective admin (not previewing as a user)
- * @param sealTheLeakDay   current day of Seal the Leak (signup-based, admin-override-aware)
- * @param cardsPlanStart   date their cards-plan started. For Path B this is their signup_date.
- *                         For Path A with the add-on it's cards_addon_started_at.
- *                         Null for Path A without add-on and for Path C.
+ * @param selectedPath           the user's path
+ * @param isAdmin                effective admin (not previewing as a user)
+ * @param sealTheLeakDay         current day of Seal the Leak (signup-based, admin-override-aware)
+ * @param cardsPlanStart         date their cards-plan started. For Path B this is their signup_date.
+ *                               For Path A with the add-on it's cards_addon_started_at.
+ *                               Null for Path A without add-on and for Path C.
+ * @param cardsPlanExpiresAt     hard cutoff for the add-on. Null = no expiry (Path B sub,
+ *                               legacy add-on, admin-marked-as-paid). Past timestamp = expired.
  */
 export function computeCardsAccess(
   selectedPath: Path | null,
   isAdmin: boolean,
   sealTheLeakDay: number,
   cardsPlanStart: Date | null,
+  cardsPlanExpiresAt: Date | null = null,
 ): CardsAccess {
   // Admin: treat as full cards access regardless of path so they can navigate freely.
   if (isAdmin) {
@@ -62,8 +84,27 @@ export function computeCardsAccess(
   // Any user with a cards-plan start date (Path B always, Path A with add-on):
   // full access. Cards Day 1 = plan start date.
   if (cardsPlanStart) {
+    // Has the 30-day window expired? Only relevant when an expiry is set
+    // (Path B subs and admin-marked-paid users have no expiry).
+    if (cardsPlanExpiresAt && cardsPlanExpiresAt.getTime() <= Date.now()) {
+      return {
+        unlocked: false,
+        maxDay: 0,
+        state: 'expired-upgrade',
+        daysRemaining: 0,
+        expiresAt: cardsPlanExpiresAt.toISOString(),
+      }
+    }
+
     const cardsDay = Math.max(1, daysSince(cardsPlanStart) + 1)
-    return { unlocked: true, maxDay: cardsDay, state: 'open' }
+    const remaining = cardsPlanExpiresAt ? Math.max(0, daysUntil(cardsPlanExpiresAt)) : undefined
+    return {
+      unlocked: true,
+      maxDay: cardsDay,
+      state: 'open',
+      ...(remaining !== undefined ? { daysRemaining: remaining } : {}),
+      ...(cardsPlanExpiresAt ? { expiresAt: cardsPlanExpiresAt.toISOString() } : {}),
+    }
   }
 
   // Path A without the add-on: teaser gate.

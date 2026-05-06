@@ -22,6 +22,9 @@ const defaultUser: User = {
   onboardingComplete: false,
   skipPathChooser: false,
   cardsAddOnAt: null,
+  cardsAddOnExpiresAt: null,
+  cardsAddOnSource: null,
+  sealCompletedAt: null,
   hasSeenWelcome: false,
 }
 
@@ -41,6 +44,9 @@ interface UserRow {
   onboarding_complete: boolean | null
   skip_path_chooser: boolean | null
   cards_addon_started_at: string | null
+  cards_addon_expires_at: string | null
+  cards_addon_source: 'seal_day7' | 'stripe' | 'manual' | null
+  seal_completed_at: string | null
   has_seen_welcome: boolean | null
 }
 
@@ -56,9 +62,12 @@ function userFromRow(row: UserRow, fallbackEmail: string): User {
     hasPaid: row.has_paid ?? false,
     isAdmin: row.is_admin ?? false,
     onboardingComplete: row.onboarding_complete ?? false,
-    skipPathChooser:    row.skip_path_chooser ?? false,
-    cardsAddOnAt:       row.cards_addon_started_at ? new Date(row.cards_addon_started_at) : null,
-    hasSeenWelcome:     row.has_seen_welcome ?? false,
+    skipPathChooser:     row.skip_path_chooser ?? false,
+    cardsAddOnAt:        row.cards_addon_started_at ? new Date(row.cards_addon_started_at) : null,
+    cardsAddOnExpiresAt: row.cards_addon_expires_at ? new Date(row.cards_addon_expires_at) : null,
+    cardsAddOnSource:    row.cards_addon_source,
+    sealCompletedAt:     row.seal_completed_at ? new Date(row.seal_completed_at) : null,
+    hasSeenWelcome:      row.has_seen_welcome ?? false,
   }
 }
 
@@ -299,8 +308,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [user.selectedPath, user.signupDate, user.cardsAddOnAt])
 
   const cardsAccess = useMemo(
-    () => computeCardsAccess(user.selectedPath, user.isAdmin, dayNumber, cardsPlanStart),
-    [user.selectedPath, user.isAdmin, dayNumber, cardsPlanStart],
+    () => computeCardsAccess(
+      user.selectedPath,
+      user.isAdmin,
+      dayNumber,
+      cardsPlanStart,
+      user.cardsAddOnExpiresAt,
+    ),
+    [user.selectedPath, user.isAdmin, dayNumber, cardsPlanStart, user.cardsAddOnExpiresAt],
   )
   // Clamp the visible card day to what the user has access to. When locked
   // entirely (maxDay = 0) todayCard becomes null and past/vault become empty.

@@ -7,11 +7,15 @@ export interface PathDefinition {
   icon: string
   title: string
   shortTitle: string
+  /** Energetic one-liner shown above the title on tiles. */
+  tagline?: string
   price: string
   priceNote: string
   description: string
   includes: string[]
   bestFor: string
+  /** What unlocks the moment they pay — used as the "first move" callout. */
+  firstMove?: string
   accent: string
   accentPale: string
   ctaLabel: string
@@ -25,24 +29,26 @@ export const PATHS: Record<PathId, PathDefinition> = {
   B: {
     id: 'B',
     tier: 1,
-    tierLabel: 'Tier 1 — Entry',
+    tierLabel: 'Daily practice',
     icon: '🌿',
     title: '365 Days of Alignment',
     shortTitle: '365 Days',
+    tagline: 'Show up for yourself, daily.',
     price: '$9/mo',
-    priceNote: 'or $67/year (save 38%)',
+    priceNote: '$9/mo or $67/yr · Cancel anytime',
     description:
-      'Daily support built around your archetype — prompts, wins, and monthly focus to keep you moving forward consistently.',
+      'A new card every morning, built around your archetype. Two minutes a day, 365 days a year — the practice does the work.',
     includes: [
-      'Daily prompt by archetype',
-      'Journal + win tracker',
-      'Monthly theme focus',
-      'Keeps you in your pipeline',
+      'A new daily card built around your archetype',
+      'Journal + win tracker that grows with you',
+      'Streaks, monthly themes, and a card vault',
+      'Cancel anytime — no contract, no hoops',
     ],
-    bestFor: 'Best if you want consistent daily support',
+    bestFor: 'Best for keeping the work alive day-to-day.',
+    firstMove: 'Day 1 unlocks the moment you sign up.',
     accent: '#1f5c3a',
     accentPale: 'rgba(31,92,58,0.08)',
-    ctaLabel: 'Start Daily Practice →',
+    ctaLabel: 'Start your daily practice',
     ctaHref: process.env.NEXT_PUBLIC_STRIPE_CARDS_MONTHLY ?? '/signup?path=B',
     ctaHrefAlt: process.env.NEXT_PUBLIC_STRIPE_CARDS_YEARLY ?? '/signup?path=B',
     billing: 'subscription',
@@ -50,24 +56,27 @@ export const PATHS: Record<PathId, PathDefinition> = {
   A: {
     id: 'A',
     tier: 2,
-    tierLabel: 'Tier 2 — Recommended',
+    tierLabel: 'Most popular',
     icon: '🔥',
     title: 'Seal the Leak',
     shortTitle: 'Seal the Leak',
+    tagline: 'Fix the pattern in 7 days.',
     price: '$37',
-    priceNote: 'One-time · Instant access',
+    priceNote: 'One-time · Lifetime access',
     description:
-      'A 7-day archetype reset with daily prompts, actions, and shifts — plus 30 days of the 365 Alignment app included. Your conversion engine.',
+      'A 7-day archetype reset that moves you through four phases — Awareness, Interruption, Reclamation, Identity — with a prompt, an action, and a seal each day. Finish Day 7 and unlock 30 days of the Alignment app so the work doesn\'t stop.',
     includes: [
-      '7-day reset by archetype',
-      'Daily prompt + action + shift',
-      'Includes 30-day app trial',
-      'Your conversion engine',
+      '7-day reset, paced day by day',
+      'Daily prompt + action + seal',
+      '4-phase shift framework built around your archetype',
+      '30 days of 365 Alignment unlocked after you finish Day 7',
+      'Lifetime access — keep coming back',
     ],
-    bestFor: "Best if you're ready to fix this now",
+    bestFor: "Best if you're ready to move on this now.",
+    firstMove: 'Day 1 starts the moment you sign up.',
     accent: '#b8922a',
     accentPale: 'rgba(184,146,42,0.08)',
-    ctaLabel: 'Seal the Leak →',
+    ctaLabel: 'Start the 7-day reset',
     ctaHref: process.env.NEXT_PUBLIC_STRIPE_LEAK ?? '/signup?path=A',
     billing: 'one-time',
     recommended: true,
@@ -75,27 +84,31 @@ export const PATHS: Record<PathId, PathDefinition> = {
   C: {
     id: 'C',
     tier: 3,
-    tierLabel: 'Tier 3 — High Ticket',
+    tierLabel: 'Deep work',
     icon: '👑',
     title: 'The Circle',
     shortTitle: 'The Circle',
+    tagline: 'Identity-level shift work, with Nicole.',
     price: '$497',
-    priceNote: 'One-time · Full access',
+    priceNote: 'One-time · or 3 × $197',
     description:
-      "Identity-level shift work with direct access to Nicole. Group or 1:1 intensive — for when you're ready to fully change the pattern.",
+      "12 weeks of guided work with direct access to Nicole, a matched accountability partner, live group calls, and a private coach thread. For when you're ready to fully change the pattern.",
     includes: [
-      'Identity-level shift work',
-      'Direct access to Nicole',
-      'Group: $97–$197/mo',
-      '1:1 intensive: $497–$997',
+      '12-week program (Root → Rebuild → Rise)',
+      'Private coach thread with Nicole',
+      'Matched accountability partner',
+      'Live group calls with replays',
+      'Cohort community feed',
+      'Pay $497 in full — or 3 × $197',
     ],
-    bestFor: "Best if you're ready to go all the way in",
+    bestFor: 'Best if you want a coach in the room with you.',
+    firstMove: 'Cohort onboarding starts within 48 hours.',
     accent: '#0c0c0a',
     accentPale: 'rgba(12,12,10,0.04)',
-    ctaLabel: 'Join the Circle →',
+    ctaLabel: 'Join The Circle',
     ctaHref: process.env.NEXT_PUBLIC_STRIPE_CIRCLE_ONETIME ?? '/signup?path=C',
     ctaHrefAlt: process.env.NEXT_PUBLIC_STRIPE_CIRCLE_MONTHLY ?? '/signup?path=C',
-    billing: 'call',
+    billing: 'one-time',
   },
 }
 
