@@ -22,6 +22,11 @@ const CARDS  = '#1A5230'
 const CIRCLE = '#C97D3A'
 const FALLBACK_PROMPT = 'What is calling for your attention today?'
 
+// Coach DM widget — gated off because the 1:1 private chat is moving into
+// a separate program. Underlying fetch + state are kept so flipping this
+// back to true brings the dashboard pill back without code changes.
+const COACH_DM_VISIBLE = false
+
 function computeJournalDay(signupDate: Date | null | undefined): number {
   if (!signupDate) return 1
   const ms = Date.now() - signupDate.getTime()
@@ -171,7 +176,7 @@ export default function DashboardPage() {
     (hasCircleAccess ? 1 : 0) +
     1 // journal always counted
 
-  const hasActivity = announcements.length > 0 || !!nextCall || unreadCoach > 0
+  const hasActivity = announcements.length > 0 || !!nextCall || (COACH_DM_VISIBLE && unreadCoach > 0)
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
@@ -316,7 +321,7 @@ export default function DashboardPage() {
       {hasActivity && (
       <div style={{ position: 'sticky', top: 24 }}>
       {/* LATEST section */}
-        <Section title="Latest" count={announcements.length + (nextCall ? 1 : 0) + (unreadCoach > 0 ? 1 : 0)}>
+        <Section title="Latest" count={announcements.length + (nextCall ? 1 : 0) + (COACH_DM_VISIBLE && unreadCoach > 0 ? 1 : 0)}>
           {nextCall && (
             <ActivityRow
               kind="Call"
@@ -340,7 +345,7 @@ export default function DashboardPage() {
               }
             />
           ))}
-          {unreadCoach > 0 && (
+          {COACH_DM_VISIBLE && unreadCoach > 0 && (
             <ActivityRow
               kind="Coach"
               title={`${unreadCoach} new ${unreadCoach === 1 ? 'message' : 'messages'} from Nicole`}

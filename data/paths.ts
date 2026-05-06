@@ -92,12 +92,11 @@ export const PATHS: Record<PathId, PathDefinition> = {
     price: '$497',
     priceNote: 'One-time · or 3 × $197',
     description:
-      "12 weeks of guided work with direct access to Nicole, a matched accountability partner, live group calls, and a private coach thread. For when you're ready to fully change the pattern.",
+      "12 weeks of guided work with Nicole leading live calls, a matched accountability partner, and a tight cohort community. For when you're ready to fully change the pattern.",
     includes: [
       '12-week program (Root → Rebuild → Rise)',
-      'Private coach thread with Nicole',
+      'Live group calls with Nicole + replays',
       'Matched accountability partner',
-      'Live group calls with replays',
       'Cohort community feed',
       'Pay $497 in full — or 3 × $197',
     ],

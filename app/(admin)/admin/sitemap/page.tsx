@@ -32,7 +32,7 @@ const SECTIONS: Section[] = [
     title: 'User portal — universal',
     desc: 'Pages every signed-in user sees regardless of program.',
     routes: [
-      { path: '/dashboard',  access: 'user', title: 'Home (dashboard)', desc: 'Universal home — sneak peeks across every program the user owns. Daily check-in lives here. Latest sidebar surfaces announcements / live calls / coach DMs for Circle members.' },
+      { path: '/dashboard',  access: 'user', title: 'Home (dashboard)', desc: 'Universal home — sneak peeks across every program the user owns. Daily check-in lives here. Latest sidebar surfaces announcements + live calls for Circle members. (Coach DM widget is feature-flagged off — the 1:1 chat is moving to a separate program.)' },
       { path: '/journal',    access: 'user', title: 'Journal',          desc: 'Universal daily journal. Prompt rotates daily by signup-anchored day, looped at 365. Backed by daily_cards.journal_prompt under the hood.' },
       { path: '/wins',       access: 'user', title: 'Wins',             desc: 'Log boundaries, choices, moments, growth wins. Cross-program.' },
       { path: '/profile',    access: 'user', title: 'Profile',          desc: 'Avatar, bio, theme compass, full reflections archive (every journal entry kept on file).' },
@@ -76,7 +76,7 @@ const SECTIONS: Section[] = [
       { path: '/circle/calls',     access: 'user', title: 'Live calls',      desc: 'Upcoming + past call schedule and replays.' },
       { path: '/circle/community', access: 'user', title: 'Community',       desc: 'Cohort-wide post feed.' },
       { path: '/circle/partner',   access: 'user', title: 'Partner',         desc: 'Direct messages with accountability partner.' },
-      { path: '/circle/coach',     access: 'user', title: 'Coach chat',      desc: '1:1 messages with Nicole.' },
+      { path: '/circle/coach',     access: 'user', title: 'Coach chat',      desc: '1:1 messages with Nicole. ⚠️ Hidden from user UI — being moved into a separate program. Page + DB tables remain; flip COACH_DM_VISIBLE in /circle and /dashboard to bring entry points back.' },
     ],
   },
   {

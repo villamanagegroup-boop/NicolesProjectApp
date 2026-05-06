@@ -32,6 +32,12 @@ import {
 const ORANGE      = '#C97D3A'
 const ORANGE_PALE = '#fdf6f2'
 
+// The 1:1 private coach thread (Chat with Nicole) is being moved into a
+// separate, paid-on-top program. We keep the underlying /circle/coach page
+// + DB tables in place but hide every entry point from the user UI behind
+// this flag. Flip to true to bring it back without re-adding the JSX.
+const COACH_DM_VISIBLE = false
+
 const ARCHETYPE_LABELS: Record<string, string> = {
   door:   'The Open Door',
   throne: 'The Overthink Throne',
@@ -339,13 +345,16 @@ export default function CirclePage() {
       <div style={{ position: 'sticky', top: 24 }}>
       {/* EVERYTHING IN THE CIRCLE — directory of every surface */}
       <Section title="Everything in The Circle">
-        <CircleRow
-          eyebrow="Coach"
-          badge="Direct line"
-          title="Chat with Nicole"
-          caption="Private thread with your coach. Voice notes welcome."
-          href="/circle/coach"
-        />
+        {/* Chat with Nicole — feature-gated. Lives in a separate program now. */}
+        {COACH_DM_VISIBLE && (
+          <CircleRow
+            eyebrow="Coach"
+            badge="Direct line"
+            title="Chat with Nicole"
+            caption="Private thread with your coach. Voice notes welcome."
+            href="/circle/coach"
+          />
+        )}
         <CircleRow
           eyebrow="Community"
           badge="Cohort feed"

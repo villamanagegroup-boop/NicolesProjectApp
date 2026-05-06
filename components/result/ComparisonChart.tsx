@@ -29,9 +29,8 @@ const ROWS: Row[] = [
 
   // Coaching & community
   { section: 'Coaching & community', label: '12-week guided program', values: { B: false, A: false, C: true } },
-  {                               label: 'Direct access to Nicole', values: { B: false,      A: false,      C: true } },
+  {                               label: 'Live group calls with Nicole', values: { B: false, A: false, C: true } },
   {                               label: 'Accountability partner',  values: { B: false,      A: false,      C: true } },
-  {                               label: 'Live group calls',        values: { B: false,      A: false,      C: true } },
   {                               label: 'Cohort community feed',   values: { B: false,      A: false,      C: true } },
 ]
 
