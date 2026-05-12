@@ -831,57 +831,58 @@ function CardPageInner() {
         </div>
 
         {/* Section 5 — Coming next */}
-        <section>
-          <header style={{
-            paddingBottom: 8, borderBottom: '1px solid var(--line)',
-            marginBottom: 4,
-          }}>
+        <section style={{ marginBottom: 36 }}>
+          <header style={{ marginBottom: 14 }}>
             <h2 style={{
-              fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
-              textTransform: 'uppercase', color: 'var(--text-soft)',
-              margin: 0, fontFamily: 'var(--font-body)',
+              fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+              color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
             }}>
               Coming next
             </h2>
           </header>
-          {upcomingCards.map(upCard => (
-            <div
-              key={upCard.id}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 14,
-                padding: '14px 4px 14px 16px',
-                borderBottom: '1px solid var(--line)',
-                position: 'relative',
-              }}
-            >
-              <span style={{
-                position: 'absolute', left: 0, top: 14, bottom: 14,
-                width: 2, background: 'var(--line-md)', borderRadius: 2,
-              }} />
-              <span style={{ fontSize: 14, opacity: 0.55, flexShrink: 0 }}>🔒</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  fontSize: 10, fontWeight: 700, letterSpacing: '0.09em',
-                  textTransform: 'uppercase', color: 'var(--text-muted)',
-                  marginBottom: 4, fontFamily: 'var(--font-body)',
-                }}>
-                  Day {upCard.dayNumber}
+          <div style={{
+            background: 'var(--card)', border: '1px solid var(--line)',
+            borderRadius: 12, overflow: 'hidden',
+          }}>
+            {upcomingCards.map((upCard, idx) => (
+              <div
+                key={upCard.id}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  padding: '20px 20px 20px 22px',
+                  borderBottom: idx === upcomingCards.length - 1 ? 'none' : '1px solid var(--line)',
+                  position: 'relative',
+                }}
+              >
+                <span style={{
+                  position: 'absolute', left: 0, top: 18, bottom: 18,
+                  width: 3, background: 'var(--line-md)', borderRadius: 2,
+                }} />
+                <span style={{ fontSize: 14, opacity: 0.55, flexShrink: 0 }}>🔒</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
+                    textTransform: 'uppercase', color: 'var(--text-muted)',
+                    marginBottom: 8, fontFamily: 'var(--font-body)',
+                  }}>
+                    Day {upCard.dayNumber}
+                  </div>
+                  <div style={{
+                    fontSize: 16, fontWeight: 600, color: 'var(--ink)',
+                    fontFamily: 'var(--font-body)', lineHeight: 1.4,
+                  }}>
+                    {upCard.theme}
+                  </div>
                 </div>
-                <div style={{
-                  fontSize: 14, fontWeight: 500, color: 'var(--text-soft)',
-                  fontFamily: 'var(--font-body)', lineHeight: 1.4,
+                <span style={{
+                  fontSize: 12, color: 'var(--text-muted)',
+                  fontFamily: 'var(--font-body)', flexShrink: 0,
                 }}>
-                  {upCard.theme}
-                </div>
+                  {getLockedLabel(upCard.dayNumber, dayNumber)}
+                </span>
               </div>
-              <span style={{
-                fontSize: 11, color: 'var(--text-muted)',
-                fontFamily: 'var(--font-body)', flexShrink: 0,
-              }}>
-                {getLockedLabel(upCard.dayNumber, dayNumber)}
-              </span>
-            </div>
-          ))}
+            ))}
+          </div>
         </section>
 
       </div>

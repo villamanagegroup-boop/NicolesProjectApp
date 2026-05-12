@@ -155,22 +155,22 @@ export default function CardsHomePage() {
       )}
 
       {/* Hero */}
-      <div style={{ marginBottom: 28 }}>
+      <div style={{ marginBottom: 40 }}>
         <p style={{
-          fontSize: 11, fontWeight: 600, letterSpacing: '0.12em',
-          textTransform: 'uppercase', color: CARDS_GREEN,
-          margin: '0 0 6px', fontFamily: 'var(--font-body)',
+          fontSize: 11, fontWeight: 500, letterSpacing: '0.14em',
+          textTransform: 'uppercase', color: 'var(--text-muted)',
+          margin: '0 0 12px', fontFamily: 'var(--font-body)',
         }}>
           365 Cards · Daily alignment
         </p>
         <h1 style={{
           fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300,
-          color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
-          lineHeight: 1.15,
+          color: 'var(--ink)', margin: 0, letterSpacing: '-0.015em',
+          lineHeight: 1.1,
         }}>
           Good {timeOfDay}, {firstName}.
         </h1>
-        <p style={{ fontSize: 14, color: 'var(--text-soft)', margin: '8px 0 0', lineHeight: 1.6 }}>
+        <p style={{ fontSize: 15, color: 'var(--text-soft)', margin: '12px 0 0', lineHeight: 1.55, maxWidth: 520 }}>
           Day {visibleDay} of {TOTAL_DAYS}
           {streakCount > 0 && <> · <strong style={{ color: CARDS_GREEN }}>🔥 {streakCount}-day streak</strong></>}
         </p>
@@ -218,7 +218,7 @@ export default function CardsHomePage() {
               display: 'grid',
               gridTemplateColumns: 'repeat(5, 1fr)',
               gap: 10,
-              paddingTop: 14,
+              padding: 18,
             }}>
               {recentPast.map(card => (
                 <Link key={card.id} href={`/card?day=${card.dayNumber}`} style={{ textDecoration: 'none' }}>
@@ -349,6 +349,7 @@ export default function CardsHomePage() {
           }
           .cards-cols > div { position: static !important; }
         }
+        .stat-row:last-child, .activity-row:last-child { border-bottom: none !important; }
       `}</style>
     </div>
   )
@@ -364,10 +365,9 @@ function TodayCardRow({
   if (!card) {
     return (
       <div style={{
-        padding: '20px 4px 20px 16px', position: 'relative',
-        borderBottom: '1px solid var(--line)',
+        padding: '20px 20px 20px 22px', position: 'relative',
       }}>
-        <span style={{ position: 'absolute', left: 0, top: 20, bottom: 20, width: 2, background: CARDS_GREEN, borderRadius: 2 }} />
+        <span style={{ position: 'absolute', left: 0, top: 18, bottom: 18, width: 3, background: CARDS_GREEN, borderRadius: 2 }} />
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
           Today&apos;s card is loading…
         </p>
@@ -380,18 +380,17 @@ function TodayCardRow({
       <div
         style={{
           display: 'flex', gap: 18, alignItems: 'flex-start',
-          padding: '18px 4px 18px 16px',
-          borderBottom: '1px solid var(--line)',
+          padding: '20px 20px 20px 22px',
           position: 'relative',
           transition: 'background 0.15s',
           flexWrap: 'wrap',
         }}
-        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'var(--paper2)' }}
+        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(200,148,31,0.04)' }}
         onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent' }}
       >
         <span style={{
           position: 'absolute', left: 0, top: 18, bottom: 18,
-          width: 2, background: CARDS_GREEN, borderRadius: 2,
+          width: 3, background: CARDS_GREEN, borderRadius: 2,
         }} />
 
         {/* Card thumbnail */}
@@ -458,21 +457,21 @@ function TodayCardRow({
 // ── Stat row ────────────────────────────────────────────────────────────────
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{
+    <div className="stat-row" style={{
       display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-      padding: '12px 4px 12px 16px',
+      padding: '18px 20px 18px 22px',
       borderBottom: '1px solid var(--line)',
       position: 'relative',
     }}>
-      <span style={{ position: 'absolute', left: 0, top: 12, bottom: 12, width: 2, background: CARDS_GREEN, borderRadius: 2 }} />
+      <span style={{ position: 'absolute', left: 0, top: 18, bottom: 18, width: 3, background: CARDS_GREEN, borderRadius: 2 }} />
       <span style={{
-        fontSize: 11, fontWeight: 600, letterSpacing: '0.08em',
+        fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
         textTransform: 'uppercase', color: 'var(--text-muted)',
         fontFamily: 'var(--font-body)',
       }}>
         {label}
       </span>
-      <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', fontFamily: 'var(--font-body)' }}>
+      <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)', fontFamily: 'var(--font-body)' }}>
         {value}
       </span>
     </div>
@@ -488,22 +487,23 @@ function ActivityRow({
   meta: string
 }) {
   return (
-    <div style={{
-      padding: '12px 4px 12px 16px',
+    <div className="activity-row" style={{
+      padding: '20px 20px 20px 22px',
       borderBottom: '1px solid var(--line)',
       position: 'relative',
     }}>
-      <span style={{ position: 'absolute', left: 0, top: 12, bottom: 12, width: 2, background: CARDS_GREEN, borderRadius: 2 }} />
+      <span style={{ position: 'absolute', left: 0, top: 18, bottom: 18, width: 3, background: CARDS_GREEN, borderRadius: 2 }} />
       <div style={{
-        fontSize: 9, fontWeight: 700, letterSpacing: '0.09em',
+        fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
         textTransform: 'uppercase', color: CARDS_GREEN,
-        marginBottom: 4, fontFamily: 'var(--font-body)',
+        marginBottom: 8, fontFamily: 'var(--font-body)',
       }}>
         {eyebrow}
         <span style={{ marginLeft: 8, fontWeight: 500, color: 'var(--text-muted)' }}>· {meta}</span>
       </div>
       <p style={{
-        fontSize: 13, color: 'var(--ink)', margin: 0, lineHeight: 1.5,
+        fontSize: 16, fontWeight: 600, color: 'var(--ink)', margin: 0,
+        lineHeight: 1.4,
         fontFamily: 'var(--font-body)',
         display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
       }}>
@@ -522,22 +522,23 @@ function Section({
   children: React.ReactNode
 }) {
   return (
-    <section style={{ marginBottom: 24 }}>
+    <section style={{ marginBottom: 36 }}>
       <header style={{
         display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-        paddingBottom: 8, borderBottom: '1px solid var(--line)',
-        marginBottom: 4,
+        marginBottom: 14,
       }}>
         <h2 style={{
-          fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
-          textTransform: 'uppercase', color: 'var(--text-soft)',
-          margin: 0, fontFamily: 'var(--font-body)',
+          fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+          color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
         }}>
           {title}
         </h2>
         {right}
       </header>
-      <div>{children}</div>
+      <div style={{
+        background: 'var(--card)', border: '1px solid var(--line)',
+        borderRadius: 12, overflow: 'hidden',
+      }}>{children}</div>
     </section>
   )
 }

@@ -103,18 +103,25 @@ export default function NewJournalEntryPage() {
 
       {/* Header */}
       <div style={{ marginBottom: 40 }}>
-        <EyebrowLabel color="gold">Free Write</EyebrowLabel>
+        <p style={{
+          fontSize: 11, fontWeight: 500, letterSpacing: '0.14em',
+          textTransform: 'uppercase', color: 'var(--text-muted)',
+          margin: '0 0 12px', fontFamily: 'var(--font-body)',
+        }}>
+          Free write
+        </p>
         <h1 style={{
           fontFamily: 'var(--font-display)',
-          fontSize: 38,
+          fontSize: 32,
           fontWeight: 300,
           color: 'var(--ink)',
-          margin: '8px 0 8px',
-          lineHeight: 1.15,
+          margin: 0,
+          letterSpacing: '-0.015em',
+          lineHeight: 1.1,
         }}>
           What&apos;s on your mind?
         </h1>
-        <p style={{ fontSize: 13, color: 'var(--text-soft)', fontFamily: 'var(--font-body)', margin: 0 }}>
+        <p style={{ fontSize: 15, color: 'var(--text-soft)', margin: '12px 0 0', lineHeight: 1.55, maxWidth: 520, fontFamily: 'var(--font-body)' }}>
           This entry is yours — no prompts, no structure. Just truth.
         </p>
       </div>
@@ -270,7 +277,7 @@ export default function NewJournalEntryPage() {
             onClick={isRecording ? stopRecording : startRecording}
             style={{
               border: isRecording ? '1px solid var(--red)' : '1px solid var(--line-md)',
-              background: isRecording ? 'var(--red-pale)' : 'white',
+              background: isRecording ? 'var(--red-pale)' : 'var(--card)',
               color: isRecording ? 'var(--red)' : 'var(--text-soft)',
               padding: '6px 14px',
               borderRadius: '6px',

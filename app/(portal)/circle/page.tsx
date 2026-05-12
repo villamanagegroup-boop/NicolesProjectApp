@@ -195,28 +195,28 @@ export default function CirclePage() {
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
       {/* Hero */}
-      <div style={{ marginBottom: 28 }}>
+      <div style={{ marginBottom: 40 }}>
         {firstName && (
           <p style={{
-            fontSize: 11, fontWeight: 600, letterSpacing: '0.12em',
-            textTransform: 'uppercase', color: ORANGE,
-            margin: '0 0 6px',
+            fontSize: 11, fontWeight: 500, letterSpacing: '0.14em',
+            textTransform: 'uppercase', color: 'var(--text-muted)',
+            margin: '0 0 12px',
           }}>
             Welcome back, {firstName}
           </p>
         )}
         <h1 style={{
           fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300,
-          color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
-          lineHeight: 1.15,
+          color: 'var(--ink)', margin: 0, letterSpacing: '-0.015em',
+          lineHeight: 1.1,
         }}>
           {ARCHETYPE_LABELS[member.archetype]}
         </h1>
         {member.goal_90day && (
           <p style={{
-            fontSize: 14, color: 'var(--text-soft)', fontStyle: 'italic',
-            lineHeight: 1.6, margin: '8px 0 0',
-            maxWidth: 600,
+            fontSize: 15, color: 'var(--text-soft)', fontStyle: 'italic',
+            lineHeight: 1.55, margin: '12px 0 0',
+            maxWidth: 520,
           }}>
             {member.goal_90day}
           </p>
@@ -253,7 +253,7 @@ export default function CirclePage() {
         title="Your 12 weeks"
         right={<span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{completedWeeks} of 12 weeks complete</span>}
       >
-        <div style={{ padding: '14px 4px 18px 16px', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <div style={{ padding: '20px', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {Array.from({ length: 12 }, (_, i) => {
             const wn = i + 1
             const done = progress.find(p => p.week_number === wn && p.journal_completed && p.action_completed)
@@ -380,6 +380,9 @@ export default function CirclePage() {
           }
           .circle-cols > div { position: static !important; }
         }
+        .circle-row:last-child { border-bottom: none !important; }
+        .circle-row:hover { background: rgba(200,148,31,0.04) !important; }
+        .circle-row:hover .circle-row-chev { color: var(--gold) !important; transform: translateX(3px); }
       `}</style>
     </div>
   )
@@ -389,22 +392,23 @@ export default function CirclePage() {
 
 function Section({ title, right, children }: { title: string; right?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section style={{ marginBottom: 32 }}>
+    <section style={{ marginBottom: 36 }}>
       <header style={{
         display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-        paddingBottom: 8, borderBottom: '1px solid var(--line)',
-        marginBottom: 4,
+        marginBottom: 14,
       }}>
         <h2 style={{
-          fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
-          textTransform: 'uppercase', color: 'var(--text-soft)',
-          margin: 0, fontFamily: 'var(--font-body)',
+          fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+          color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
         }}>
           {title}
         </h2>
         {right}
       </header>
-      <div>{children}</div>
+      <div style={{
+        background: 'var(--card)', border: '1px solid var(--line)',
+        borderRadius: 12, overflow: 'hidden',
+      }}>{children}</div>
     </section>
   )
 }
@@ -420,33 +424,30 @@ function CircleRow({
   externalCta?: { label: string; href: string }
 }) {
   const Inner = (
-    <div style={{
+    <div className="circle-row" style={{
       display: 'flex', alignItems: 'center', gap: 16,
-      padding: '18px 4px 18px 16px',
+      padding: '20px 20px 20px 22px',
       borderBottom: '1px solid var(--line)',
       position: 'relative', flexWrap: 'wrap',
       transition: 'background 0.15s',
-    }}
-      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'var(--paper2)' }}
-      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent' }}
-    >
+    }}>
       <span style={{
         position: 'absolute', left: 0, top: 18, bottom: 18,
-        width: 2, background: ORANGE, borderRadius: 2,
+        width: 3, background: ORANGE, borderRadius: 2,
       }} />
 
       <div style={{ flex: 1, minWidth: 200 }}>
         <div style={{
-          fontSize: 10, fontWeight: 700, letterSpacing: '0.09em',
+          fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
           textTransform: 'uppercase', color: ORANGE,
-          fontFamily: 'var(--font-body)', marginBottom: 6,
+          fontFamily: 'var(--font-body)', marginBottom: 8,
         }}>
           {eyebrow}
           <span style={{
-            marginLeft: 10, fontWeight: 500,
-            padding: '2px 8px', borderRadius: 999,
-            background: 'var(--paper2)', color: 'var(--text-muted)',
-            letterSpacing: '0.04em',
+            marginLeft: 10, fontWeight: 600, fontSize: 9,
+            padding: '3px 8px', borderRadius: 6,
+            background: `${ORANGE}14`, color: ORANGE,
+            letterSpacing: '0.08em',
           }}>
             {badge}
           </span>
@@ -459,8 +460,8 @@ function CircleRow({
         </div>
         {caption && (
           <div style={{
-            fontSize: 12, color: 'var(--text-soft)',
-            fontFamily: 'var(--font-body)', marginTop: 4, lineHeight: 1.5,
+            fontSize: 12, color: 'var(--text-muted)',
+            fontFamily: 'var(--font-body)', marginTop: 6, lineHeight: 1.5,
           }}>
             {caption}
           </div>
@@ -472,9 +473,9 @@ function CircleRow({
           href={externalCta.href} target="_blank" rel="noopener noreferrer"
           onClick={e => e.stopPropagation()}
           style={{
-            padding: '8px 14px', borderRadius: 7,
+            padding: '10px 18px', borderRadius: 8,
             background: ORANGE, color: '#fff',
-            fontSize: 12, fontWeight: 600,
+            fontSize: 13, fontWeight: 600,
             textDecoration: 'none', fontFamily: 'var(--font-body)',
             whiteSpace: 'nowrap', flexShrink: 0,
           }}
@@ -484,9 +485,10 @@ function CircleRow({
       )}
 
       {href && (
-        <span style={{
-          color: 'var(--text-muted)', fontSize: 16,
+        <span className="circle-row-chev" style={{
+          color: 'var(--text-muted)', fontSize: 18,
           flexShrink: 0, paddingRight: 4,
+          transition: 'color 0.15s, transform 0.15s',
         }}>
           ›
         </span>

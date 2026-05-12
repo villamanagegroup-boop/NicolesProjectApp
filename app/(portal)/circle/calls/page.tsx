@@ -85,14 +85,14 @@ export default function CallsPage() {
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
       {/* Hero */}
-      <div style={{ marginBottom: 28 }}>
-        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: ORANGE, margin: '0 0 6px' }}>
+      <div style={{ marginBottom: 40 }}>
+        <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 12px' }}>
           The Circle
         </p>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300, color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em', lineHeight: 1.15 }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300, color: 'var(--ink)', margin: 0, letterSpacing: '-0.015em', lineHeight: 1.1 }}>
           Live calls
         </h1>
-        <p style={{ fontSize: 14, color: 'var(--text-soft)', margin: '8px 0 0', lineHeight: 1.6 }}>
+        <p style={{ fontSize: 15, color: 'var(--text-soft)', margin: '12px 0 0', lineHeight: 1.55, maxWidth: 520 }}>
           6 calls across your 12-week journey · {past.length} complete, {upcoming.length} upcoming.
         </p>
       </div>
@@ -114,7 +114,7 @@ export default function CallsPage() {
           )}
           {upcoming.length === 1 && (
             <Section title="Upcoming">
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', padding: '14px 4px 14px 16px', borderBottom: '1px solid var(--line)' }}>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', padding: '20px 22px', margin: 0 }}>
                 No calls beyond the next one. Future calls will appear here as they&apos;re scheduled.
               </p>
             </Section>
@@ -128,7 +128,7 @@ export default function CallsPage() {
             </Section>
           ) : (
             <Section title="Past calls">
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', padding: '14px 4px 14px 16px', borderBottom: '1px solid var(--line)' }}>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', padding: '20px 22px', margin: 0 }}>
                 You haven&apos;t finished any calls yet. Replays will collect here as you go.
               </p>
             </Section>
@@ -143,6 +143,8 @@ export default function CallsPage() {
           }
           .calls-cols > div { position: static !important; }
         }
+        .call-row:last-child { border-bottom: none !important; }
+        .call-row:hover { background: rgba(200,148,31,0.04) !important; }
       `}</style>
     </div>
   )
@@ -217,30 +219,30 @@ function CallRow({ call, kind }: { call: LiveCall; kind: 'upcoming' | 'past' }) 
 
   return (
     <div
+      className="call-row"
       style={{
         display: 'flex', alignItems: 'center', gap: 16,
-        padding: '14px 4px 14px 16px',
+        padding: '20px 20px 20px 22px',
         borderBottom: '1px solid var(--line)',
         position: 'relative', flexWrap: 'wrap',
         transition: 'background 0.15s',
       }}
-      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'var(--paper2)' }}
-      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent' }}
     >
       <span style={{
-        position: 'absolute', left: 0, top: 14, bottom: 14,
-        width: 2, background: isPast ? 'var(--line-md)' : ORANGE,
+        position: 'absolute', left: 0, top: 18, bottom: 18,
+        width: 3, background: isPast ? 'var(--line-md)' : ORANGE,
         borderRadius: 2,
       }} />
 
       <div style={{ flex: 1, minWidth: 220 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: isPast ? 'var(--text-muted)' : ORANGE, marginBottom: 6, fontFamily: 'var(--font-body)' }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: isPast ? 'var(--text-muted)' : ORANGE, marginBottom: 8, fontFamily: 'var(--font-body)' }}>
           {meta?.label ?? ''} · Call {call.call_number}
           <span style={{
-            marginLeft: 10, fontWeight: 500,
-            padding: '2px 8px', borderRadius: 999,
-            background: 'var(--paper2)', color: 'var(--text-muted)',
-            letterSpacing: '0.04em',
+            marginLeft: 10, fontWeight: 600, fontSize: 9,
+            padding: '3px 8px', borderRadius: 6,
+            background: `${isPast ? 'rgba(0,0,0,0.04)' : ORANGE + '14'}`,
+            color: isPast ? 'var(--text-muted)' : ORANGE,
+            letterSpacing: '0.08em',
           }}>
             {isPast ? 'Replay' : humanCountdown(date)}
           </span>
@@ -300,16 +302,14 @@ function CallRow({ call, kind }: { call: LiveCall; kind: 'upcoming' | 'past' }) 
 
 function Section({ title, count, children }: { title: string; count?: number; children: React.ReactNode }) {
   return (
-    <section style={{ marginBottom: 32 }}>
+    <section style={{ marginBottom: 36 }}>
       <header style={{
         display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-        paddingBottom: 8, borderBottom: '1px solid var(--line)',
-        marginBottom: 4,
+        marginBottom: 14,
       }}>
         <h2 style={{
-          fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
-          textTransform: 'uppercase', color: 'var(--text-soft)',
-          margin: 0, fontFamily: 'var(--font-body)',
+          fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+          color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
         }}>
           {title}
         </h2>
@@ -319,7 +319,10 @@ function Section({ title, count, children }: { title: string; count?: number; ch
           </span>
         )}
       </header>
-      <div>{children}</div>
+      <div style={{
+        background: 'var(--card)', border: '1px solid var(--line)',
+        borderRadius: 12, overflow: 'hidden',
+      }}>{children}</div>
     </section>
   )
 }

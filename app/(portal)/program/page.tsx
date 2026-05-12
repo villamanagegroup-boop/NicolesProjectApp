@@ -63,24 +63,24 @@ function ProgramOverviewInner() {
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
       {/* Hero */}
-      <div style={{ marginBottom: 28 }}>
+      <div style={{ marginBottom: 40 }}>
         <p style={{
-          fontSize: 11, fontWeight: 600, letterSpacing: '0.12em',
-          textTransform: 'uppercase', color: route.color,
-          margin: '0 0 6px', fontFamily: 'var(--font-body)',
+          fontSize: 11, fontWeight: 500, letterSpacing: '0.14em',
+          textTransform: 'uppercase', color: 'var(--text-muted)',
+          margin: '0 0 12px', fontFamily: 'var(--font-body)',
         }}>
           Seal the Leak · {route.name}
         </p>
         <h1 style={{
           fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300,
-          color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
-          lineHeight: 1.15,
+          color: 'var(--ink)', margin: 0, letterSpacing: '-0.015em',
+          lineHeight: 1.1,
         }}>
           {firstName ? `Welcome back, ${firstName}.` : 'Welcome back.'}
         </h1>
         <p style={{
-          fontSize: 14, color: 'var(--text-soft)', margin: '8px 0 0',
-          lineHeight: 1.6, maxWidth: 600, fontFamily: 'var(--font-body)',
+          fontSize: 15, color: 'var(--text-soft)', margin: '12px 0 0',
+          lineHeight: 1.55, maxWidth: 520, fontFamily: 'var(--font-body)',
         }}>
           Day {currentDay} of 7 · <em>{route.coreShift}</em>
         </p>
@@ -164,9 +164,10 @@ function ProgramOverviewInner() {
               return (
                 <Wrapper key={day.day} {...(wrapperProps as { href: string; style: React.CSSProperties })}>
                   <div
+                    className="program-day-row"
                     style={{
                       display: 'flex', alignItems: 'flex-start', gap: 14,
-                      padding: '18px 4px 18px 16px',
+                      padding: '20px 20px 20px 22px',
                       borderBottom: '1px solid var(--line)',
                       background: isToday ? `${route.color}08` : 'transparent',
                       position: 'relative',
@@ -174,13 +175,13 @@ function ProgramOverviewInner() {
                       opacity: isFuture ? 0.7 : 1,
                     }}
                     onMouseEnter={e => {
-                      if (!isLocked) (e.currentTarget as HTMLDivElement).style.background = isToday ? `${route.color}10` : 'var(--paper2)'
+                      if (!isLocked) (e.currentTarget as HTMLDivElement).style.background = isToday ? `${route.color}10` : 'rgba(200,148,31,0.04)'
                     }}
                     onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = isToday ? `${route.color}08` : 'transparent' }}
                   >
                     <span style={{
                       position: 'absolute', left: 0, top: 18, bottom: 18,
-                      width: 2,
+                      width: 3,
                       background: isFuture ? 'var(--line-md)' : route.color,
                       borderRadius: 2,
                     }} />
@@ -275,16 +276,16 @@ function ProgramOverviewInner() {
           </Section>
 
           <Section title="Your archetype">
-            <div style={{ padding: '0 4px 16px 16px', position: 'relative' }}>
+            <div style={{ padding: '20px 22px 22px 22px', position: 'relative' }}>
               <span style={{
-                position: 'absolute', left: 0, top: 0, bottom: 16,
-                width: 2, background: route.color, borderRadius: 2,
+                position: 'absolute', left: 0, top: 20, bottom: 20,
+                width: 3, background: route.color, borderRadius: 2,
               }} />
               {route.imageUrl && (
                 <div style={{
                   position: 'relative', width: '100%', aspectRatio: '16/9',
                   borderRadius: 8, overflow: 'hidden',
-                  marginTop: 14, marginBottom: 14,
+                  marginTop: 4, marginBottom: 14,
                 }}>
                   <img
                     src={route.imageUrl}
@@ -342,6 +343,11 @@ function ProgramOverviewInner() {
           }
           .program-cols > div { position: static !important; }
         }
+        .program-row:last-child, .program-stat:last-child, .program-day-row:last-child {
+          border-bottom: none !important;
+        }
+        .program-row:hover { background: rgba(200,148,31,0.04) !important; }
+        .program-row:hover .program-row-chev { color: var(--gold) !important; transform: translateX(3px); }
       `}</style>
     </div>
   )
@@ -357,21 +363,23 @@ function Section({
   children: React.ReactNode
 }) {
   return (
-    <section style={{ marginBottom: 32 }}>
+    <section style={{ marginBottom: 36 }}>
       <header style={{
         display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-        paddingBottom: 8, borderBottom: '1px solid var(--line)', marginBottom: 4,
+        marginBottom: 14,
       }}>
         <h2 style={{
-          fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
-          textTransform: 'uppercase', color: 'var(--text-soft)',
-          margin: 0, fontFamily: 'var(--font-body)',
+          fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+          color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
         }}>
           {title}
         </h2>
         {right}
       </header>
-      <div>{children}</div>
+      <div style={{
+        background: 'var(--card)', border: '1px solid var(--line)',
+        borderRadius: 12, overflow: 'hidden',
+      }}>{children}</div>
     </section>
   )
 }
@@ -389,34 +397,33 @@ function ProgramRow({
 }) {
   const Inner = (
     <div
+      className="program-row"
       style={{
         display: 'flex', alignItems: 'center', gap: 16,
-        padding: '18px 4px 18px 16px',
+        padding: '20px 20px 20px 22px',
         borderBottom: '1px solid var(--line)',
         position: 'relative', flexWrap: 'wrap',
         transition: 'background 0.15s',
       }}
-      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'var(--paper2)' }}
-      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent' }}
     >
       <span style={{
         position: 'absolute', left: 0, top: 18, bottom: 18,
-        width: 2, background: accent, borderRadius: 2,
+        width: 3, background: accent, borderRadius: 2,
       }} />
       <div style={{ flex: 1, minWidth: 200 }}>
         <div style={{
-          fontSize: 10, fontWeight: 700, letterSpacing: '0.09em',
+          fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
           textTransform: 'uppercase', color: accent,
-          fontFamily: 'var(--font-body)', marginBottom: 6,
+          fontFamily: 'var(--font-body)', marginBottom: 8,
         }}>
           {eyebrow}
           {badge && (
             <span style={{
-              marginLeft: 10, fontWeight: 500,
-              padding: '2px 8px', borderRadius: 999,
-              background: 'var(--paper2)',
-              color: badgeColor ?? 'var(--text-muted)',
-              letterSpacing: '0.04em',
+              marginLeft: 10, fontWeight: 600, fontSize: 9,
+              padding: '3px 8px', borderRadius: 6,
+              background: `${badgeColor ?? accent}14`,
+              color: badgeColor ?? accent,
+              letterSpacing: '0.08em',
             }}>
               {badge}
             </span>
@@ -430,17 +437,18 @@ function ProgramRow({
         </div>
         {caption && (
           <div style={{
-            fontSize: 12, color: 'var(--text-soft)',
-            fontFamily: 'var(--font-body)', marginTop: 4, lineHeight: 1.5,
+            fontSize: 12, color: 'var(--text-muted)',
+            fontFamily: 'var(--font-body)', marginTop: 6, lineHeight: 1.5,
           }}>
             {caption}
           </div>
         )}
       </div>
       {href && (
-        <span style={{
-          color: 'var(--text-muted)', fontSize: 16,
+        <span className="program-row-chev" style={{
+          color: 'var(--text-muted)', fontSize: 18,
           flexShrink: 0, paddingRight: 4,
+          transition: 'color 0.15s, transform 0.15s',
         }}>
           ›
         </span>
@@ -454,25 +462,25 @@ function ProgramRow({
 
 function Stat({ accent, label, value }: { accent: string; label: string; value: string }) {
   return (
-    <div style={{
+    <div className="program-stat" style={{
       display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-      padding: '12px 4px 12px 16px',
+      padding: '18px 20px 18px 22px',
       borderBottom: '1px solid var(--line)',
       position: 'relative',
     }}>
       <span style={{
-        position: 'absolute', left: 0, top: 12, bottom: 12,
-        width: 2, background: accent, borderRadius: 2,
+        position: 'absolute', left: 0, top: 18, bottom: 18,
+        width: 3, background: accent, borderRadius: 2,
       }} />
       <span style={{
-        fontSize: 11, fontWeight: 600, letterSpacing: '0.08em',
+        fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
         textTransform: 'uppercase', color: 'var(--text-muted)',
         fontFamily: 'var(--font-body)',
       }}>
         {label}
       </span>
       <span style={{
-        fontSize: 14, fontWeight: 600, color: 'var(--ink)',
+        fontSize: 16, fontWeight: 600, color: 'var(--ink)',
         fontFamily: 'var(--font-body)',
       }}>
         {value}

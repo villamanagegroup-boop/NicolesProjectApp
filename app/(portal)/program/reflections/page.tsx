@@ -163,10 +163,10 @@ function ReflectionsInner() {
                 {route.name}
               </span>
             </div>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '30px', fontWeight: 300, color: 'var(--ink)', margin: '0 0 6px' }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300, color: 'var(--ink)', margin: 0, letterSpacing: '-0.015em', lineHeight: 1.1 }}>
               Reflections
             </h1>
-            <p style={{ fontSize: '13px', color: 'var(--text-soft)', fontFamily: 'var(--font-body)', margin: 0, lineHeight: 1.6 }}>
+            <p style={{ fontSize: 15, color: 'var(--text-soft)', fontFamily: 'var(--font-body)', margin: '12px 0 0', lineHeight: 1.55, maxWidth: 520 }}>
               Your daily reflection prompts for the {route.name} track. Tap a day to review what you wrote.
             </p>
           </div>
@@ -229,7 +229,7 @@ function ReflectionsInner() {
 
             {/* Program days */}
             {completedDays > 0 && (
-              <div style={{ background: 'white', border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden' }}>
+              <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden' }}>
                 <div style={{ height: '3px', background: route.color }} />
                 <div style={{ padding: '14px 16px' }}>
                   <p style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 10px', fontFamily: 'var(--font-body)' }}>
@@ -358,7 +358,7 @@ function ReflectionsInner() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                       {activePromptEntry.items.map(({ question, answer }, i) => (
-                        <div key={i} style={{ background: 'white', border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden' }}>
+                        <div key={i} style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden' }}>
                           <div style={{ height: '3px', background: route.color }} />
                           <div style={{ padding: '20px 24px' }}>
                             <p style={{ fontSize: '11px', fontWeight: 600, color: route.color, fontFamily: 'var(--font-body)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 10px' }}>

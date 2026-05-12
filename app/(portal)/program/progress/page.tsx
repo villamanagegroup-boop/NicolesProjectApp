@@ -342,28 +342,26 @@ export default function MyProgressPage() {
             </div>
             <h1 style={{
               fontFamily: 'var(--font-display)',
-              fontSize: '30px',
+              fontSize: 32,
               fontWeight: 300,
               color: 'var(--ink)',
-              margin: '0 0 6px',
+              margin: 0,
+              letterSpacing: '-0.015em',
+              lineHeight: 1.1,
             }}>
-              My Progress
+              My progress
             </h1>
-            <p style={{ fontSize: '13px', color: 'var(--text-soft)', fontFamily: 'var(--font-body)', margin: 0, lineHeight: 1.6 }}>
+            <p style={{ fontSize: 15, color: 'var(--text-soft)', fontFamily: 'var(--font-body)', margin: '12px 0 0', lineHeight: 1.55, maxWidth: 520 }}>
               {route.coreWound}
             </p>
           </div>
 
           {/* Stats — hairline section, no card chrome */}
           <section>
-            <header style={{
-              paddingBottom: 8, borderBottom: '1px solid var(--line)',
-              marginBottom: 14,
-            }}>
+            <header style={{ marginBottom: 14 }}>
               <h2 style={{
-                fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
-                textTransform: 'uppercase', color: 'var(--text-soft)',
-                margin: 0, fontFamily: 'var(--font-body)',
+                fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+                color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
               }}>
                 Your numbers
               </h2>
@@ -393,14 +391,10 @@ export default function MyProgressPage() {
 
           {/* Day selector — hairline section */}
           <section>
-            <header style={{
-              paddingBottom: 8, borderBottom: '1px solid var(--line)',
-              marginBottom: 14,
-            }}>
+            <header style={{ marginBottom: 14 }}>
               <h2 style={{
-                fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
-                textTransform: 'uppercase', color: 'var(--text-soft)',
-                margin: 0, fontFamily: 'var(--font-body)',
+                fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+                color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
               }}>
                 Your journey
               </h2>

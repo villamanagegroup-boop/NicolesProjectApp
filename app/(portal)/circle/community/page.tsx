@@ -187,15 +187,15 @@ export default function CommunityPage() {
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
       {/* Hero */}
-      <div style={{ marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' }}>
+      <div style={{ marginBottom: 40, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: ORANGE, margin: '0 0 6px' }}>
+          <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 12px' }}>
             The Circle
           </p>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300, color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em', lineHeight: 1.15 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300, color: 'var(--ink)', margin: 0, letterSpacing: '-0.015em', lineHeight: 1.1 }}>
             Community
           </h1>
-          <p style={{ fontSize: 14, color: 'var(--text-soft)', margin: '8px 0 0', lineHeight: 1.6 }}>
+          <p style={{ fontSize: 15, color: 'var(--text-soft)', margin: '12px 0 0', lineHeight: 1.55, maxWidth: 520 }}>
             Wins, prompts, and partner check-ins from your cohort.
           </p>
         </div>
@@ -332,16 +332,14 @@ export default function CommunityPage() {
 
       {/* Right column — filter sidebar (sticky on desktop) */}
       <div style={{ position: 'sticky', top: 24 }}>
-        <section style={{ marginBottom: 24 }}>
+        <section style={{ marginBottom: 32 }}>
           <header style={{
             display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-            paddingBottom: 8, borderBottom: '1px solid var(--line)',
-            marginBottom: 12,
+            marginBottom: 14,
           }}>
             <h2 style={{
-              fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
-              textTransform: 'uppercase', color: 'var(--text-soft)',
-              margin: 0, fontFamily: 'var(--font-body)',
+              fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+              color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
             }}>
               Filter
             </h2>
@@ -360,14 +358,10 @@ export default function CommunityPage() {
         </section>
 
         <section>
-          <header style={{
-            paddingBottom: 8, borderBottom: '1px solid var(--line)',
-            marginBottom: 12,
-          }}>
+          <header style={{ marginBottom: 14 }}>
             <h2 style={{
-              fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
-              textTransform: 'uppercase', color: 'var(--text-soft)',
-              margin: 0, fontFamily: 'var(--font-body)',
+              fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+              color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
             }}>
               About this feed
             </h2>

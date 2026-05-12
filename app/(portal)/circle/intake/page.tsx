@@ -163,13 +163,13 @@ export default function CircleIntakePage() {
     <Shell>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: ORANGE, margin: '0 0 6px' }}>
+        <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 12px', fontFamily: 'var(--font-body)' }}>
           The Circle · Intake
         </p>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 300, color: 'var(--ink)', margin: '0 0 6px' }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300, color: 'var(--ink)', margin: 0, letterSpacing: '-0.015em', lineHeight: 1.1 }}>
           {user.name ? `A few more things, ${user.name.split(' ')[0]}.` : 'Finish your Circle profile'}
         </h1>
-        <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.6, margin: 0 }}>
+        <p style={{ fontSize: 15, color: 'var(--text-soft)', lineHeight: 1.55, margin: '12px 0 0', maxWidth: 520 }}>
           These answers power your partner pairing and shape the prompts you see each week. About 3 minutes.
         </p>
       </div>

@@ -588,7 +588,7 @@ function TodaysSessionInner() {
           </div>
 
           {/* Action */}
-          <div style={{ background: 'white', border: '1px solid var(--line)', borderRadius: '10px', padding: '18px 20px' }}>
+          <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '10px', padding: '18px 20px' }}>
             <p style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 6px' }}>
               {isPast ? 'The action' : "Today's action"}
             </p>
@@ -613,7 +613,7 @@ function TodaysSessionInner() {
               </p>
             </div>
           ) : (
-            <div style={{ background: 'white', border: `1px dashed ${route.color}40`, borderRadius: '10px', padding: '18px 20px', textAlign: 'center' }}>
+            <div style={{ background: 'var(--card)', border: `1px dashed ${route.color}40`, borderRadius: '10px', padding: '18px 20px', textAlign: 'center' }}>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 12px', lineHeight: 1.6 }}>
                 Complete your reflections, then claim your seal.
               </p>
@@ -641,7 +641,7 @@ function TodaysSessionInner() {
               </p>
               <div className="two-col-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 {day.proofs.map((proof) => (
-                  <div key={proof.label} style={{ background: 'white', border: '1px solid var(--line)', borderRadius: '8px', padding: '10px 12px' }}>
+                  <div key={proof.label} style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '8px', padding: '10px 12px' }}>
                     <p style={{ fontSize: '10px', fontWeight: 500, color: route.color, margin: '0 0 4px', fontFamily: 'var(--font-body)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{proof.label}</p>
                     <p style={{ fontSize: '11px', color: 'var(--text-soft)', fontStyle: 'italic', lineHeight: 1.6, margin: 0, fontFamily: 'var(--font-body)' }}>&ldquo;{proof.quote}&rdquo;</p>
                   </div>
@@ -658,7 +658,7 @@ function TodaysSessionInner() {
         </div>
 
         {/* RIGHT: prompt / reflection column */}
-        <div style={{ background: 'white', border: '1px solid var(--line)', borderRadius: '10px', padding: '24px' }}>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '10px', padding: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '6px' }}>
             <p style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: 0 }}>
               {isPast ? 'Daily Journal' : "Today's prompt"}
@@ -712,7 +712,7 @@ function TodaysSessionInner() {
               style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
                 padding: '10px 18px', borderRadius: '8px', border: '1px solid var(--line)',
-                background: 'white', color: 'var(--text-soft)', fontSize: '13px',
+                background: 'var(--card)', color: 'var(--text-soft)', fontSize: '13px',
                 fontFamily: 'var(--font-body)', fontWeight: 500, cursor: 'pointer',
                 transition: 'all 0.15s',
               }}
@@ -1054,24 +1054,27 @@ function RecordedSection({ routeId, route, currentDay }: {
   if (entries.length === 0) return null
 
   return (
-    <div style={{ marginTop: '48px', paddingTop: '32px', borderTop: '1px solid var(--line)' }}>
-      <h2 style={{
-        fontFamily: 'var(--font-display)',
-        fontSize: '22px',
-        fontWeight: 300,
-        color: 'var(--ink)',
-        margin: '0 0 6px',
-      }}>
-        Recorded
-      </h2>
-      <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '0 0 24px' }}>
-        Everything you&apos;ve written across this program.
-      </p>
+    <div style={{ marginTop: '48px' }}>
+      <header style={{ marginBottom: 14 }}>
+        <h2 style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 22,
+          fontWeight: 400,
+          color: 'var(--ink)',
+          margin: 0,
+          letterSpacing: '-0.01em',
+        }}>
+          Recorded
+        </h2>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '4px 0 0' }}>
+          Everything you&apos;ve written across this program.
+        </p>
+      </header>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {entries.map(({ day, title, items }) => (
           <div key={day} style={{
-            background: 'white',
+            background: 'var(--card)',
             border: '1px solid var(--line)',
             borderRadius: '12px',
             overflow: 'hidden',

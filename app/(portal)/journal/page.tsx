@@ -148,8 +148,27 @@ function JournalInner() {
 
       {/* ── LEFT — Editor ── */}
       <div style={{ flex: 1 }}>
-        <div style={{ marginBottom: '24px' }}>
-          <EyebrowLabel color="muted">Your Reflections</EyebrowLabel>
+        <div style={{ marginBottom: 40 }}>
+          <p style={{
+            fontSize: 11, fontWeight: 500, letterSpacing: '0.14em',
+            textTransform: 'uppercase', color: 'var(--text-muted)',
+            margin: '0 0 12px', fontFamily: 'var(--font-body)',
+          }}>
+            Journal · Day {journalDay}
+          </p>
+          <h1 style={{
+            fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300,
+            color: 'var(--ink)', margin: 0, letterSpacing: '-0.015em',
+            lineHeight: 1.1,
+          }}>
+            Your reflections
+          </h1>
+          <p style={{
+            fontSize: 15, color: 'var(--text-soft)', margin: '12px 0 0',
+            lineHeight: 1.55, maxWidth: 520, fontFamily: 'var(--font-body)',
+          }}>
+            One prompt a day. Write, speak, or just notice — there&apos;s no wrong way.
+          </p>
         </div>
 
         {/* Prompt block — daily card prompt */}
@@ -248,7 +267,7 @@ function JournalInner() {
               onClick={isRecording ? stopRecording : startRecording}
               style={{
                 border: isRecording ? '1px solid var(--red)' : '1px solid var(--line-md)',
-                background: isRecording ? 'var(--red-pale)' : 'white',
+                background: isRecording ? 'var(--red-pale)' : 'var(--card)',
                 color: isRecording ? 'var(--red)' : 'var(--text-soft)',
                 padding: '6px 14px',
                 borderRadius: '6px',

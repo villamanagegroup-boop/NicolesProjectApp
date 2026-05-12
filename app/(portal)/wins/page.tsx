@@ -112,21 +112,28 @@ export default function WinsPage() {
   return (
     <div>
       {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
-        <EyebrowLabel color="gold">Private Victories</EyebrowLabel>
+      <div style={{ marginBottom: 40 }}>
+        <p style={{
+          fontSize: 11, fontWeight: 500, letterSpacing: '0.14em',
+          textTransform: 'uppercase', color: 'var(--text-muted)',
+          margin: '0 0 12px', fontFamily: 'var(--font-body)',
+        }}>
+          Private victories
+        </p>
         <h1
           style={{
             fontFamily: 'var(--font-display)',
-            fontSize: '2.25rem',
+            fontSize: 32,
             fontWeight: 300,
             color: 'var(--ink)',
-            marginTop: '4px',
-            marginBottom: '8px',
+            margin: 0,
+            letterSpacing: '-0.015em',
+            lineHeight: 1.1,
           }}
         >
-          My Wins
+          My wins
         </h1>
-        <p style={{ fontSize: '14px', color: 'var(--text-soft)', margin: 0 }}>
+        <p style={{ fontSize: 15, color: 'var(--text-soft)', margin: '12px 0 0', lineHeight: 1.55, maxWidth: 520, fontFamily: 'var(--font-body)' }}>
           Every time you chose yourself — logged here.
         </p>
       </div>
@@ -134,11 +141,11 @@ export default function WinsPage() {
       {/* Add Win panel */}
       <div
         style={{
-          marginBottom: '32px',
+          marginBottom: '36px',
           border: '1px solid var(--line)',
           borderRadius: '12px',
           padding: '24px',
-          backgroundColor: 'white',
+          background: 'var(--card)',
         }}
       >
         <p
@@ -169,7 +176,7 @@ export default function WinsPage() {
                     fontSize: '12px',
                     fontFamily: 'var(--font-body)',
                     cursor: 'pointer',
-                    backgroundColor: isSelected ? config.selectedStyle.backgroundColor : 'white',
+                    backgroundColor: isSelected ? config.selectedStyle.backgroundColor : 'var(--card)',
                     borderColor: isSelected
                       ? (config.selectedStyle.borderColor as string)
                       : 'var(--line-md)',
@@ -348,7 +355,7 @@ export default function WinsPage() {
               onClick={isRecording ? stopRecording : startRecording}
               style={{
                 border: isRecording ? '1px solid var(--red)' : '1px solid var(--line-md)',
-                background: isRecording ? 'var(--red-pale)' : 'white',
+                background: isRecording ? 'var(--red-pale)' : 'var(--card)',
                 color: isRecording ? 'var(--red)' : 'var(--text-soft)',
                 padding: '6px 14px',
                 borderRadius: '6px',
@@ -463,7 +470,7 @@ export default function WinsPage() {
                   border: '1px solid var(--line)',
                   borderRadius: '12px',
                   padding: '20px',
-                  backgroundColor: 'white',
+                  background: 'var(--card)',
                   position: 'relative',
                   paddingLeft: '24px',
                 }}

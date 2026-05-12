@@ -21,13 +21,13 @@ export default function UpgradePage() {
 
   return (
     <div style={{ maxWidth: 1040, margin: '0 auto' }}>
-      <div style={{ marginBottom: 36 }}>
+      <div style={{ marginBottom: 40 }}>
         <p style={{
-          fontSize: 10,
-          letterSpacing: '0.12em',
+          fontSize: 11,
+          letterSpacing: '0.14em',
           textTransform: 'uppercase',
-          color: 'var(--green)',
-          margin: '0 0 10px',
+          color: 'var(--text-muted)',
+          margin: '0 0 12px',
           fontWeight: 500,
           fontFamily: 'var(--font-body)',
         }}>
@@ -35,21 +35,22 @@ export default function UpgradePage() {
         </p>
         <h1 style={{
           fontFamily: 'var(--font-display)',
-          fontSize: 36,
+          fontSize: 32,
           fontWeight: 300,
           color: 'var(--ink)',
-          margin: '0 0 10px',
-          lineHeight: 1.15,
+          margin: 0,
+          letterSpacing: '-0.015em',
+          lineHeight: 1.1,
         }}>
           Add another path.
         </h1>
         <p style={{
-          fontSize: 14,
+          fontSize: 15,
           color: 'var(--text-soft)',
           fontFamily: 'var(--font-body)',
-          margin: 0,
-          lineHeight: 1.7,
-          maxWidth: 560,
+          margin: '12px 0 0',
+          lineHeight: 1.55,
+          maxWidth: 520,
         }}>
           {owned
             ? `You're on ${PATHS[owned].title}. Here's what's still available — pick the next step when you're ready.`
@@ -82,7 +83,7 @@ export default function UpgradePage() {
               <div
                 key={pathId}
                 style={{
-                  background: 'white',
+                  background: 'var(--card)',
                   border: '1px solid var(--line-md)',
                   borderRadius: 14,
                   padding: '24px 22px',
@@ -99,11 +100,11 @@ export default function UpgradePage() {
                 }} />
 
                 <span style={{
-                  fontSize: 9,
+                  fontSize: 10,
                   textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
+                  letterSpacing: '0.12em',
                   color: p.accent,
-                  fontWeight: 600,
+                  fontWeight: 700,
                 }}>
                   {p.tierLabel}
                 </span>
