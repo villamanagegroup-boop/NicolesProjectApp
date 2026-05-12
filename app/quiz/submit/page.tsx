@@ -62,6 +62,20 @@ export default function QuizSubmitPage() {
       console.error('quiz_leads insert failed:', insertError)
     }
 
+    // Sync the lead to the Emailit "Quiz Takers" audience so Nicole's
+    // nurture sequence can start. Fire-and-forget — never block the funnel
+    // on an email-provider hiccup. The server route also no-ops cleanly
+    // if EMAILIT_QUIZ_AUDIENCE_ID isn't set.
+    fetch('/api/quiz-complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email.trim(),
+        first_name: name.trim().split(/\s+/)[0],
+        archetype: result,
+      }),
+    }).catch(err => console.error('quiz-complete sync failed:', err))
+
     sessionStorage.setItem('clarity_quiz_result', result)
     sessionStorage.setItem('clarity_lead_name', name.trim())
     sessionStorage.setItem('clarity_lead_email', email.trim())
