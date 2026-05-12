@@ -76,10 +76,11 @@ function isActive(href: string, pathname: string, exact?: boolean): boolean {
   return pathname === href || pathname.startsWith(href + '/')
 }
 
-// Derive which program the user is currently in based on the URL.
-// /dashboard is universal (not tied to any program) — the picker stays on
-// whatever the user's natural default was when they navigate there.
-function programFromPath(pathname: string, fallback: ProgramKey): ProgramKey {
+// Strict URL-to-program mapping. Returns null for cross-cutting routes
+// (/dashboard, /journal, /wins, /inbox, /profile, /settings, /upgrade)
+// so the caller can leave the program picker sticky instead of forcing
+// it back to a default whenever the user clicks Home.
+function programFromPath(pathname: string): ProgramKey | null {
   if (pathname.startsWith('/program')) return 'seal'
   if (pathname.startsWith('/circle'))  return 'circle'
   if (pathname === '/cards' || pathname.startsWith('/cards') ||
@@ -88,7 +89,7 @@ function programFromPath(pathname: string, fallback: ProgramKey): ProgramKey {
       pathname === '/vault' || pathname.startsWith('/vault')) {
     return 'cards'
   }
-  return fallback
+  return null
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -105,25 +106,24 @@ export default function Sidebar() {
   const owned   = (Object.keys(access) as ProgramKey[]).filter(k => access[k])
   const locked  = (Object.keys(access) as ProgramKey[]).filter(k => !access[k])
 
-  // Default the selected program to the user's actual selected_path first,
-  // then fall back to the first owned program, then 'cards'. Honoring
-  // selected_path matters for users with multiple access (e.g. Path A
-  // with cards add-on, or an admin previewing) — they should land in
-  // their own program on /dashboard, not whichever the access map
-  // happens to enumerate first.
+  // Initial selection: prefer URL → user's selected_path → first owned →
+  // 'cards' as the final safety net. After mount, selected only changes
+  // when the user actively switches programs (URL hits a program-specific
+  // route, or they pick from the dropdown). Cross-cutting routes leave
+  // it alone — Home and Journal and Inbox don't switch programs.
   const pathToProgram: Record<'A' | 'B' | 'C', ProgramKey> = { A: 'seal', B: 'cards', C: 'circle' }
   const naturalDefault: ProgramKey =
+    programFromPath(pathname) ??
     (user.selectedPath && pathToProgram[user.selectedPath]) ??
     owned[0] ??
     'cards'
-  const [selected, setSelected] = useState<ProgramKey>(programFromPath(pathname, naturalDefault))
+  const [selected, setSelected] = useState<ProgramKey>(naturalDefault)
 
-  // When the URL changes, follow it. Keeps the dropdown in sync if the user
-  // navigates via direct link or the journey items.
+  // Follow the URL only when it points at a program-specific route.
+  // For everything else (Home, journal, inbox, etc.), stay where we are.
   useEffect(() => {
-    const next = programFromPath(pathname, naturalDefault)
-    setSelected(next)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const next = programFromPath(pathname)
+    if (next) setSelected(next)
   }, [pathname])
 
   // Inbox unread badge — refresh on mount + each time the user navigates

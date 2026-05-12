@@ -18,37 +18,44 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   const router = useRouter()
   const pathname = usePathname()
 
-  // Keep mobile nav/drawer themed correctly. The desktop sidebar is now
-  // unified and ignores sidebarMode, but MobileNav and MobileDrawer still
-  // use it to swap their per-program nav lists.
-  //
-  // For program-prefixed routes (/program, /circle, /cards…) the mode
-  // follows the URL. For shared routes (/dashboard, /inbox, /journal,
-  // /wins, etc.) we DON'T default to cards — we honor the user's
-  // selected_path so a Path A or Path C user clicking "Home" stays
-  // in their own program instead of getting flipped to Cards nav.
+  // sidebarMode (used by MobileNav + MobileDrawer) follows the URL only
+  // when the URL is program-specific. Cross-cutting routes (Home,
+  // journal, wins, inbox, settings, profile, upgrade) DO NOT change
+  // the mode — the sidebar stays on whichever program the user was
+  // last looking at. Home is the user's universal landing; it should
+  // never silently switch programs out from under them.
   useEffect(() => {
     if (!pathname) return
-    const isShared =
-      pathname === '/settings' || pathname.startsWith('/settings/') ||
-      pathname === '/profile'  || pathname.startsWith('/profile/')  ||
-      pathname === '/upgrade'
-    if (isShared) return
-    if (pathname.startsWith('/circle'))      { setSidebarMode('circle'); return }
-    if (pathname.startsWith('/program'))     { setSidebarMode('work');   return }
+    if (pathname.startsWith('/circle'))  { setSidebarMode('circle'); return }
+    if (pathname.startsWith('/program')) { setSidebarMode('work');   return }
     if (pathname === '/cards' || pathname.startsWith('/cards') ||
         pathname === '/card'  || pathname.startsWith('/card')  ||
         pathname === '/past'  || pathname.startsWith('/past')  ||
         pathname === '/vault' || pathname.startsWith('/vault')) {
       setSidebarMode('cards'); return
     }
-    // Cross-cutting routes (/dashboard, /journal, /wins, /inbox…):
-    // pin to the user's own program.
-    if (user.selectedPath === 'A')      setSidebarMode('work')
+    // Anything else — leave sidebarMode alone (sticky).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
+
+  // First-load seed: if the user lands on a cross-cutting route directly
+  // (e.g. signs in and gets dropped on /dashboard), use their selected_path
+  // to pick a reasonable starting program for the sidebar. Runs once when
+  // user.selectedPath becomes known.
+  const [sidebarSeeded, setSidebarSeeded] = useState(false)
+  useEffect(() => {
+    if (sidebarSeeded || !user.selectedPath || !pathname) return
+    const onProgramRoute =
+      pathname.startsWith('/circle') || pathname.startsWith('/program') ||
+      pathname.startsWith('/cards')  || pathname.startsWith('/card')    ||
+      pathname.startsWith('/past')   || pathname.startsWith('/vault')
+    if (onProgramRoute) { setSidebarSeeded(true); return }
+    if      (user.selectedPath === 'A') setSidebarMode('work')
     else if (user.selectedPath === 'C') setSidebarMode('circle')
     else                                setSidebarMode('cards')
+    setSidebarSeeded(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, user.selectedPath])
+  }, [user.selectedPath, pathname, sidebarSeeded])
 
   // Route-level path isolation: each persona only sees their own content.
   // A: /program + (when unlocked) /card·/dashboard·... — no /circle.
