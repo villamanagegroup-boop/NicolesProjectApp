@@ -24,13 +24,19 @@ export interface ProgramRoute {
   days: ProgramDay[]
 }
 
-// Mapping from quiz archetype to program route
-// Adjust this mapping as needed
+// Mapping from quiz archetype to program route. These MUST stay in sync
+// with the names shown on the quiz result page (components/result/
+// ArchetypeReveal.tsx) — otherwise users get told they're one archetype
+// and dropped into a different one's program. Pairings:
+//   seeker    → throne (Overthinker's Throne)
+//   healer    → door   (Open Door)
+//   builder   → engine (Interrupted Engine)
+//   visionary → push   (Pushthrough)
 export const archetypeToRoute: Record<string, string> = {
-  seeker:    'door',
-  visionary: 'throne',
+  seeker:    'throne',
+  healer:    'door',
   builder:   'engine',
-  healer:    'push',
+  visionary: 'push',
 }
 
 export const PHASE_ORDER: Phase[] = ['Awareness', 'Interruption', 'Reclamation', 'Identity']

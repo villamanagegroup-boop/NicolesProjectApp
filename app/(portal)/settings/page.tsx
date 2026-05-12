@@ -20,7 +20,7 @@ type SectionId = typeof SECTIONS[number]['id']
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { user, updateUser, avatarUrl, setAvatarUrl, dailyReminders, setDailyReminders, enableCardsAddOn } = useApp()
+  const { user, updateUser, avatarUrl, setAvatarUrl, dailyReminders, setDailyReminders } = useApp()
 
   // ── Profile autosave ─────────────────────────────────────────────────────
   const [name, setName] = useState(user.name)
@@ -650,11 +650,16 @@ export default function SettingsPage() {
                           fontFamily: 'var(--font-body)',
                           cursor: 'pointer',
                         }}
-                        onClick={async () => {
-                          // TODO: send through Stripe checkout before writing the add-on row.
-                          if (!confirm('Add Daily Cards to your plan? Today becomes your Cards Day 1.')) return
-                          await enableCardsAddOn()
-                          alert('Daily Cards added — head to the Daily Alignment sidebar.')
+                        onClick={() => {
+                          // Route through Stripe checkout — never grant the
+                          // add-on row directly. The webhook activates the
+                          // user's Cards access after the payment lands.
+                          const checkout = PATHS.B.ctaHref
+                          if (checkout && checkout.startsWith('http')) {
+                            window.location.href = checkout
+                          } else {
+                            alert('Daily Cards checkout is not configured yet. Contact support.')
+                          }
                         }}
                       >
                         Add Daily Cards →

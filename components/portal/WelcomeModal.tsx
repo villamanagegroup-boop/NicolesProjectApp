@@ -33,8 +33,8 @@ const PROGRAM_CONTENT: Record<string, {
     steps: [
       'Head to The Work to begin Day 1',
       'One session per day — takes 10–15 minutes',
-      'Days 6 & 7 unlock your first Alignment cards',
-      'After Day 7 you choose whether to keep the daily practice',
+      'Finishing Day 7 unlocks 30 days of the Daily Alignment app',
+      'After your 30 days, pick monthly or yearly to keep going',
     ],
     cta: 'Begin Day 1 →',
   },

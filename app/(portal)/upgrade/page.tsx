@@ -2,23 +2,16 @@
 import { useApp } from '@/context/AppContext'
 import { PATHS, PATH_ORDER, type PathId } from '@/data/paths'
 
-const STRIPE_PATH_A = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK ?? ''
-const STRIPE_PATH_B = process.env.NEXT_PUBLIC_STRIPE_PATH_B_LINK ?? ''
-const STRIPE_PATH_C = process.env.NEXT_PUBLIC_STRIPE_PATH_C_LINK ?? ''
-
-function stripeLinkFor(id: PathId): string {
-  if (id === 'A') return STRIPE_PATH_A
-  if (id === 'B') return STRIPE_PATH_B
-  return STRIPE_PATH_C
-}
-
 export default function UpgradePage() {
   const { user } = useApp()
   const owned: PathId | null = user.selectedPath
   const available = PATH_ORDER.filter((id) => id !== owned)
 
   function startUpgrade(id: PathId) {
-    const link = stripeLinkFor(id)
+    // data/paths.ts already resolves the right Stripe link (env var or
+    // fallback /signup route) for each path — use it as the single source
+    // of truth instead of maintaining a parallel env-var triplet here.
+    const link = PATHS[id].ctaHref
     if (link) {
       window.location.href = link
     } else {
