@@ -5,15 +5,19 @@ import { useApp } from '@/context/AppContext'
 
 const GREEN  = '#1A5230'
 const PURPLE = '#3D3080'
+const ORANGE = '#C97D3A'
 
 export default function ChoosePathPage() {
   const router = useRouter()
   const { setSidebarMode } = useApp()
   const [cardsInterval, setCardsInterval] = useState<'monthly' | 'yearly'>('monthly')
+  const [circlePay, setCirclePay] = useState<'full' | 'plan'>('full')
 
-  function choose(mode: 'cards' | 'work') {
+  function choose(mode: 'cards' | 'work' | 'circle') {
     setSidebarMode(mode)
-    router.push(mode === 'work' ? '/program' : '/dashboard')
+    if (mode === 'work')   { router.push('/program'); return }
+    if (mode === 'circle') { router.push('/circle');  return }
+    router.push('/dashboard')
   }
 
   return (
@@ -67,7 +71,7 @@ export default function ChoosePathPage() {
         gap: '20px',
         flexWrap: 'wrap',
         justifyContent: 'center',
-        maxWidth: '760px',
+        maxWidth: '1140px',
         width: '100%',
       }}>
 
@@ -385,6 +389,192 @@ export default function ChoosePathPage() {
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = 'rgba(61,48,128,0.05)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+              }}
+            >
+              Preview First
+            </button>
+          </div>
+        </div>
+
+        {/* The Circle */}
+        <div
+          style={{
+            flex: '1 1 300px',
+            maxWidth: '360px',
+            background: '#ffffff',
+            border: `1.5px solid rgba(201,125,58,0.22)`,
+            borderRadius: '16px',
+            padding: '32px 28px',
+            textAlign: 'left',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+          }}
+        >
+          {/* Icon badge */}
+          <div style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '10px',
+            backgroundColor: 'rgba(201,125,58,0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: ORANGE,
+          }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="9" cy="8" r="3.2" />
+              <circle cx="17" cy="9" r="2.5" />
+              <path d="M3 19c0-3.31 2.69-6 6-6s6 2.69 6 6" />
+              <path d="M14.5 18.5c0-2.49 1.79-4.5 4-4.5 1.39 0 2.5.78 3 2" />
+            </svg>
+          </div>
+
+          <div>
+            <div style={{
+              fontSize: '10px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
+              color: ORANGE,
+              fontFamily: 'var(--font-body)',
+              fontWeight: 600,
+              marginBottom: '6px',
+            }}>
+              12-Week Intensive
+            </div>
+            <div style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '24px',
+              fontWeight: 500,
+              color: 'var(--ink)',
+              lineHeight: 1.15,
+              marginBottom: '10px',
+            }}>
+              The Circle
+            </div>
+            <p style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '13px',
+              color: 'var(--text-soft)',
+              lineHeight: 1.6,
+              margin: 0,
+            }}>
+              12 weeks of guided work with Nicole — live calls, a matched accountability partner, and a tight cohort community.
+            </p>
+          </div>
+
+          {/* Pay-in-full vs installments toggle */}
+          <div style={{
+            marginTop: '16px',
+            display: 'flex',
+            gap: '8px',
+            backgroundColor: 'rgba(201,125,58,0.06)',
+            borderRadius: '8px',
+            padding: '4px',
+          }}>
+            <button
+              onClick={() => setCirclePay('full')}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: 'none',
+                backgroundColor: circlePay === 'full' ? '#ffffff' : 'transparent',
+                color: circlePay === 'full' ? ORANGE : 'rgba(201,125,58,0.7)',
+                fontSize: '13px',
+                fontFamily: 'var(--font-body)',
+                fontWeight: circlePay === 'full' ? 600 : 500,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              Pay in full <span style={{ fontWeight: 400, fontSize: '12px' }}>$497</span>
+            </button>
+            <button
+              onClick={() => setCirclePay('plan')}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: 'none',
+                backgroundColor: circlePay === 'plan' ? '#ffffff' : 'transparent',
+                color: circlePay === 'plan' ? ORANGE : 'rgba(201,125,58,0.7)',
+                fontSize: '13px',
+                fontFamily: 'var(--font-body)',
+                fontWeight: circlePay === 'plan' ? 600 : 500,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              3 × <span style={{ fontWeight: 400, fontSize: '12px' }}>$197</span>
+            </button>
+          </div>
+          <p style={{
+            fontSize: '11px',
+            fontFamily: 'var(--font-body)',
+            color: 'var(--text-muted)',
+            margin: '-4px 0 0',
+            lineHeight: 1.5,
+          }}>
+            {circlePay === 'full'
+              ? 'Save $94 vs. the 3-payment plan.'
+              : 'Total: $591. Pay in full to save $94.'}
+          </p>
+
+          {/* CTA buttons */}
+          <div style={{
+            marginTop: 'auto',
+            paddingTop: '16px',
+            borderTop: '1px solid var(--line)',
+            display: 'flex',
+            gap: '8px',
+            flexDirection: 'column',
+          }}>
+            <a
+              href={circlePay === 'full'
+                ? process.env.NEXT_PUBLIC_STRIPE_CIRCLE_ONETIME
+                : process.env.NEXT_PUBLIC_STRIPE_CIRCLE_MONTHLY
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'block',
+                padding: '10px 12px',
+                backgroundColor: ORANGE,
+                color: '#ffffff',
+                borderRadius: '8px',
+                textAlign: 'center',
+                fontSize: '13px',
+                fontFamily: 'var(--font-body)',
+                fontWeight: 600,
+                textDecoration: 'none',
+                cursor: 'pointer',
+                transition: 'opacity 0.2s ease',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+            >
+              Join The Circle
+            </a>
+            <button
+              onClick={() => choose('circle')}
+              style={{
+                padding: '10px 12px',
+                backgroundColor: 'transparent',
+                color: ORANGE,
+                border: `1px solid ${ORANGE}`,
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontFamily: 'var(--font-body)',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(201,125,58,0.05)'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = 'transparent'
