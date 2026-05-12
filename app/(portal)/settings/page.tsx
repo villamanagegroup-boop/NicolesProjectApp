@@ -940,8 +940,8 @@ export default function SettingsPage() {
           }}>
             <span>v1.0.0 · Built by Hicks Virtual Solutions LLC</span>
             <span>
-              <a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none', marginRight: 14 }}>Privacy</a>
-              <a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Terms</a>
+              <Link href="/privacy" style={{ color: 'var(--text-muted)', textDecoration: 'none', marginRight: 14 }}>Privacy</Link>
+              <Link href="/terms" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Terms</Link>
             </span>
           </div>
         </div>
