@@ -432,7 +432,7 @@ export default function AdminMemberProfilePage() {
   const completed = progress.reduce((s, p) => s + (p.journal_completed ? 1 : 0) + (p.action_completed ? 1 : 0), 0)
   const completionPct = totalPossible > 0 ? Math.round((completed / totalPossible) * 100) : 0
   const thisWeek = progress.find(p => p.week_number === cohortWeek)
-  const planLabel = user.selected_path === 'A' ? 'Path A — Cohort' : user.selected_path === 'B' ? 'Path B — Daily Cards' : '—'
+  const planLabel = user.selected_path === 'A' ? 'Path A — Seal the Leak' : user.selected_path === 'B' ? 'Path B — Daily Cards' : '—'
 
   // ── Styles ──────────────────────────────────────────────────────────────
   const S = {
@@ -1125,7 +1125,7 @@ export default function AdminMemberProfilePage() {
                   style={editInputStyle}
                 >
                   <option value="">—</option>
-                  <option value="A">A — Cohort</option>
+                  <option value="A">A — Seal the Leak</option>
                   <option value="B">B — Daily Cards</option>
                 </select>
               </EditField>

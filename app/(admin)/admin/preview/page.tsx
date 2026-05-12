@@ -44,7 +44,7 @@ const PATHS: PathDescriptor[] = [
   {
     id: 'A',
     title: 'Seal the Leak',
-    subtitle: '7-day reset cohort program. Today’s session walks D1–D7.',
+    subtitle: '7-day reset program. Today’s session walks D1–D7.',
     home: '/program/today',
     accent: '#3D3080',
     accentBg: 'rgba(61,48,128,0.08)',

@@ -2,8 +2,8 @@
 
 // app/(admin)/admin/users/page.tsx
 // Cross-portal user roster — every signed-up account, not just circle members.
-// Path A (Cohort) / Path B (Daily Cards) / Path C (Circle) all show up here so
-// admins can see and reach 365-day and Seal-the-Leak users alongside Circle.
+// Path A (Seal the Leak) / Path B (Daily Cards) / Path C (Circle) all show up
+// here so admins can see and reach Seal and Cards users alongside Circle.
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -28,7 +28,7 @@ const TAG_COLOR_STYLE: Record<TagColor, { bg: string; fg: string; border: string
 }
 
 const PATH_LABELS: Record<NonNullable<AdminUserRow['selected_path']> | 'none', { label: string; color: string; bg: string; border: string }> = {
-  A:    { label: 'Path A · Cohort',       color: '#3D3080',     bg: 'rgba(61,48,128,0.12)',  border: 'rgba(61,48,128,0.25)' },
+  A:    { label: 'Path A · Seal the Leak', color: '#3D3080',     bg: 'rgba(61,48,128,0.12)',  border: 'rgba(61,48,128,0.25)' },
   B:    { label: 'Path B · Daily Cards',  color: 'var(--green)',bg: 'rgba(31,92,58,0.12)',   border: 'rgba(31,92,58,0.25)' },
   C:    { label: 'Path C · Circle',       color: '#C97D3A',     bg: 'rgba(201,125,58,0.12)', border: 'rgba(201,125,58,0.25)' },
   none: { label: 'No path yet',           color: 'var(--text-muted)', bg: 'var(--paper2)', border: 'var(--line)' },
@@ -339,7 +339,7 @@ export default function AdminUsersPage() {
                   title="Change selected path"
                 >
                   <option value="">No path</option>
-                  <option value="A">Path A · Cohort</option>
+                  <option value="A">Path A · Seal the Leak</option>
                   <option value="B">Path B · Daily Cards</option>
                   <option value="C">Path C · Circle</option>
                 </select>

@@ -506,7 +506,7 @@ export default function AdminUserProfilePage() {
             style={{ ...S.input, flex: 1 }}
           >
             <option value="">No path</option>
-            <option value="A">Path A · Cohort (Seal the Leak)</option>
+            <option value="A">Path A · Seal the Leak</option>
             <option value="B">Path B · Daily Cards</option>
             <option value="C">Path C · Circle</option>
           </select>

@@ -184,7 +184,7 @@ export default function CommsPage() {
       {/* Direct one-on-one message — pick any signed-up user across paths */}
       <h2 style={{ ...S.h1, marginTop: '8px' }}>Direct message</h2>
       <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 16px' }}>
-        Send a 1:1 message to any user — Path A (Cohort), Path B (Daily Cards), or Path C (Circle).
+        Send a 1:1 message to any user — Path A (Seal the Leak), Path B (Daily Cards), or Path C (Circle).
         They&apos;ll see it in their Coach chat.
       </p>
       <div style={S.card}>

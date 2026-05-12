@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation'
 import { usePreviewMode, type ArchetypeRoute } from '@/hooks/usePreviewMode'
 
 const PATH_LABELS: Record<'A' | 'B' | 'C', string> = {
-  A: 'Path A · Cohort + Cards',
+  A: 'Path A · Seal the Leak',
   B: 'Path B · Daily Cards',
   C: 'Path C · Circle',
 }
