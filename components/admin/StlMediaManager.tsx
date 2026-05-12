@@ -13,7 +13,7 @@ import {
   fetchMediaSlots, upsertMediaSlot, deleteMediaSlot,
   type MediaSlot, type MediaSlotType,
 } from '@/lib/admin/hooks'
-import { uploadCircleAttachment } from '@/lib/circle'
+import { uploadCircleAttachmentResult } from '@/lib/circle'
 
 // Day 1 defaults to video; the rest default to voice. Admins can flip either.
 function defaultTypeFor(day: number): MediaSlotType {
@@ -69,9 +69,9 @@ export default function StlMediaManager() {
   async function handleUpload(day: number, file: File, type: MediaSlotType) {
     setBusy(day)
     setErrorByDay(prev => ({ ...prev, [day]: null }))
-    const url = await uploadCircleAttachment(file)
-    if (!url) {
-      setErrorByDay(prev => ({ ...prev, [day]: 'Upload failed — check storage permissions.' }))
+    const result = await uploadCircleAttachmentResult(file)
+    if (!result.url) {
+      setErrorByDay(prev => ({ ...prev, [day]: result.error ?? 'Upload failed.' }))
       setBusy(null)
       return
     }
@@ -79,7 +79,7 @@ export default function StlMediaManager() {
       slot_key: slotKeyFor(day),
       program: 'work',
       media_type: type,
-      media_url: url,
+      media_url: result.url,
     })
     if (error) {
       setErrorByDay(prev => ({ ...prev, [day]: error.message }))

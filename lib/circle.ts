@@ -326,41 +326,100 @@ export async function createPost(
   return !error
 }
 
-/** Upload a file to the public circle-uploads bucket and return its URL.
- *  Returns null on failure but logs the underlying cause to console.error so
- *  the actual reason (auth expired, bucket missing, file too large, MIME
- *  rejected, RLS mismatch) is visible in browser DevTools — the call sites
- *  only know "it failed" otherwise. */
-export async function uploadCircleAttachment(file: File): Promise<string | null> {
+// iOS Safari often leaves File.type empty when picking from Camera Roll
+// or Files; Supabase Storage then rejects the upload against the bucket's
+// MIME allowlist. Fall back to extension-based inference for that case.
+const EXT_MIME: Record<string, string> = {
+  mov: 'video/quicktime',
+  mp4: 'video/mp4',
+  m4v: 'video/x-m4v',
+  webm: 'video/webm',
+  mp3:  'audio/mpeg',
+  m4a:  'audio/mp4',
+  wav:  'audio/wav',
+  ogg:  'audio/ogg',
+  heic: 'image/heic',
+  heif: 'image/heif',
+  jpg:  'image/jpeg',
+  jpeg: 'image/jpeg',
+  png:  'image/png',
+  gif:  'image/gif',
+  webp: 'image/webp',
+  pdf:  'application/pdf',
+}
+function inferContentType(file: File): string {
+  if (file.type) return file.type
+  const ext = file.name.toLowerCase().split('.').pop() ?? ''
+  return EXT_MIME[ext] ?? 'application/octet-stream'
+}
+
+export interface UploadResult {
+  url: string | null
+  /** Human-readable failure reason, present when url is null. */
+  error?: string
+}
+
+/** Upload a file to the public circle-uploads bucket. Returns the public URL
+ *  on success, or a structured error message on failure. UI surfaces should
+ *  prefer this over uploadCircleAttachment() so users see the actual cause
+ *  (e.g. "File too large — limit is 500 MB") instead of a generic message. */
+export async function uploadCircleAttachmentResult(file: File): Promise<UploadResult> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    console.error('[uploadCircleAttachment] no auth session — user must be signed in', {
+    console.error('[uploadCircleAttachment] no auth session', {
       fileName: file.name, fileSize: file.size, fileType: file.type,
     })
-    return null
+    return { url: null, error: 'You\'re signed out. Refresh the page and sign in again.' }
   }
   const ext = file.name.split('.').pop() ?? 'bin'
+  const contentType = inferContentType(file)
   const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
   const { error } = await supabase.storage
     .from('circle-uploads')
-    .upload(path, file, { contentType: file.type, upsert: false })
+    .upload(path, file, { contentType, upsert: false })
   if (error) {
-    console.error('[uploadCircleAttachment] Supabase Storage rejected upload', {
+    const ctx = {
       message: error.message,
-      // Common shapes: { statusCode, error, message } on StorageApiError.
       raw: error,
       fileName: file.name,
       fileSizeBytes: file.size,
       fileSizeMB: +(file.size / 1024 / 1024).toFixed(2),
-      contentType: file.type,
+      contentType,
+      originalFileType: file.type,
       bucket: 'circle-uploads',
       path,
       userId: user.id,
-    })
-    return null
+    }
+    console.error('[uploadCircleAttachment] Supabase Storage rejected upload', ctx)
+    return { url: null, error: friendlyUploadError(error.message, file.size) }
   }
   const { data } = supabase.storage.from('circle-uploads').getPublicUrl(path)
-  return data.publicUrl
+  return { url: data.publicUrl }
+}
+
+/** Back-compat: callers that only need the URL (or null) keep working. */
+export async function uploadCircleAttachment(file: File): Promise<string | null> {
+  return (await uploadCircleAttachmentResult(file)).url
+}
+
+// Translate Supabase Storage error messages into something a non-dev user
+// can act on. Anything we don't recognize falls through verbatim.
+function friendlyUploadError(message: string, fileSizeBytes: number): string {
+  const m = message.toLowerCase()
+  if (m.includes('payload too large') || m.includes('exceeded the maximum')) {
+    const mb = +(fileSizeBytes / 1024 / 1024).toFixed(1)
+    return `File is too large (${mb} MB). Limit is 500 MB — try compressing or trimming the video.`
+  }
+  if (m.includes('mime type') || m.includes('not allowed')) {
+    return 'File type not allowed. Use a standard video/audio/image format (mp4, mov, mp3, jpg, png, heic).'
+  }
+  if (m.includes('row-level security') || m.includes('rls') || m.includes('not authorized') || m.includes('permission')) {
+    return 'Storage permissions blocked the upload. Sign out and back in, then try again.'
+  }
+  if (m.includes('bucket') && m.includes('not found')) {
+    return 'Storage bucket missing — contact support.'
+  }
+  return `Upload failed: ${message}`
 }
 
 /**
