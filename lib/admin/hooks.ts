@@ -1634,3 +1634,234 @@ export async function isUserAdmin(userId: string): Promise<boolean> {
     .maybeSingle()
   return !!data
 }
+
+// ─── Nicole broadcast / inbox ─────────────────────────────────────────────
+// Channels:
+//   'inbox'  — appears in /inbox forever (or until archived)
+//   'banner' — sticky-top across portal; 7-day default expiry
+//   'pinned' — attached to a specific Seal-the-Leak day (1–7)
+//
+// Audience targeting:
+//   audience_paths        → ['A','B','C'] / empty = all paths
+//   audience_user_ids     → uuid[] of specific users / empty = "audience-paths-only"
+
+export type AdminMessageChannel = 'inbox' | 'banner' | 'pinned'
+
+export interface AdminMessage {
+  id: string
+  channel: AdminMessageChannel
+  title: string | null
+  body: string
+  audience_paths: ('A' | 'B' | 'C')[]
+  audience_user_ids: string[]
+  pinned_program_day: number | null
+  expires_at: string | null
+  archived_at: string | null
+  email_paired: boolean
+  created_by: string | null
+  created_at: string
+}
+
+export interface AdminMessageInputData {
+  channel: AdminMessageChannel
+  title?: string | null
+  body: string
+  audience_paths?: ('A' | 'B' | 'C')[]
+  audience_user_ids?: string[]
+  pinned_program_day?: number | null
+  expires_at?: string | null   // ISO; null = no expiry
+  email_paired?: boolean
+}
+
+/** Admin-only — insert a new broadcast row. RLS gates non-admins out. */
+export async function createAdminMessage(input: AdminMessageInputData): Promise<{ data: AdminMessage | null; error: Error | null }> {
+  const { data: auth } = await supabase.auth.getUser()
+  const created_by = auth.user?.id ?? null
+
+  const row = {
+    channel:            input.channel,
+    title:              input.title ?? null,
+    body:               input.body,
+    audience_paths:     input.audience_paths ?? [],
+    audience_user_ids:  input.audience_user_ids ?? [],
+    pinned_program_day: input.channel === 'pinned' ? (input.pinned_program_day ?? null) : null,
+    expires_at:         input.expires_at ?? null,
+    email_paired:       !!input.email_paired,
+    created_by,
+  }
+
+  const { data, error } = await supabase
+    .from('admin_messages')
+    .insert(row)
+    .select('*')
+    .single()
+  return { data: (data as AdminMessage | null) ?? null, error: (error as unknown as Error | null) ?? null }
+}
+
+/** Admin-only — soft-delete by setting archived_at. */
+export async function archiveAdminMessage(id: string): Promise<{ error: Error | null }> {
+  const { error } = await supabase
+    .from('admin_messages')
+    .update({ archived_at: new Date().toISOString() })
+    .eq('id', id)
+  return { error: (error as unknown as Error | null) ?? null }
+}
+
+/** Admin-only — list of everything Nicole has sent, newest first. */
+export async function fetchAdminMessageHistory(limit = 50): Promise<AdminMessage[]> {
+  const { data } = await supabase
+    .from('admin_messages')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  return (data as AdminMessage[] | null) ?? []
+}
+
+// ─── Read-state per user ──────────────────────────────────────────────────
+
+export async function markMessageRead(messageId: string): Promise<void> {
+  const { data: auth } = await supabase.auth.getUser()
+  const userId = auth.user?.id
+  if (!userId) return
+  await supabase
+    .from('user_message_reads')
+    .upsert({
+      user_id:    userId,
+      message_id: messageId,
+      read_at:    new Date().toISOString(),
+    }, { onConflict: 'user_id,message_id' })
+}
+
+export async function dismissBanner(messageId: string): Promise<void> {
+  const { data: auth } = await supabase.auth.getUser()
+  const userId = auth.user?.id
+  if (!userId) return
+  await supabase
+    .from('user_message_reads')
+    .upsert({
+      user_id:      userId,
+      message_id:   messageId,
+      dismissed_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,message_id' })
+}
+
+// ─── Reads for the signed-in user ─────────────────────────────────────────
+// RLS already filters admin_messages to messages this user is addressed by;
+// these helpers add channel and read-state filtering on top.
+
+export interface InboxItem {
+  // Discriminated union: a broadcast or a 1:1 DM rendered uniformly.
+  source: 'broadcast' | 'coach'
+  id: string
+  title: string | null
+  body: string
+  created_at: string
+  read_at: string | null
+  /** Only set for broadcast source. */
+  channel?: AdminMessageChannel
+}
+
+/** All messages for the current user, broadcasts + 1:1 coach DMs, merged
+ *  and sorted newest first. */
+export async function fetchUserInbox(): Promise<InboxItem[]> {
+  const { data: auth } = await supabase.auth.getUser()
+  const userId = auth.user?.id
+  if (!userId) return []
+
+  // Broadcasts addressed to me, inbox channel only — banner/pinned don't
+  // belong in the inbox view; they have their own surface.
+  const [broadcastsRes, readsRes, coachRes] = await Promise.all([
+    supabase
+      .from('admin_messages')
+      .select('*')
+      .eq('channel', 'inbox')
+      .is('archived_at', null)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('user_message_reads')
+      .select('message_id, read_at, dismissed_at')
+      .eq('user_id', userId),
+    // 1:1 coach DMs: only show messages TO this user (sender != self) so
+    // the user's own outbound replies (if any) don't show as inbox items.
+    supabase
+      .from('circle_coach_messages')
+      .select('id, body, sender_id, read_at, created_at')
+      .eq('user_id', userId)
+      .neq('sender_id', userId)
+      .order('created_at', { ascending: false }),
+  ])
+
+  const reads = new Map<string, { read_at: string | null }>()
+  for (const r of (readsRes.data as { message_id: string; read_at: string | null; dismissed_at: string | null }[] | null) ?? []) {
+    reads.set(r.message_id, { read_at: r.read_at })
+  }
+
+  const broadcasts: InboxItem[] = ((broadcastsRes.data as AdminMessage[] | null) ?? []).map(m => ({
+    source: 'broadcast' as const,
+    id: m.id,
+    title: m.title,
+    body: m.body,
+    created_at: m.created_at,
+    read_at: reads.get(m.id)?.read_at ?? null,
+    channel: m.channel,
+  }))
+
+  const coach: InboxItem[] = ((coachRes.data as { id: string; body: string; read_at: string | null; created_at: string }[] | null) ?? []).map(m => ({
+    source: 'coach' as const,
+    id: m.id,
+    title: null,
+    body: m.body,
+    created_at: m.created_at,
+    read_at: m.read_at,
+  }))
+
+  return [...broadcasts, ...coach].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  )
+}
+
+/** Banner messages that this user hasn't dismissed yet. Used by the
+ *  portal layout to render the sticky banner. */
+export async function fetchActiveBanners(): Promise<AdminMessage[]> {
+  const { data: auth } = await supabase.auth.getUser()
+  const userId = auth.user?.id
+  if (!userId) return []
+
+  const [bannersRes, readsRes] = await Promise.all([
+    supabase
+      .from('admin_messages')
+      .select('*')
+      .eq('channel', 'banner')
+      .is('archived_at', null)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('user_message_reads')
+      .select('message_id, dismissed_at')
+      .eq('user_id', userId)
+      .not('dismissed_at', 'is', null),
+  ])
+
+  const dismissed = new Set(((readsRes.data as { message_id: string }[] | null) ?? []).map(r => r.message_id))
+  return ((bannersRes.data as AdminMessage[] | null) ?? []).filter(m => !dismissed.has(m.id))
+}
+
+/** Pinned messages for a specific Seal-the-Leak day. Returns whatever's
+ *  active for the user on that day (filtered by audience server-side). */
+export async function fetchPinnedForDay(day: number): Promise<AdminMessage | null> {
+  const { data } = await supabase
+    .from('admin_messages')
+    .select('*')
+    .eq('channel', 'pinned')
+    .eq('pinned_program_day', day)
+    .is('archived_at', null)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  return (data as AdminMessage | null) ?? null
+}
+
+/** Count of inbox items the user hasn't read. Drives the sidebar badge. */
+export async function fetchInboxUnreadCount(): Promise<number> {
+  const items = await fetchUserInbox()
+  return items.filter(i => !i.read_at).length
+}

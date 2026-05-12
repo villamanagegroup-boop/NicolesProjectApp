@@ -19,6 +19,7 @@ import { useApp } from '@/context/AppContext'
 import { signOut } from '@/lib/supabase/auth'
 import AdminPortalLink from './AdminPortalLink'
 import ReportBugButton from '@/components/support/ReportBugButton'
+import { fetchInboxUnreadCount } from '@/lib/admin/hooks'
 
 // ── Per-program palette ──────────────────────────────────────────────────────
 const SEAL   = { fg: '#3D3080', pale: 'rgba(61,48,128,0.08)',  hover: 'rgba(61,48,128,0.04)' }
@@ -64,6 +65,7 @@ interface JourneyItem extends NavItem {
 }
 
 const JOURNEY_ITEMS: JourneyItem[] = [
+  { href: '/inbox',   label: 'Inbox',    icon: <InboxIcon /> },
   { href: '/journal', label: 'Journal',  icon: <JournalIcon /> },
   { href: '/wins',    label: 'My wins',  icon: <WinsIcon />,    exact: true },
   { href: '/profile', label: 'Profile',  icon: <ProfileIcon />, exact: true },
@@ -115,6 +117,16 @@ export default function Sidebar() {
     setSelected(next)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname])
+
+  // Inbox unread badge — refresh on mount + each time the user navigates
+  // (cheap query and ensures the badge clears after they read a message).
+  const [inboxUnread, setInboxUnread] = useState(0)
+  useEffect(() => {
+    let cancelled = false
+    if (!user?.id) return
+    fetchInboxUnreadCount().then(n => { if (!cancelled) setInboxUnread(n) })
+    return () => { cancelled = true }
+  }, [user?.id, pathname])
 
   // Build the items for the selected program. Cards is dynamic because the
   // Vault unlock depends on dayNumber.
@@ -407,9 +419,23 @@ export default function Sidebar() {
                 <span style={{
                   fontSize: 13, fontWeight: active ? 600 : 500,
                   lineHeight: 1.2,
+                  flex: 1,
                 }}>
                   {item.label}
                 </span>
+                {item.href === '/inbox' && inboxUnread > 0 && (
+                  <span style={{
+                    flexShrink: 0,
+                    background: 'var(--gold)', color: '#fff',
+                    fontSize: 10, fontWeight: 700,
+                    minWidth: 18, height: 18, padding: '0 6px',
+                    borderRadius: 9,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    lineHeight: 1, letterSpacing: 0,
+                  }}>
+                    {inboxUnread > 9 ? '9+' : inboxUnread}
+                  </span>
+                )}
               </div>
             </Link>
           )
@@ -531,6 +557,15 @@ function GearIcon() {
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="8" cy="8" r="2.5" />
       <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" />
+    </svg>
+  )
+}
+
+function InboxIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 9l1.5-5A1 1 0 014.5 3.25h7a1 1 0 011 0.75L14 9" />
+      <path d="M2 9h3.5l1 1.5h3l1-1.5H14v3.5a1 1 0 01-1 1H3a1 1 0 01-1-1V9z" />
     </svg>
   )
 }

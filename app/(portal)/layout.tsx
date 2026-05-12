@@ -7,6 +7,7 @@ import MobileNav from '@/components/layout/MobileNav'
 import MobileDrawer from '@/components/layout/MobileDrawer'
 import PageTransition from '@/components/layout/PageTransition'
 import PreviewBanner from '@/components/admin/PreviewBanner'
+import NicoleBannerStrip from '@/components/layout/NicoleBannerStrip'
 import WelcomeModal from '@/components/portal/WelcomeModal'
 import { useApp } from '@/context/AppContext'
 
@@ -81,6 +82,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
         {/* Admin preview banner — only renders when an admin has activated
             "View as member" from /admin/preview or a cohort detail page. */}
         <PreviewBanner />
+        <NicoleBannerStrip />
         <Topbar onMenuOpen={() => setDrawerOpen(true)} />
         <main
           className="portal-main"

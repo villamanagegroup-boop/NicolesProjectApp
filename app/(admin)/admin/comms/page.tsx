@@ -8,7 +8,9 @@ import { supabaseClient } from '@/lib/supabase/client'
 import {
   fetchAdminCohorts, fetchMessageTemplates, sendBroadcast, createCoachPost,
   sendCoachMessage, fetchCoachThread, fetchAllUsersAdmin,
+  createAdminMessage,
   type MessageTemplate, type AdminUserRow, type CoachMessage,
+  type AdminMessageChannel,
 } from '@/lib/admin/hooks'
 
 export default function CommsPage() {
@@ -39,6 +41,50 @@ export default function CommsPage() {
   const [dmSent, setDmSent] = useState(false)
   const [dmRecent, setDmRecent] = useState<CoachMessage[]>([])
   const [dmCoachId, setDmCoachId] = useState('')
+
+  // Unified note composer (Inbox / Banner / Pinned)
+  const [noteChannel,  setNoteChannel]  = useState<AdminMessageChannel>('inbox')
+  const [noteTitle,    setNoteTitle]    = useState('')
+  const [noteBody,     setNoteBody]     = useState('')
+  const [notePaths,    setNotePaths]    = useState<('A' | 'B' | 'C')[]>([])
+  const [notePinnedDay, setNotePinnedDay] = useState<number>(1)
+  const [noteEmail,    setNoteEmail]    = useState(false)
+  const [noteSending,  setNoteSending]  = useState(false)
+  const [noteSent,     setNoteSent]     = useState(false)
+  const [noteError,    setNoteError]    = useState<string | null>(null)
+
+  function togglePath(p: 'A' | 'B' | 'C') {
+    setNotePaths(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])
+  }
+
+  async function handleSendNote() {
+    if (!noteBody.trim()) return
+    setNoteSending(true)
+    setNoteError(null)
+    // Banner default expiry: 7 days from now. Inbox/pinned: null.
+    const expiresAt = noteChannel === 'banner'
+      ? new Date(Date.now() + 7 * 86400000).toISOString()
+      : null
+    const { error } = await createAdminMessage({
+      channel:            noteChannel,
+      title:              noteTitle.trim() || null,
+      body:               noteBody.trim(),
+      audience_paths:     notePaths,
+      audience_user_ids:  [],
+      pinned_program_day: noteChannel === 'pinned' ? notePinnedDay : null,
+      expires_at:         expiresAt,
+      email_paired:       noteEmail,
+    })
+    setNoteSending(false)
+    if (error) {
+      setNoteError(error.message)
+      return
+    }
+    setNoteSent(true)
+    setNoteTitle('')
+    setNoteBody('')
+    setTimeout(() => setNoteSent(false), 2500)
+  }
 
   useEffect(() => {
     fetchAdminCohorts().then(c => {
@@ -134,6 +180,137 @@ export default function CommsPage() {
         </select>
       </div>
 
+      {/* ── Send a note (Inbox / Banner / Pinned) ─────────────────── */}
+      <div style={S.card}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>
+          Send a note
+        </div>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 14px', lineHeight: 1.5 }}>
+          Three channels. <strong>Inbox</strong> = persistent /inbox entry.
+          <strong> Banner</strong> = sticky top strip (7-day default expiry).
+          <strong> Pinned</strong> = attaches to a specific Seal-the-Leak day.
+        </p>
+
+        <label style={S.label}>Channel</label>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+          {(['inbox', 'banner', 'pinned'] as AdminMessageChannel[]).map(c => {
+            const on = noteChannel === c
+            return (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setNoteChannel(c)}
+                style={{
+                  fontSize: 12, fontWeight: 600,
+                  padding: '6px 14px', borderRadius: 999,
+                  border: `1.5px solid ${on ? 'var(--gold)' : 'var(--line-md)'}`,
+                  background: on ? 'var(--gold)' : '#fff',
+                  color: on ? '#fff' : 'var(--text-soft)',
+                  cursor: 'pointer', fontFamily: 'inherit',
+                  textTransform: 'capitalize',
+                }}
+              >
+                {c}
+              </button>
+            )
+          })}
+        </div>
+
+        <label style={S.label}>
+          Title {noteChannel === 'inbox' ? '(optional)' : '(optional)'}
+        </label>
+        <input
+          value={noteTitle}
+          onChange={e => setNoteTitle(e.target.value)}
+          placeholder={
+            noteChannel === 'banner'   ? 'e.g. Live call moved to Thursday' :
+            noteChannel === 'pinned'   ? 'e.g. Take this one slow' :
+                                         'e.g. A note on Week 3'
+          }
+          style={S.input}
+        />
+
+        <label style={S.label}>Message *</label>
+        <textarea
+          value={noteBody}
+          onChange={e => setNoteBody(e.target.value)}
+          placeholder="What do you want to tell them?"
+          style={S.textarea}
+        />
+
+        <label style={S.label}>Audience — paths</label>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+          {([
+            { id: 'A' as const, label: 'Seal the Leak' },
+            { id: 'B' as const, label: 'Daily Cards' },
+            { id: 'C' as const, label: 'The Circle' },
+          ]).map(p => {
+            const on = notePaths.includes(p.id)
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => togglePath(p.id)}
+                style={{
+                  fontSize: 11, fontWeight: 600,
+                  padding: '5px 11px', borderRadius: 999,
+                  border: `1px solid ${on ? 'var(--gold-line)' : 'var(--line)'}`,
+                  background: on ? 'var(--gold-pale)' : '#fff',
+                  color: on ? 'var(--gold)' : 'var(--text-soft)',
+                  cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                {on ? '✓ ' : ''}{p.label}
+              </button>
+            )
+          })}
+        </div>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '-6px 0 12px' }}>
+          {notePaths.length === 0 ? 'No paths selected = all users.' : `Targeting ${notePaths.length} path${notePaths.length === 1 ? '' : 's'}.`}
+        </p>
+
+        {noteChannel === 'pinned' && (
+          <>
+            <label style={S.label}>Pin to Seal day</label>
+            <select
+              value={notePinnedDay}
+              onChange={e => setNotePinnedDay(Number(e.target.value))}
+              style={S.select}
+            >
+              {[1, 2, 3, 4, 5, 6, 7].map(d => (
+                <option key={d} value={d}>Day {d}</option>
+              ))}
+            </select>
+          </>
+        )}
+
+        <label style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          fontSize: 12, color: 'var(--text-soft)', fontFamily: 'inherit',
+          margin: '4px 0 14px', cursor: 'pointer',
+        }}>
+          <input
+            type="checkbox"
+            checked={noteEmail}
+            onChange={e => setNoteEmail(e.target.checked)}
+          />
+          Also email the recipients
+        </label>
+
+        {noteError && (
+          <p style={{ fontSize: 12, color: 'var(--red)', margin: '0 0 12px' }}>{noteError}</p>
+        )}
+
+        <button
+          onClick={handleSendNote}
+          disabled={!noteBody.trim() || noteSending}
+          style={{ ...S.btn, opacity: noteBody.trim() && !noteSending ? 1 : 0.5 }}
+        >
+          {noteSending ? 'Sending…' : noteSent ? '✓ Sent' : 'Send note'}
+        </button>
+      </div>
+
+      {/* ── Legacy cohort broadcast ────────────────────────────────── */}
       <div style={S.card}>
         <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ink)', marginBottom: '10px' }}>Quick templates</div>
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>

@@ -9,6 +9,7 @@ import MediaSlot from '@/components/media/MediaSlot'
 import { upsertReflection } from '@/lib/admin/hooks'
 import { supabaseClient } from '@/lib/supabase/client'
 import { usePreviewMode } from '@/hooks/usePreviewMode'
+import { fetchPinnedForDay, type AdminMessage } from '@/lib/admin/hooks'
 
 function CheckIcon() {
   return (
@@ -215,8 +216,20 @@ function TodaysSessionInner() {
     : currentDay
 
   const [viewingDay, setViewingDay] = useState(initialDay)
+  const [pinnedNote, setPinnedNote] = useState<AdminMessage | null>(null)
   const [sealedDays, setSealedDays] = useState<Set<number>>(new Set())
   const [celebratingDay, setCelebratingDay] = useState(false)
+
+  // Load Nicole's pinned note for the currently-viewed day (if any). The
+  // server-side RLS filter already gates by audience, so we get a hit only
+  // when this user is in the targeted path.
+  useEffect(() => {
+    let cancelled = false
+    fetchPinnedForDay(viewingDay).then(msg => {
+      if (!cancelled) setPinnedNote(msg)
+    })
+    return () => { cancelled = true }
+  }, [viewingDay])
   const [unlockResult, setUnlockResult] = useState<
     | { granted: true; expiresAt: string }
     | { granted: false; alreadySealed: boolean }
@@ -392,6 +405,42 @@ function TodaysSessionInner() {
         }} className="dots-fade" />
         </div>{/* end relative wrapper */}
       </div>
+
+      {/* Pinned note from Nicole — only renders if she's pinned one to
+          this specific day for users in the current audience filter. */}
+      {pinnedNote && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(184,146,42,0.08) 0%, rgba(184,146,42,0.02) 100%)',
+          border: '1px solid rgba(184,146,42,0.28)',
+          borderLeft: '3px solid var(--gold)',
+          borderRadius: 10,
+          padding: '14px 16px',
+          marginBottom: 14,
+        }}>
+          <p style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '0.14em',
+            textTransform: 'uppercase', color: 'var(--gold)',
+            margin: '0 0 8px', fontFamily: 'var(--font-body)',
+          }}>
+            ✨ From Nicole
+          </p>
+          {pinnedNote.title && (
+            <p style={{
+              fontSize: 14, fontWeight: 600, color: 'var(--ink)',
+              margin: '0 0 6px', fontFamily: 'var(--font-body)',
+            }}>
+              {pinnedNote.title}
+            </p>
+          )}
+          <p style={{
+            fontSize: 13, color: 'var(--text-soft)',
+            margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap',
+            fontFamily: 'var(--font-body)',
+          }}>
+            {pinnedNote.body}
+          </p>
+        </div>
+      )}
 
       {/* Preview banner when viewing a future day */}
       {isPreview && (
