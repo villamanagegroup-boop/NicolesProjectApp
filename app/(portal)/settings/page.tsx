@@ -20,7 +20,7 @@ type SectionId = typeof SECTIONS[number]['id']
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { user, updateUser, avatarUrl, setAvatarUrl, dailyReminders, setDailyReminders } = useApp()
+  const { user, updateUser, avatarUrl, setAvatarUrl, notificationPrefs, setNotificationPref } = useApp()
 
   // ── Profile autosave ─────────────────────────────────────────────────────
   const [name, setName] = useState(user.name)
@@ -44,9 +44,7 @@ export default function SettingsPage() {
     }
   }
 
-  // ── Notifications ─────────────────────────────────────────────────────────
-  const [weeklyDigest, setWeeklyDigest] = useState(false)
-  const [milestoneAlerts, setMilestoneAlerts] = useState(true)
+  // ── Notifications — all three toggles now persist via notificationPrefs.
 
   // ── Plan ────────────────────────────────────────────────────────────────
   const currentPath = getPath(user.selectedPath)
@@ -152,7 +150,7 @@ export default function SettingsPage() {
             <span>{billingLabel(currentPath.billing)}</span>
             <span style={{ color: 'var(--text-muted)' }}>·</span>
             <span>Next card at 4:00 AM</span>
-            {dailyReminders ? null : (
+            {notificationPrefs.daily_reminder ? null : (
               <>
                 <span style={{ color: 'var(--text-muted)' }}>·</span>
                 <span style={{ color: 'var(--red)' }}>Reminders off</span>
@@ -405,10 +403,10 @@ export default function SettingsPage() {
             </div>
             <div style={{ padding: '0 24px' }}>
               {([
-                { label: 'Daily card reminder',       sub: 'One gentle nudge each morning',     value: dailyReminders, set: setDailyReminders },
-                { label: 'Weekly reflection digest',  sub: 'A summary of your entries on Sunday', value: weeklyDigest,   set: setWeeklyDigest },
-                { label: 'Milestone alerts',          sub: 'Streak milestones and unlocks',     value: milestoneAlerts, set: setMilestoneAlerts },
-              ] as { label: string; sub: string; value: boolean; set: (v: boolean) => void }[]).map((item, i, arr) => (
+                { label: 'Daily card reminder',       sub: 'One gentle nudge each morning',       kind: 'daily_reminder' as const,   value: notificationPrefs.daily_reminder },
+                { label: 'Weekly reflection digest',  sub: 'A summary of your entries on Sunday', kind: 'weekly_digest' as const,    value: notificationPrefs.weekly_digest },
+                { label: 'Milestone alerts',          sub: 'Streak milestones and unlocks',       kind: 'milestone_alerts' as const, value: notificationPrefs.milestone_alerts },
+              ]).map((item, i, arr) => (
                 <div key={item.label} style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   padding: '18px 0',
@@ -419,7 +417,7 @@ export default function SettingsPage() {
                     <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)', marginTop: 2 }}>{item.sub}</div>
                   </div>
                   <button
-                    onClick={() => item.set(!item.value)}
+                    onClick={() => setNotificationPref(item.kind, !item.value)}
                     aria-label={`${item.value ? 'Disable' : 'Enable'} ${item.label}`}
                     style={{
                       width: 44, height: 24, borderRadius: 12, flexShrink: 0,

@@ -1,6 +1,18 @@
 export type QuizResultId = 'seeker' | 'builder' | 'healer' | 'visionary'
 export type Path = 'A' | 'B' | 'C'
 
+export interface NotificationPrefs {
+  daily_reminder: boolean
+  weekly_digest: boolean
+  milestone_alerts: boolean
+}
+
+export const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
+  daily_reminder: true,
+  weekly_digest: true,
+  milestone_alerts: true,
+}
+
 export interface User {
   id: string
   name: string
@@ -24,6 +36,7 @@ export interface User {
   // First time the user sealed Day 7 on their own archetype path.
   sealCompletedAt: Date | null
   hasSeenWelcome: boolean
+  notificationPrefs: NotificationPrefs
 }
 
 export interface DailyCard {

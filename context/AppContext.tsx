@@ -2,7 +2,7 @@
 import { createContext, useContext, useState, useMemo, useEffect, useCallback, ReactNode } from 'react'
 import type { User as AuthUser } from '@supabase/supabase-js'
 import { supabaseClient } from '@/lib/supabase/client'
-import { User, DailyCard, JournalEntry, Win, QuizResultId, Path } from '@/types'
+import { User, DailyCard, JournalEntry, Win, QuizResultId, Path, NotificationPrefs, DEFAULT_NOTIFICATION_PREFS } from '@/types'
 import { getDayNumber, getTodayCard, getPastCards, getVaultCards } from '@/lib/utils/cardUtils'
 import { computeCardsAccess, type CardsAccess } from '@/lib/utils/pathAccess'
 
@@ -26,6 +26,7 @@ const defaultUser: User = {
   cardsAddOnSource: null,
   sealCompletedAt: null,
   hasSeenWelcome: false,
+  notificationPrefs: DEFAULT_NOTIFICATION_PREFS,
 }
 
 // ── Supabase row → domain model transforms ───────────────────────────────────
@@ -48,6 +49,7 @@ interface UserRow {
   cards_addon_source: 'seal_day7' | 'stripe' | 'manual' | null
   seal_completed_at: string | null
   has_seen_welcome: boolean | null
+  notification_prefs: Partial<NotificationPrefs> | null
 }
 
 function userFromRow(row: UserRow, fallbackEmail: string): User {
@@ -68,6 +70,9 @@ function userFromRow(row: UserRow, fallbackEmail: string): User {
     cardsAddOnSource:    row.cards_addon_source,
     sealCompletedAt:     row.seal_completed_at ? new Date(row.seal_completed_at) : null,
     hasSeenWelcome:      row.has_seen_welcome ?? false,
+    // Merge stored prefs over the defaults so a new flag added in the future
+    // doesn't read as undefined for users created before that column existed.
+    notificationPrefs: { ...DEFAULT_NOTIFICATION_PREFS, ...(row.notification_prefs ?? {}) },
   }
 }
 
@@ -176,8 +181,12 @@ interface AppContextValue {
   deleteJournalEntry: (id: string) => Promise<void>
   avatarUrl: string | null
   setAvatarUrl: (url: string | null) => void
+  /** Notification preferences, persisted on the users row. */
+  notificationPrefs: NotificationPrefs
+  setNotificationPref: (kind: keyof NotificationPrefs, value: boolean) => Promise<void>
+  /** Backwards-compat alias for the daily_reminder flag — same value, persisted. */
   dailyReminders: boolean
-  setDailyReminders: (on: boolean) => void
+  setDailyReminders: (on: boolean) => Promise<void>
   sidebarMode: 'cards' | 'work' | 'circle'
   setSidebarMode: (mode: 'cards' | 'work' | 'circle') => void
   // What the user is allowed to navigate into.
@@ -211,7 +220,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // UI / session-only state
   const [avatarUrl, setAvatarUrlState] = useState<string | null>(null)
-  const [dailyReminders, setDailyReminders] = useState(true)
   const [sidebarMode, setSidebarMode] = useState<'cards' | 'work' | 'circle'>('cards')
 
   // ── 1. Subscribe to auth state ─────────────────────────────────────────────
@@ -355,6 +363,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [authUser])
 
+  const setNotificationPref = useCallback(async (kind: keyof NotificationPrefs, value: boolean) => {
+    if (!authUser) return
+    // Read latest from the row so a concurrent toggle doesn't clobber another.
+    const current: NotificationPrefs = userRow?.notification_prefs
+      ? { ...DEFAULT_NOTIFICATION_PREFS, ...userRow.notification_prefs }
+      : DEFAULT_NOTIFICATION_PREFS
+    const next = { ...current, [kind]: value }
+    await supabaseClient.from('users')
+      .update({ notification_prefs: next })
+      .eq('id', authUser.id)
+    setUserRow(prev => prev ? { ...prev, notification_prefs: next } : prev)
+  }, [authUser, userRow])
+
   const enableCardsAddOn = useCallback(async () => {
     if (!authUser) return
     const ts = new Date().toISOString()
@@ -476,8 +497,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     deleteJournalEntry,
     avatarUrl,
     setAvatarUrl,
-    dailyReminders,
-    setDailyReminders,
+    notificationPrefs: user.notificationPrefs,
+    setNotificationPref,
+    dailyReminders: user.notificationPrefs.daily_reminder,
+    setDailyReminders: (on: boolean) => setNotificationPref('daily_reminder', on),
     sidebarMode,
     setSidebarMode,
     hasWorkAccess:   user.selectedPath === 'A' || user.isAdmin,
