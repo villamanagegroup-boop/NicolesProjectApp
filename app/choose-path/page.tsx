@@ -3,9 +3,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 
-const GREEN  = '#1A5230'
-const PURPLE = '#3D3080'
-const ORANGE = '#C97D3A'
+// Pan-African palette: Cards green / Seal red / Circle gold.
+const GREEN  = '#0F4D2E'
+const PURPLE = '#7A1F1F'   // Path A "Seal the Leak" — historically named PURPLE
+const ORANGE = '#B8862E'   // Path C "The Circle"  — historically named ORANGE
 
 export default function ChoosePathPage() {
   const router = useRouter()

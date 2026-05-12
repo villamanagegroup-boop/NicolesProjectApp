@@ -38,8 +38,8 @@ const ARCHETYPE_LABELS: Record<string, string> = {
   door: 'Open Door', throne: "Overthinker's Throne", engine: 'Interrupted Engine', push: 'Pushthrough',
 }
 const ALERT_COLORS = {
-  amber:  { bg: 'rgba(184,146,42,.15)', text: 'var(--gold)' },
-  orange: { bg: 'rgba(201,125,58,.15)', text: '#C97D3A' },
+  amber:  { bg: 'rgba(200,148,31,.15)', text: 'var(--gold)' },
+  orange: { bg: 'rgba(184,134,46,.15)', text: '#B8862E' },
   red:    { bg: 'rgba(139,31,47,.25)', text: 'var(--red)' },
 }
 type AlertLevel = 'amber' | 'orange' | 'red'
@@ -756,7 +756,7 @@ export default function AdminMemberProfilePage() {
               const j = row?.journal_completed ?? false
               const a = row?.action_completed ?? false
               const score = (j ? 1 : 0) + (a ? 1 : 0)
-              const bg = score === 2 ? 'rgba(31,92,58,0.12)' : score === 1 ? 'rgba(184,146,42,0.12)' : 'var(--paper)'
+              const bg = score === 2 ? 'rgba(31,92,58,0.12)' : score === 1 ? 'rgba(200,148,31,0.12)' : 'var(--paper)'
               const fg = score === 2 ? 'var(--green)' : score === 1 ? 'var(--gold)' : 'var(--text-muted)'
               return (
                 <div key={w} style={{

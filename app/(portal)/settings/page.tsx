@@ -504,7 +504,7 @@ export default function SettingsPage() {
                 <Link href="/circle" style={{
                   fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-body)',
                   padding: '8px 14px', borderRadius: 7,
-                  background: '#C97D3A', color: '#fff',
+                  background: '#B8862E', color: '#fff',
                   textDecoration: 'none',
                 }}>
                   Open The Circle →
@@ -512,8 +512,8 @@ export default function SettingsPage() {
                 <Link href="/circle/partner" style={{
                   fontSize: 12, fontWeight: 500, fontFamily: 'var(--font-body)',
                   padding: '8px 14px', borderRadius: 7,
-                  background: '#fff', color: '#C97D3A',
-                  border: '1px solid #C97D3A40',
+                  background: '#fff', color: '#B8862E',
+                  border: '1px solid #B8862E40',
                   textDecoration: 'none',
                 }}>
                   Your partner
@@ -521,8 +521,8 @@ export default function SettingsPage() {
                 <Link href="/circle/calls" style={{
                   fontSize: 12, fontWeight: 500, fontFamily: 'var(--font-body)',
                   padding: '8px 14px', borderRadius: 7,
-                  background: '#fff', color: '#C97D3A',
-                  border: '1px solid #C97D3A40',
+                  background: '#fff', color: '#B8862E',
+                  border: '1px solid #B8862E40',
                   textDecoration: 'none',
                 }}>
                   Live calls

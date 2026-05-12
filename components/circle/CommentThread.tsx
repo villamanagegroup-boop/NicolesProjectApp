@@ -20,7 +20,7 @@ import {
 import EmojiPickerPopover, { EXTENDED_EMOJIS } from './EmojiPickerPopover'
 import GifPicker from './GifPicker'
 
-const ORANGE      = '#C97D3A'
+const ORANGE      = '#B8862E'
 const ORANGE_PALE = '#fdf6f2'
 const QUICK_EMOJIS = ['❤️', '🔥', '✨', '👏', '💪']
 
@@ -431,7 +431,7 @@ const smallGhostBtn: React.CSSProperties = {
 }
 
 const smallPrimaryBtn: React.CSSProperties = {
-  background: '#C97D3A', color: '#fff',
+  background: '#B8862E', color: '#fff',
   border: 'none', borderRadius: 7,
   padding: '5px 14px', fontSize: 11, fontWeight: 600,
   cursor: 'pointer', fontFamily: 'inherit',

@@ -29,7 +29,7 @@ import {
   type LiveCall,
 } from '@/lib/circle'
 
-const ORANGE      = '#C97D3A'
+const ORANGE      = '#B8862E'
 const ORANGE_PALE = '#fdf6f2'
 
 // The 1:1 private coach thread (Chat with Nicole) is being moved into a

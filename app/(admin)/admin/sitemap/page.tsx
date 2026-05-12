@@ -110,7 +110,7 @@ const SECTIONS: Section[] = [
 const ACCESS_TINT: Record<Access, { bg: string; fg: string; border: string; label: string }> = {
   admin:  { bg: 'rgba(184,40,40,0.08)',  fg: 'var(--red)',   border: 'rgba(184,40,40,0.25)', label: 'Admin' },
   user:   { bg: 'rgba(31,92,58,0.10)',   fg: 'var(--green)', border: 'rgba(31,92,58,0.25)',  label: 'User' },
-  public: { bg: 'rgba(184,146,42,0.10)', fg: 'var(--gold)',  border: 'var(--gold-line)',     label: 'Public' },
+  public: { bg: 'rgba(200,148,31,0.10)', fg: 'var(--gold)',  border: 'var(--gold-line)',     label: 'Public' },
 }
 
 export default function SitemapPage() {

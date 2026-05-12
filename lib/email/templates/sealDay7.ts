@@ -36,7 +36,7 @@ export function sealDay7UserEmail({
 
             <!-- Header -->
             <tr>
-              <td style="background:linear-gradient(135deg,#b8922a 0%,#9a7720 100%);padding:36px 32px 28px;text-align:center;color:#ffffff;">
+              <td style="background:linear-gradient(135deg,#C8941F 0%,#9a7720 100%);padding:36px 32px 28px;text-align:center;color:#ffffff;">
                 <div style="font-size:32px;line-height:1;margin:0 0 14px;">✦</div>
                 <p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:2.4px;text-transform:uppercase;color:rgba(255,255,255,0.85);">Day 7 sealed</p>
                 <h1 style="margin:0;font-size:26px;font-weight:300;font-style:italic;line-height:1.2;letter-spacing:-0.01em;">
@@ -59,8 +59,8 @@ export function sealDay7UserEmail({
                 </p>
 
                 <!-- Expiry pill -->
-                <div style="background:rgba(184,146,42,0.08);border:1px solid rgba(184,146,42,0.25);border-radius:10px;padding:14px 18px;margin:0 0 24px;text-align:center;">
-                  <p style="margin:0;font-size:12px;font-weight:600;color:#b8922a;letter-spacing:0.4px;">
+                <div style="background:rgba(200,148,31,0.08);border:1px solid rgba(200,148,31,0.25);border-radius:10px;padding:14px 18px;margin:0 0 24px;text-align:center;">
+                  <p style="margin:0;font-size:12px;font-weight:600;color:#C8941F;letter-spacing:0.4px;">
                     📅 Window ends ${expiryDate}
                   </p>
                 </div>
@@ -68,7 +68,7 @@ export function sealDay7UserEmail({
                 <!-- CTA -->
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 8px;">
                   <tr>
-                    <td style="border-radius:10px;background:#b8922a;">
+                    <td style="border-radius:10px;background:#C8941F;">
                       <a href="${cardsHref}"
                         style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:10px;letter-spacing:0.3px;">
                         Open today's card →

@@ -7,15 +7,16 @@ import { signOut } from '@/lib/supabase/auth'
 import AdminPortalLink from './AdminPortalLink'
 import ReportBugButton from '@/components/support/ReportBugButton'
 
-const GREEN  = '#1A5230'
-const GREEN_PALE = 'rgba(26,82,48,0.07)'
-const GREEN_DIM  = 'rgba(26,82,48,0.55)'
-const PURPLE = '#3D3080'
-const PURPLE_PALE = 'rgba(61,48,128,0.07)'
-const PURPLE_DIM  = 'rgba(61,48,128,0.55)'
-const ORANGE = '#C97D3A'
-const ORANGE_PALE = 'rgba(201,125,58,0.08)'
-const ORANGE_DIM  = 'rgba(201,125,58,0.55)'
+// Pan-African palette — Cards green / Seal red / Circle gold
+const GREEN  = '#0F4D2E'
+const GREEN_PALE = 'rgba(15,77,46,0.07)'
+const GREEN_DIM  = 'rgba(15,77,46,0.55)'
+const PURPLE = '#7A1F1F'                              // Path A "Seal the Leak"
+const PURPLE_PALE = 'rgba(122,31,31,0.07)'
+const PURPLE_DIM  = 'rgba(122,31,31,0.55)'
+const ORANGE = '#B8862E'                              // Path C "The Circle"
+const ORANGE_PALE = 'rgba(184,134,46,0.10)'
+const ORANGE_DIM  = 'rgba(184,134,46,0.55)'
 
 // ── Icons (same as sidebars) ──────────────────────────────────────────────────
 

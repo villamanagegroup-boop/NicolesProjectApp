@@ -21,10 +21,10 @@ import AdminPortalLink from './AdminPortalLink'
 import ReportBugButton from '@/components/support/ReportBugButton'
 import { fetchInboxUnreadCount } from '@/lib/admin/hooks'
 
-// ── Per-program palette ──────────────────────────────────────────────────────
-const SEAL   = { fg: '#3D3080', pale: 'rgba(61,48,128,0.08)',  hover: 'rgba(61,48,128,0.04)' }
-const CARDS  = { fg: '#1A5230', pale: 'rgba(26,82,48,0.07)',   hover: 'rgba(26,82,48,0.04)'  }
-const CIRCLE = { fg: '#C97D3A', pale: 'rgba(201,125,58,0.08)', hover: 'rgba(201,125,58,0.04)'}
+// ── Per-program palette (Pan-African: red / green / gold) ─────────────────
+const SEAL   = { fg: '#7A1F1F', pale: 'rgba(122,31,31,0.08)',  hover: 'rgba(122,31,31,0.04)' }
+const CARDS  = { fg: '#0F4D2E', pale: 'rgba(15,77,46,0.07)',   hover: 'rgba(15,77,46,0.04)'  }
+const CIRCLE = { fg: '#B8862E', pale: 'rgba(184,134,46,0.10)', hover: 'rgba(184,134,46,0.05)'}
 
 type ProgramKey = 'seal' | 'cards' | 'circle'
 

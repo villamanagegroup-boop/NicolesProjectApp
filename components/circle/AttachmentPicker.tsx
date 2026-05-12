@@ -32,7 +32,7 @@ interface Props {
  * MIME (audio/* → audio, video/* → video, image/* → image, else → doc),
  * so users always have one upload-fallback button.
  */
-export default function AttachmentPicker({ slots, onChange, accent = '#C97D3A', compact }: Props) {
+export default function AttachmentPicker({ slots, onChange, accent = '#B8862E', compact }: Props) {
   // Recording state
   const [recording, setRecording] = useState<null | 'audio' | 'video'>(null)
   const [recSeconds, setRecSeconds] = useState(0)
@@ -137,7 +137,7 @@ export default function AttachmentPicker({ slots, onChange, accent = '#C97D3A', 
     display: 'inline-flex', alignItems: 'center', gap: 6,
     fontSize: 11, fontWeight: 600,
     padding: '5px 10px', borderRadius: 999,
-    background: 'rgba(201,125,58,0.10)', color: accent,
+    background: 'rgba(184,134,46,0.10)', color: accent,
     border: `1px solid ${accent}`,
   }
   const chipX: React.CSSProperties = {

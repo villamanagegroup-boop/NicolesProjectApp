@@ -27,7 +27,7 @@ const PROGRAM_CONTENT: Record<string, {
   },
   A: {
     icon: '🔥',
-    accent: '#b8922a',
+    accent: '#C8941F',
     heading: "Welcome to Seal the Leak.",
     body: "You're here because you're ready to go to the root. Your 7-day reset starts now — daily prompts, actions, and shifts built around your archetype.",
     steps: [

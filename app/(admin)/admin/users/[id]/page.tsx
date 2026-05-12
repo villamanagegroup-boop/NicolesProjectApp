@@ -23,10 +23,10 @@ import {
 } from '@/lib/admin/hooks'
 
 const TAG_COLOR_STYLE: Record<TagColor, { bg: string; fg: string; border: string }> = {
-  gold:  { bg: 'rgba(184,146,42,0.12)', fg: 'var(--gold)',  border: 'var(--gold-line)' },
+  gold:  { bg: 'rgba(200,148,31,0.12)', fg: 'var(--gold)',  border: 'var(--gold-line)' },
   green: { bg: 'rgba(31,92,58,0.12)',   fg: 'var(--green)', border: 'rgba(31,92,58,0.25)' },
   red:   { bg: 'rgba(184,40,40,0.12)',  fg: 'var(--red)',   border: 'rgba(184,40,40,0.3)' },
-  blue:  { bg: 'rgba(61,48,128,0.12)',  fg: '#3D3080',      border: 'rgba(61,48,128,0.25)' },
+  blue:  { bg: 'rgba(122,31,31,0.12)',  fg: '#7A1F1F',      border: 'rgba(122,31,31,0.25)' },
   gray:  { bg: 'rgba(0,0,0,0.06)',      fg: 'var(--text-muted)', border: 'var(--line)' },
 }
 
@@ -355,7 +355,7 @@ export default function AdminUserProfilePage() {
       {/* ── Pending purchase warning ─────────────────────────────────── */}
       {pending && (
         <div style={{
-          background: 'rgba(184,146,42,0.1)',
+          background: 'rgba(200,148,31,0.1)',
           border: '1px solid var(--gold-line)',
           borderRadius: 12, padding: 14,
           marginBottom: 16,
@@ -430,10 +430,10 @@ export default function AdminUserProfilePage() {
                 )}
                 {programs.map(p => {
                   const c = (p.color === 'gold'
-                    ? { bg: 'rgba(184,146,42,0.12)', fg: 'var(--gold)',  border: 'var(--gold-line)' }
+                    ? { bg: 'rgba(200,148,31,0.12)', fg: 'var(--gold)',  border: 'var(--gold-line)' }
                     : p.color === 'green'
                     ? { bg: 'rgba(31,92,58,0.12)',   fg: 'var(--green)', border: 'rgba(31,92,58,0.25)' }
-                    : { bg: 'rgba(61,48,128,0.12)',  fg: '#3D3080',      border: 'rgba(61,48,128,0.25)' })
+                    : { bg: 'rgba(122,31,31,0.12)',  fg: '#7A1F1F',      border: 'rgba(122,31,31,0.25)' })
                   return (
                     <span key={p.key + p.label} style={{
                       fontSize: 10, fontWeight: 600,

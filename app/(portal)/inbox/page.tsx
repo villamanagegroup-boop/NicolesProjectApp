@@ -14,7 +14,7 @@ import {
 import { supabaseClient } from '@/lib/supabase/client'
 import { Skeleton } from '@/components/ui/Skeleton'
 
-const GOLD = '#b8922a'
+const GOLD = '#C8941F'
 
 function timeAgo(iso: string): string {
   const ms = Date.now() - new Date(iso).getTime()
@@ -137,7 +137,7 @@ export default function InboxPage() {
                     width: '100%', textAlign: 'left',
                     display: 'flex', flexDirection: 'column', gap: 4,
                     padding: '14px 16px',
-                    background: active ? 'rgba(184,146,42,0.06)' : '#fff',
+                    background: active ? 'rgba(200,148,31,0.06)' : '#fff',
                     border: 'none',
                     borderTop: i === 0 ? 'none' : '1px solid var(--line)',
                     borderLeft: active ? `3px solid ${GOLD}` : '3px solid transparent',

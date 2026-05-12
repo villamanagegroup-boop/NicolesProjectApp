@@ -79,7 +79,7 @@ export default function AdminRedesignPreview() {
       {/* Preview banner */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-        background: 'linear-gradient(135deg, rgba(31,92,58,0.08), rgba(184,146,42,0.08))',
+        background: 'linear-gradient(135deg, rgba(31,92,58,0.08), rgba(200,148,31,0.08))',
         border: '1px solid rgba(31,92,58,0.15)',
         borderRadius: 12, padding: '10px 14px', marginBottom: 24,
         flexWrap: 'wrap',
@@ -121,7 +121,7 @@ export default function AdminRedesignPreview() {
         gap: 14, marginBottom: 14,
       }}>
         <ProgramCard
-          tint={{ from: 'rgba(184,146,42,0.18)', to: 'rgba(184,146,42,0.04)', accent: '#b8922a' }}
+          tint={{ from: 'rgba(200,148,31,0.18)', to: 'rgba(200,148,31,0.04)', accent: '#C8941F' }}
           icon="✦"
           title="Seal the Leak"
           stat={a.total}
@@ -137,7 +137,7 @@ export default function AdminRedesignPreview() {
           href="/admin/users?path=B"
         />
         <ProgramCard
-          tint={{ from: 'rgba(61,48,128,0.18)', to: 'rgba(61,48,128,0.04)', accent: '#3D3080' }}
+          tint={{ from: 'rgba(122,31,31,0.18)', to: 'rgba(122,31,31,0.04)', accent: '#7A1F1F' }}
           icon="○"
           title="The Circle"
           stat={c.total}
@@ -271,7 +271,7 @@ export default function AdminRedesignPreview() {
           </SectionTitle>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
             {activeCohorts.map(co => {
-              const phaseColor = co.phase === 'root' ? '#1f5c3a' : co.phase === 'rebuild' ? '#b8922a' : '#3D3080'
+              const phaseColor = co.phase === 'root' ? '#1f5c3a' : co.phase === 'rebuild' ? '#C8941F' : '#7A1F1F'
               return (
                 <Link
                   key={co.id}
@@ -378,7 +378,7 @@ const subtleLink: React.CSSProperties = {
 
 function Surface({ children, tint }: { children: React.ReactNode; tint?: 'amber' | 'red' | null }) {
   const tintStyle = tint === 'amber'
-    ? { background: 'linear-gradient(135deg, rgba(184,146,42,0.10), #ffffff 60%)', borderColor: 'rgba(184,146,42,0.20)' }
+    ? { background: 'linear-gradient(135deg, rgba(200,148,31,0.10), #ffffff 60%)', borderColor: 'rgba(200,148,31,0.20)' }
     : tint === 'red'
     ? { background: 'linear-gradient(135deg, rgba(184,40,40,0.08), #ffffff 60%)', borderColor: 'rgba(184,40,40,0.18)' }
     : { background: '#ffffff', borderColor: 'rgba(0,0,0,0.06)' }
@@ -419,7 +419,7 @@ function StatusDot({ color }: { color: string }) {
 
 function Avatar({ text, path }: { text: string; path: 'A' | 'B' | 'C' | null }) {
   const initials = text.slice(0, 2).toUpperCase()
-  const tint = path === 'A' ? '#b8922a' : path === 'B' ? '#1f5c3a' : path === 'C' ? '#3D3080' : '#a0a0a0'
+  const tint = path === 'A' ? '#C8941F' : path === 'B' ? '#1f5c3a' : path === 'C' ? '#7A1F1F' : '#a0a0a0'
   return (
     <div style={{
       width: 36, height: 36, borderRadius: '50%',

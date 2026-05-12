@@ -183,7 +183,7 @@ function CardPageInner() {
           style={{
             display: 'inline-block',
             padding: '11px 22px',
-            background: '#3D3080',
+            background: '#7A1F1F',
             color: 'white',
             borderRadius: 8,
             fontSize: 13,
@@ -275,9 +275,9 @@ function CardPageInner() {
       {/* Upgrade prompt — Path A users past the 7-day program */}
       {cardsAccess.state === 'locked-upgrade' && (
         <div style={{
-          background: 'linear-gradient(135deg, rgba(184,146,42,0.08) 0%, rgba(184,146,42,0.04) 100%)',
-          border: '1px solid rgba(184,146,42,0.35)',
-          borderLeft: '3px solid #b8922a',
+          background: 'linear-gradient(135deg, rgba(200,148,31,0.08) 0%, rgba(200,148,31,0.04) 100%)',
+          border: '1px solid rgba(200,148,31,0.35)',
+          borderLeft: '3px solid #C8941F',
           borderRadius: 10,
           padding: '14px 20px',
           marginBottom: 20,
@@ -287,7 +287,7 @@ function CardPageInner() {
           flexWrap: 'wrap',
         }}>
           <div style={{ flex: 1, minWidth: 220 }}>
-            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#b8922a', fontWeight: 600, marginBottom: 3 }}>
+            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#C8941F', fontWeight: 600, marginBottom: 3 }}>
               You&apos;ve finished Seal the Leak
             </div>
             <div style={{ fontSize: 13, color: 'var(--ink)', fontFamily: 'var(--font-body)', lineHeight: 1.6 }}>
@@ -298,7 +298,7 @@ function CardPageInner() {
             href="/upgrade"
             style={{
               padding: '8px 14px',
-              background: '#b8922a',
+              background: '#C8941F',
               color: 'white',
               borderRadius: 6,
               fontSize: 12,
@@ -549,7 +549,7 @@ function CardPageInner() {
         {/* Section 2 — Affirmation. Wide gradient block matching /cards
             and /circle homes; reads as the centerpiece, not a side card. */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(26,82,48,0.07) 0%, #fff 70%)',
+          background: 'linear-gradient(135deg, rgba(15,77,46,0.07) 0%, #fff 70%)',
           borderTop: '2px solid var(--green)',
           borderBottom: '1px solid var(--line)',
           padding: '24px 4px 24px 20px',

@@ -14,23 +14,23 @@ import {
 } from '@/lib/admin/hooks'
 
 const PROGRAM_TINT: Record<string, { bg: string; fg: string; border: string }> = {
-  gold:  { bg: 'rgba(184,146,42,0.12)', fg: 'var(--gold)',  border: 'var(--gold-line)' },
+  gold:  { bg: 'rgba(200,148,31,0.12)', fg: 'var(--gold)',  border: 'var(--gold-line)' },
   green: { bg: 'rgba(31,92,58,0.12)',   fg: 'var(--green)', border: 'rgba(31,92,58,0.25)' },
-  blue:  { bg: 'rgba(61,48,128,0.12)',  fg: '#3D3080',      border: 'rgba(61,48,128,0.25)' },
+  blue:  { bg: 'rgba(122,31,31,0.12)',  fg: '#7A1F1F',      border: 'rgba(122,31,31,0.25)' },
 }
 
 const TAG_COLOR_STYLE: Record<TagColor, { bg: string; fg: string; border: string }> = {
-  gold:  { bg: 'rgba(184,146,42,0.12)', fg: 'var(--gold)',  border: 'var(--gold-line)' },
+  gold:  { bg: 'rgba(200,148,31,0.12)', fg: 'var(--gold)',  border: 'var(--gold-line)' },
   green: { bg: 'rgba(31,92,58,0.12)',   fg: 'var(--green)', border: 'rgba(31,92,58,0.25)' },
   red:   { bg: 'rgba(184,40,40,0.12)',  fg: 'var(--red)',   border: 'rgba(184,40,40,0.3)' },
-  blue:  { bg: 'rgba(61,48,128,0.12)',  fg: '#3D3080',      border: 'rgba(61,48,128,0.25)' },
+  blue:  { bg: 'rgba(122,31,31,0.12)',  fg: '#7A1F1F',      border: 'rgba(122,31,31,0.25)' },
   gray:  { bg: 'rgba(0,0,0,0.06)',      fg: 'var(--text-muted)', border: 'var(--line)' },
 }
 
 const PATH_LABELS: Record<NonNullable<AdminUserRow['selected_path']> | 'none', { label: string; color: string; bg: string; border: string }> = {
-  A:    { label: 'Path A · Seal the Leak', color: '#3D3080',     bg: 'rgba(61,48,128,0.12)',  border: 'rgba(61,48,128,0.25)' },
+  A:    { label: 'Path A · Seal the Leak', color: '#7A1F1F',     bg: 'rgba(122,31,31,0.12)',  border: 'rgba(122,31,31,0.25)' },
   B:    { label: 'Path B · Daily Cards',  color: 'var(--green)',bg: 'rgba(31,92,58,0.12)',   border: 'rgba(31,92,58,0.25)' },
-  C:    { label: 'Path C · Circle',       color: '#C97D3A',     bg: 'rgba(201,125,58,0.12)', border: 'rgba(201,125,58,0.25)' },
+  C:    { label: 'Path C · Circle',       color: '#B8862E',     bg: 'rgba(184,134,46,0.12)', border: 'rgba(184,134,46,0.25)' },
   none: { label: 'No path yet',           color: 'var(--text-muted)', bg: 'var(--paper2)', border: 'var(--line)' },
 }
 type PathFilter = 'all' | 'A' | 'B' | 'C' | 'none'
@@ -172,7 +172,7 @@ export default function AdminUsersPage() {
 
       {filter === 'C' && (
         <div style={{
-          background: 'rgba(61,48,128,0.06)', border: '1px solid rgba(61,48,128,0.2)',
+          background: 'rgba(122,31,31,0.06)', border: '1px solid rgba(122,31,31,0.2)',
           borderRadius: 10, padding: '10px 14px', marginBottom: 12,
           fontSize: 12, color: 'var(--ink)',
           display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
@@ -183,7 +183,7 @@ export default function AdminUsersPage() {
             style={{
               marginLeft: 'auto', fontSize: 11, fontWeight: 600,
               padding: '5px 12px', borderRadius: 7,
-              background: '#3D3080', color: '#fff', textDecoration: 'none',
+              background: '#7A1F1F', color: '#fff', textDecoration: 'none',
             }}
           >
             Open Circle deep-dive →

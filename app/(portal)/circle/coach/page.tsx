@@ -20,7 +20,7 @@ type CoachMessage = {
   read_at: string | null
 }
 
-const ORANGE      = '#C97D3A'
+const ORANGE      = '#B8862E'
 const ORANGE_PALE = '#fdf6f2'
 
 export default function CoachChatPage() {

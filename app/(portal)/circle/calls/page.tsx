@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 import { getMyCircleMember, getLiveCalls, type LiveCall } from '@/lib/circle'
 
-const ORANGE      = '#C97D3A'
+const ORANGE      = '#B8862E'
 const ORANGE_PALE = '#fdf6f2'
 
 const CALL_DESCRIPTIONS: Record<number, string> = {

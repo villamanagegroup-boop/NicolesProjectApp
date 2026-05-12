@@ -14,8 +14,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useApp } from '@/context/AppContext'
 
-const CARDS_GREEN = '#1A5230'
-const CARDS_PALE  = 'rgba(26,82,48,0.07)'
+const CARDS_GREEN = '#0F4D2E'
+const CARDS_PALE  = 'rgba(15,77,46,0.07)'
 const TOTAL_DAYS  = 365
 
 const FALLBACK_AFFIRMATION = 'I am exactly where I need to be.'

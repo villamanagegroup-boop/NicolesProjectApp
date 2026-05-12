@@ -32,7 +32,7 @@ export default function VideoPlayer({ videoUrl, lessonTitle }: VideoPlayerProps)
             position: 'absolute',
             inset: 0,
             background:
-              'radial-gradient(ellipse at center, rgba(184,146,42,0.12) 0%, var(--ink) 70%)',
+              'radial-gradient(ellipse at center, rgba(200,148,31,0.12) 0%, var(--ink) 70%)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',

@@ -16,7 +16,7 @@ import {
 } from '@/lib/circle'
 import AttachmentPicker, { type AttachmentSlots, type AttachmentSlot } from '@/components/circle/AttachmentPicker'
 
-const ORANGE      = '#C97D3A'
+const ORANGE      = '#B8862E'
 const ORANGE_PALE = '#fdf6f2'
 
 const ARCHETYPE_LABELS: Record<string, string> = {

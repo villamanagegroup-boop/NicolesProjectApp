@@ -184,7 +184,7 @@ export default function AdminCardsPage() {
                   style={{
                     display: 'flex', alignItems: 'center', gap: 12,
                     padding: '10px 14px', cursor: 'pointer',
-                    background: isEditing ? 'rgba(184,146,42,0.10)' : '#fff',
+                    background: isEditing ? 'rgba(200,148,31,0.10)' : '#fff',
                     borderLeft: isEditing ? '3px solid var(--gold)' : '3px solid transparent',
                     fontSize: 13,
                     flexWrap: 'wrap',

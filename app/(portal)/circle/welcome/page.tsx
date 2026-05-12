@@ -6,7 +6,7 @@ import { supabaseClient } from '@/lib/supabase/client'
 import { useApp } from '@/context/AppContext'
 import { getMyCircleMember, getLiveCalls, type CircleMember, type LiveCall } from '@/lib/circle'
 
-const ORANGE      = '#C97D3A'
+const ORANGE      = '#B8862E'
 const ORANGE_PALE = '#fdf6f2'
 
 const ARCHETYPE_LABELS: Record<string, string> = {

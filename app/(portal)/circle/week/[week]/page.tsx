@@ -10,7 +10,7 @@ import {
   type WeeklyContent,
 } from '@/lib/circle'
 
-const ORANGE      = '#C97D3A'
+const ORANGE      = '#B8862E'
 const ORANGE_DEEP = '#a66128'
 const ORANGE_PALE = '#fdf6f2'
 

@@ -4,10 +4,10 @@ import Link from 'next/link'
 import { supabaseClient } from '@/lib/supabase/client'
 import RoleBadge from './RoleBadge'
 
-const ORANGE      = '#C97D3A'
-const ORANGE_PALE = 'rgba(201,125,58,0.08)'
-const ORANGE_DIM  = 'rgba(201,125,58,0.55)'
-const ORANGE_LINE = 'rgba(201,125,58,0.25)'
+const ORANGE      = '#B8862E'
+const ORANGE_PALE = 'rgba(184,134,46,0.08)'
+const ORANGE_DIM  = 'rgba(184,134,46,0.55)'
+const ORANGE_LINE = 'rgba(184,134,46,0.25)'
 
 const GREEN     = '#1F5C3A'
 const GREEN_DIM = 'rgba(31,92,58,0.55)'
@@ -93,7 +93,7 @@ export default function AdminPortalLink({ onNavigate }: { onNavigate?: () => voi
             fontFamily: 'var(--font-body)',
             transition: 'background 0.15s ease',
           }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(201,125,58,0.14)' }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(184,134,46,0.14)' }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = ORANGE_PALE }}
         >
           Open admin portal →

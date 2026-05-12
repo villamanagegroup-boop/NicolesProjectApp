@@ -23,8 +23,8 @@ const ARCHETYPE_LABELS: Record<string, string> = {
   door: 'Open Door', throne: "Overthinker's Throne", engine: 'Interrupted Engine', push: 'Pushthrough',
 }
 const ALERT_COLORS = {
-  amber:  { bg: 'rgba(184,146,42,.15)', text: 'var(--gold)' },
-  orange: { bg: 'rgba(201,125,58,.15)', text: '#C97D3A' },
+  amber:  { bg: 'rgba(200,148,31,.15)', text: 'var(--gold)' },
+  orange: { bg: 'rgba(184,134,46,.15)', text: '#B8862E' },
   red:    { bg: 'rgba(139,31,47,.25)', text: 'var(--red)' },
 }
 
@@ -482,7 +482,7 @@ function MembersInner() {
                   {selectedMember.has_transformation_story && (
                     <div style={{
                       padding: '10px 12px', borderRadius: '8px',
-                      background: 'rgba(184,146,42,.1)', border: '1px solid rgba(184,146,42,.3)',
+                      background: 'rgba(200,148,31,.1)', border: '1px solid rgba(200,148,31,.3)',
                       fontSize: '12px', color: 'var(--gold)',
                     }}>
                       ✨ Transformation story submitted

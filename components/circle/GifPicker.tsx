@@ -32,7 +32,7 @@ interface GiphyResult {
   }
 }
 
-const ORANGE = '#C97D3A'
+const ORANGE = '#B8862E'
 
 export default function GifPicker({ onPick, label = 'GIF', align = 'left' }: GifPickerProps) {
   const [open, setOpen]     = useState(false)

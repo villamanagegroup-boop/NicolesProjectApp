@@ -35,7 +35,7 @@ export default function IntentionsPanel() {
                 width: '5px',
                 height: '5px',
                 borderRadius: '50%',
-                backgroundColor: 'rgba(184,146,42,0.80)',
+                backgroundColor: 'rgba(200,148,31,0.80)',
                 marginTop: '6px',
                 flexShrink: 0,
               }}

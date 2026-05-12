@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 
-const GOLD      = '#b8922a'
+const GOLD      = '#C8941F'
 const GOLD_PALE = '#fffdf7'
 
 const STEPS = [
@@ -41,7 +41,7 @@ export default function WelcomeSealTheLeak() {
         {/* Hero */}
         <div style={{
           background: '#fff',
-          border: '1px solid rgba(184,146,42,0.2)',
+          border: '1px solid rgba(200,148,31,0.2)',
           borderRadius: 16,
           padding: '40px 36px',
           textAlign: 'center',
@@ -78,7 +78,7 @@ export default function WelcomeSealTheLeak() {
         {/* Day-by-day breakdown */}
         <div style={{
           background: '#fff',
-          border: '1px solid rgba(184,146,42,0.15)',
+          border: '1px solid rgba(200,148,31,0.15)',
           borderRadius: 14, padding: '28px 28px',
         }}>
           <Eyebrow>Your 7-day roadmap</Eyebrow>
@@ -104,8 +104,8 @@ export default function WelcomeSealTheLeak() {
 
         {/* Reminder */}
         <div style={{
-          background: `rgba(184,146,42,0.07)`,
-          border: `1px solid rgba(184,146,42,0.2)`,
+          background: `rgba(200,148,31,0.07)`,
+          border: `1px solid rgba(200,148,31,0.2)`,
           borderLeft: `3px solid ${GOLD}`,
           borderRadius: 10, padding: '16px 20px',
         }}>

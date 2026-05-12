@@ -2,9 +2,9 @@
 // user's name. Single component so the two badges stay visually identical
 // — only the color flips with the role.
 
-const ADMIN_BG     = 'rgba(201,125,58,0.12)'
-const ADMIN_FG     = '#C97D3A'
-const ADMIN_BORDER = 'rgba(201,125,58,0.3)'
+const ADMIN_BG     = 'rgba(184,134,46,0.12)'
+const ADMIN_FG     = '#B8862E'
+const ADMIN_BORDER = 'rgba(184,134,46,0.3)'
 
 const MEMBER_BG     = 'rgba(31,92,58,0.1)'
 const MEMBER_FG     = '#1F5C3A'

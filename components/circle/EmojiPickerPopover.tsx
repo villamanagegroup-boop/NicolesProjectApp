@@ -6,7 +6,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-const ORANGE = '#C97D3A'
+const ORANGE = '#B8862E'
 
 // Curated set — broader than the always-visible 5 but small enough to
 // scan at a glance. Grouped roughly by intent (love → fire → applause →

@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { fetchAdminCohorts, type AdminCohortSummary } from '@/lib/admin/hooks'
 
 const PHASE_COLORS: Record<string, string> = {
-  root: 'var(--green)', rebuild: 'var(--gold)', rise: '#3D3080',
+  root: 'var(--green)', rebuild: 'var(--gold)', rise: '#7A1F1F',
 }
 
 export default function CohortsPage() {

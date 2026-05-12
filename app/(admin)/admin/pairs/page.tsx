@@ -17,8 +17,8 @@ const ARCHETYPE_LABELS: Record<string, string> = {
 function PairHealthBadge({ health }: { health: string }) {
   const map: Record<string, { bg: string; text: string; emoji: string }> = {
     strong:   { bg: 'rgba(31,92,58,.3)',    text: 'var(--green)', emoji: '🔥' },
-    moderate: { bg: 'rgba(184,146,42,.15)', text: 'var(--gold)', emoji: '✓' },
-    quiet:    { bg: 'rgba(201,125,58,.15)',  text: '#C97D3A', emoji: '⚠' },
+    moderate: { bg: 'rgba(200,148,31,.15)', text: 'var(--gold)', emoji: '✓' },
+    quiet:    { bg: 'rgba(184,134,46,.15)',  text: '#B8862E', emoji: '⚠' },
     silent:   { bg: 'rgba(139,31,47,.25)',  text: 'var(--red)', emoji: '🔴' },
   }
   const c = map[health] ?? map.moderate

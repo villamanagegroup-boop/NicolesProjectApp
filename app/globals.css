@@ -1,41 +1,49 @@
 @import "tailwindcss";
 
+/* Pan-African palette — red / gold / green / black. The beige background
+   is gone; surfaces are a near-white warm canvas (#fafaf7) so the colored
+   accents do the work instead of being washed out. */
 @theme {
   --color-ink: #0c0c0a;
-  --color-paper: #f7f4ef;
-  --color-paper2: #f0ebe2;
-  --color-paper3: #e8e2d8;
-  --color-gold: #b8922a;
-  --color-gold-dim: #c9a84c;
-  --color-gold-pale: #f5edd8;
-  --color-green: #1f5c3a;
-  --color-green-dim: #2d7a52;
-  --color-green-pale: #e8f3ec;
-  --color-red: #8b1f2f;
-  --color-red-pale: #f5e8ea;
+  --color-paper: #fafaf7;
+  --color-paper2: #f3f0ea;
+  --color-paper3: #ebe6dc;
+  --color-gold: #C8941F;
+  --color-gold-dim: #D4A945;
+  --color-gold-pale: rgba(200,148,31,0.10);
+  --color-green: #0F4D2E;
+  --color-green-dim: #1D6B44;
+  --color-green-pale: rgba(15,77,46,0.10);
+  --color-red: #7A1F1F;
+  --color-red-pale: rgba(122,31,31,0.10);
   --font-display: 'Cormorant Garamond', serif;
   --font-body: 'Instrument Sans', sans-serif;
 }
 
 :root {
   --ink: #0c0c0a;
-  --paper: #f7f4ef;
-  --paper2: #f0ebe2;
-  --paper3: #e8e2d8;
-  --gold: #b8922a;
-  --gold-dim: #c9a84c;
-  --gold-pale: #f5edd8;
-  --gold-line: rgba(184,146,42,0.2);
-  --green: #1f5c3a;
-  --green-dim: #2d7a52;
-  --green-pale: #e8f3ec;
-  --red: #8b1f2f;
-  --red-pale: #f5e8ea;
-  --line: rgba(12,12,10,0.08);
-  --line-md: rgba(12,12,10,0.12);
+  --paper: #fafaf7;       /* near-white canvas */
+  --paper2: #f3f0ea;
+  --paper3: #ebe6dc;
+  --gold:      #C8941F;
+  --gold-dim:  #D4A945;
+  --gold-pale: rgba(200,148,31,0.10);
+  --gold-line: rgba(200,148,31,0.28);
+  --green:      #0F4D2E;
+  --green-dim:  #1D6B44;
+  --green-pale: rgba(15,77,46,0.10);
+  --red:        #7A1F1F;
+  --red-pale:   rgba(122,31,31,0.10);
+  --line:    rgba(12,12,10,0.08);
+  --line-md: rgba(12,12,10,0.14);
   --text-muted: rgba(12,12,10,0.45);
-  --text-soft: rgba(12,12,10,0.65);
+  --text-soft:  rgba(12,12,10,0.68);
   --sidebar: 210px;
+  /* Path colors — surface-level branding. Archetype colors inside Seal
+     the Leak keep their own palette in data/sealTheLeakProgram.ts. */
+  --path-seal:   #7A1F1F;
+  --path-cards:  #0F4D2E;
+  --path-circle: #B8862E;
 }
 
 * {

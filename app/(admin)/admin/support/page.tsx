@@ -26,8 +26,8 @@ const STATUS_TABS: { id: StatusFilter; label: string }[] = [
 ]
 
 const STATUS_COLORS: Record<SupportMessage['status'], { bg: string; text: string; border: string; emoji: string }> = {
-  open:        { bg: 'rgba(184,146,42,0.15)', text: 'var(--gold)',     border: 'rgba(184,146,42,0.3)', emoji: '🆕' },
-  in_progress: { bg: 'rgba(61,48,128,0.12)',  text: '#3D3080',         border: 'rgba(61,48,128,0.3)',  emoji: '🛠' },
+  open:        { bg: 'rgba(200,148,31,0.15)', text: 'var(--gold)',     border: 'rgba(200,148,31,0.3)', emoji: '🆕' },
+  in_progress: { bg: 'rgba(122,31,31,0.12)',  text: '#7A1F1F',         border: 'rgba(122,31,31,0.3)',  emoji: '🛠' },
   resolved:    { bg: 'rgba(31,92,58,0.12)',   text: 'var(--green)',    border: 'rgba(31,92,58,0.25)',  emoji: '✓' },
 }
 
@@ -175,8 +175,8 @@ export default function AdminSupportPage() {
             // white card body and the page's --paper background. Hover is a
             // lighter version of the same accent.
             const rowBg = isOpen
-              ? 'rgba(184,146,42,0.10)'
-              : isHovered ? 'rgba(184,146,42,0.06)' : '#fff'
+              ? 'rgba(200,148,31,0.10)'
+              : isHovered ? 'rgba(200,148,31,0.06)' : '#fff'
             return (
               <div
                 key={msg.id}

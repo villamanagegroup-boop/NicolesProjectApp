@@ -410,8 +410,8 @@ function TodaysSessionInner() {
           this specific day for users in the current audience filter. */}
       {pinnedNote && (
         <div style={{
-          background: 'linear-gradient(135deg, rgba(184,146,42,0.08) 0%, rgba(184,146,42,0.02) 100%)',
-          border: '1px solid rgba(184,146,42,0.28)',
+          background: 'linear-gradient(135deg, rgba(200,148,31,0.08) 0%, rgba(200,148,31,0.02) 100%)',
+          border: '1px solid rgba(200,148,31,0.28)',
           borderLeft: '3px solid var(--gold)',
           borderRadius: 10,
           padding: '14px 16px',
@@ -840,7 +840,7 @@ function UnlockModal({
     delay: Math.random() * 0.4,
     duration: 1.4 + Math.random() * 1.2,
     size: 6 + Math.floor(Math.random() * 6),
-    color: i % 3 === 0 ? accent : i % 3 === 1 ? '#1f5c3a' : '#b8922a',
+    color: i % 3 === 0 ? accent : i % 3 === 1 ? '#1f5c3a' : '#C8941F',
   }))
 
   return (

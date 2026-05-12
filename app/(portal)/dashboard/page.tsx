@@ -17,9 +17,9 @@ import { supabaseClient } from '@/lib/supabase/client'
 import { programRoutes, archetypeToRoute } from '@/data/sealTheLeakProgram'
 import DailyCheckIn from '@/components/cards/DailyCheckIn'
 
-const SEAL   = '#3D3080'
-const CARDS  = '#1A5230'
-const CIRCLE = '#C97D3A'
+const SEAL   = '#7A1F1F'
+const CARDS  = '#0F4D2E'
+const CIRCLE = '#B8862E'
 const FALLBACK_PROMPT = 'What is calling for your attention today?'
 
 // Coach DM widget — gated off because the 1:1 private chat is moving into
@@ -516,7 +516,7 @@ function CardsRow({
         {/* Card thumbnail */}
         <div style={{
           width: 56, height: 56, borderRadius: 8,
-          background: todayCard.cardColor || 'rgba(26,82,48,0.07)',
+          background: todayCard.cardColor || 'rgba(15,77,46,0.07)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 22, flexShrink: 0,
           position: 'relative', overflow: 'hidden',

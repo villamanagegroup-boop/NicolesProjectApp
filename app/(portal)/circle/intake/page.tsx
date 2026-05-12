@@ -14,7 +14,7 @@ type Ennea = '1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9'
 type Attach = 'secure' | 'anxious' | 'avoidant' | 'disorganized'
 type Feedback = 'straight' | 'context' | 'written' | 'example'
 
-const ORANGE      = '#C97D3A'
+const ORANGE      = '#B8862E'
 const ORANGE_PALE = '#fdf6f2'
 
 const ENNEA_OPTS: [Ennea, string, string][] = [

@@ -21,7 +21,7 @@ function phaseFromWeek(week: number): MonthName {
   return 'rise'
 }
 
-const PHASE_COLORS: Record<string, string> = { root: 'var(--green)', rebuild: 'var(--gold)', rise: '#3D3080' }
+const PHASE_COLORS: Record<string, string> = { root: 'var(--green)', rebuild: 'var(--gold)', rise: '#7A1F1F' }
 
 export default function ContentPage() {
   const [cohortId, setCohortId] = useState('')
@@ -412,7 +412,7 @@ export default function ContentPage() {
                       Call {call.call_number}
                     </span>
                     {call.recording_url && <span style={{ fontSize: '11px', color: 'var(--green)' }}>✓ Recording uploaded</span>}
-                    {!call.recording_url && isPast && <span style={{ fontSize: '11px', color: '#C97D3A' }}>⚠ Needs recording</span>}
+                    {!call.recording_url && isPast && <span style={{ fontSize: '11px', color: '#B8862E' }}>⚠ Needs recording</span>}
                   </div>
                   <div style={{ fontSize: '14px', fontWeight: 600 }}>{call.title}</div>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>

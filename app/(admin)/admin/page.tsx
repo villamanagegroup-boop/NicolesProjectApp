@@ -41,13 +41,13 @@ const ARCHETYPE_LABELS: Record<string, string> = {
   door: 'Open Door', throne: "Overthinker's Throne", engine: 'Interrupted Engine', push: 'Pushthrough',
 }
 const PHASE_COLORS: Record<string, string> = {
-  root: 'var(--green)', rebuild: 'var(--gold)', rise: '#3D3080',
+  root: 'var(--green)', rebuild: 'var(--gold)', rise: '#7A1F1F',
 }
 
 function AlertBadge({ level }: { level: string }) {
   const colors: Record<string, { bg: string; text: string; label: string }> = {
-    amber:  { bg: 'rgba(184,146,42,.15)', text: 'var(--gold)', label: 'Monitor' },
-    orange: { bg: 'rgba(201,125,58,.15)',  text: '#C97D3A', label: 'Check in' },
+    amber:  { bg: 'rgba(200,148,31,.15)', text: 'var(--gold)', label: 'Monitor' },
+    orange: { bg: 'rgba(184,134,46,.15)',  text: '#B8862E', label: 'Check in' },
     red:    { bg: 'rgba(139,31,47,.25)',  text: 'var(--red)', label: 'At risk' },
   }
   const c = colors[level] ?? colors.amber
@@ -185,7 +185,7 @@ export default function AdminDashboard() {
                   <BigStat label="Total users" value={totalUsers} sub={`${paid} paid`} />
                   <BigStat label="Seal the Leak" value={a.total} sub={`${a.paid} paid`} accent="var(--gold)" />
                   <BigStat label="365 Cards"     value={b.total} sub={`${b.paid} paid`} accent="var(--green)" />
-                  <BigStat label="The Circle"    value={c.total} sub={`${c.paid} paid`} accent="#3D3080" />
+                  <BigStat label="The Circle"    value={c.total} sub={`${c.paid} paid`} accent="#7A1F1F" />
                   <BigStat
                     label="Unclaimed payments"
                     value={unclaimed.length}
@@ -257,7 +257,7 @@ export default function AdminDashboard() {
             {[
               { label: 'Active cohorts', value: activeCohorts.length, color: 'var(--green)' },
               { label: 'Total members', value: activeCohorts.reduce((s, c) => s + c.member_count, 0), color: 'var(--gold)' },
-              { label: 'Engagement alerts', value: totalAlerts, color: totalAlerts > 0 ? '#C97D3A' : 'var(--text-muted)' },
+              { label: 'Engagement alerts', value: totalAlerts, color: totalAlerts > 0 ? '#B8862E' : 'var(--text-muted)' },
               { label: 'At-risk members', value: redAlerts, color: redAlerts > 0 ? 'var(--red)' : 'var(--text-muted)' },
             ].map(s => (
               <div key={s.label} style={{
@@ -320,12 +320,12 @@ export default function AdminDashboard() {
                           </span>
                         )}
                         {c.alert_counts.orange > 0 && (
-                          <span style={{ fontSize: '11px', color: '#C97D3A', background: 'rgba(201,125,58,.15)', padding: '2px 8px', borderRadius: '8px' }}>
+                          <span style={{ fontSize: '11px', color: '#B8862E', background: 'rgba(184,134,46,.15)', padding: '2px 8px', borderRadius: '8px' }}>
                             {c.alert_counts.orange} check in
                           </span>
                         )}
                         {c.next_call && (
-                          <span style={{ fontSize: '11px', color: 'var(--gold)', background: 'rgba(184,146,42,.12)', padding: '2px 8px', borderRadius: '8px' }}>
+                          <span style={{ fontSize: '11px', color: 'var(--gold)', background: 'rgba(200,148,31,.12)', padding: '2px 8px', borderRadius: '8px' }}>
                             Call {c.next_call.call_number} → {new Date(c.next_call.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                           </span>
                         )}

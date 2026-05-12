@@ -21,9 +21,9 @@ const PATH_LABELS: Record<'A' | 'B' | 'C', string> = {
   C: 'The Circle',
 }
 const PATH_TINT: Record<'A' | 'B' | 'C', { bg: string; fg: string }> = {
-  A: { bg: 'rgba(184,146,42,0.12)', fg: 'var(--gold)' },
+  A: { bg: 'rgba(200,148,31,0.12)', fg: 'var(--gold)' },
   B: { bg: 'rgba(31,92,58,0.12)',   fg: 'var(--green)' },
-  C: { bg: 'rgba(61,48,128,0.12)',  fg: '#3D3080' },
+  C: { bg: 'rgba(122,31,31,0.12)',  fg: '#7A1F1F' },
 }
 
 export default function MoneyPage() {

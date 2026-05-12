@@ -39,8 +39,8 @@ export default function NicoleBannerStrip() {
   return (
     <div style={{
       position: 'sticky', top: 0, zIndex: 50,
-      background: 'linear-gradient(90deg, rgba(184,146,42,0.12) 0%, rgba(184,146,42,0.06) 100%)',
-      borderBottom: '1px solid rgba(184,146,42,0.25)',
+      background: 'linear-gradient(90deg, rgba(200,148,31,0.12) 0%, rgba(200,148,31,0.06) 100%)',
+      borderBottom: '1px solid rgba(200,148,31,0.25)',
       padding: '10px 20px',
       display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
       fontFamily: 'var(--font-body)',
@@ -49,7 +49,7 @@ export default function NicoleBannerStrip() {
         fontSize: 9, fontWeight: 700, letterSpacing: '0.14em',
         textTransform: 'uppercase', color: 'var(--gold)',
         padding: '3px 8px', borderRadius: 999,
-        background: '#fff', border: '1px solid rgba(184,146,42,0.3)',
+        background: '#fff', border: '1px solid rgba(200,148,31,0.3)',
         flexShrink: 0,
       }}>
         ✨ From Nicole

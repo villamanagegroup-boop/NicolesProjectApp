@@ -270,13 +270,13 @@ function SignupForm() {
         {isAdminPreview && (
           <div style={{
             background: '#fffaeb',
-            border: '1px solid rgba(184,146,42,0.4)',
-            borderLeft: '3px solid #b8922a',
+            border: '1px solid rgba(200,148,31,0.4)',
+            borderLeft: '3px solid #C8941F',
             borderRadius: 6,
             padding: '10px 14px',
             marginBottom: 24,
             fontSize: 12,
-            color: '#b8922a',
+            color: '#C8941F',
             fontFamily: 'var(--font-body)',
             lineHeight: 1.5,
           }}>

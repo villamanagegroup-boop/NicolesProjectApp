@@ -20,7 +20,7 @@ import CommentThread from '@/components/circle/CommentThread'
 import EmojiPickerPopover from '@/components/circle/EmojiPickerPopover'
 import GifPicker from '@/components/circle/GifPicker'
 
-const ORANGE      = '#C97D3A'
+const ORANGE      = '#B8862E'
 const ORANGE_PALE = '#fdf6f2'
 
 const POST_TYPES: { id: PostType; label: string; dot: string }[] = [

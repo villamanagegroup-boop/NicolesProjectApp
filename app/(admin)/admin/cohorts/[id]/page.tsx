@@ -15,7 +15,7 @@ import {
 import { usePreviewMode } from '@/hooks/usePreviewMode'
 
 const PHASE_COLORS: Record<string, string> = {
-  root: 'var(--green)', rebuild: 'var(--gold)', rise: '#3D3080',
+  root: 'var(--green)', rebuild: 'var(--gold)', rise: '#7A1F1F',
 }
 
 export default function CohortDetailPage() {
@@ -173,7 +173,7 @@ export default function CohortDetailPage() {
             <span style={{ fontSize: 12, color: 'var(--red)', fontWeight: 600 }}>{cohort.alert_counts.red} at risk</span>
           )}
           {cohort.alert_counts.orange > 0 && (
-            <span style={{ fontSize: 12, color: '#C97D3A', fontWeight: 600 }}>{cohort.alert_counts.orange} check in</span>
+            <span style={{ fontSize: 12, color: '#B8862E', fontWeight: 600 }}>{cohort.alert_counts.orange} check in</span>
           )}
           {cohort.alert_counts.amber > 0 && (
             <span style={{ fontSize: 12, color: 'var(--gold)', fontWeight: 600 }}>{cohort.alert_counts.amber} monitor</span>
