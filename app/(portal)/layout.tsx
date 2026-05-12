@@ -9,6 +9,7 @@ import PageTransition from '@/components/layout/PageTransition'
 import PreviewBanner from '@/components/admin/PreviewBanner'
 import NicoleBannerStrip from '@/components/layout/NicoleBannerStrip'
 import WelcomeModal from '@/components/portal/WelcomeModal'
+import { SkeletonStyles } from '@/components/ui/Skeleton'
 import { useApp } from '@/context/AppContext'
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
@@ -74,6 +75,8 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   }, [loading, isAuthed, user.isAdmin, user.selectedPath, user.onboardingComplete, router])
 
   return (
+    <>
+    <SkeletonStyles />
     <div className="portal-shell" style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#ffffff' }}>
       <div className="sidebar">
         <Sidebar />
@@ -101,5 +104,6 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
       <MobileNav />
       <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </div>
+    </>
   )
 }

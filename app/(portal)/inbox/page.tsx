@@ -12,6 +12,7 @@ import {
   type InboxItem,
 } from '@/lib/admin/hooks'
 import { supabaseClient } from '@/lib/supabase/client'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 const GOLD = '#b8922a'
 
@@ -80,7 +81,31 @@ export default function InboxPage() {
       </div>
 
       {loading ? (
-        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading…</p>
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'minmax(0, 340px) minmax(0, 1fr)',
+          gap: 20, alignItems: 'flex-start',
+        }} className="inbox-grid">
+          <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
+            {[0, 1, 2].map(i => (
+              <div key={i} style={{
+                padding: '14px 16px',
+                borderTop: i === 0 ? 'none' : '1px solid var(--line)',
+                display: 'flex', flexDirection: 'column', gap: 6,
+              }}>
+                <Skeleton width="70%" height={12} />
+                <Skeleton width="95%" height={10} />
+                <Skeleton width="60%" height={10} />
+              </div>
+            ))}
+          </div>
+          <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 12, padding: '28px 30px' }}>
+            <Skeleton width={120} height={10} style={{ marginBottom: 16 }} />
+            <Skeleton width="80%" height={20} style={{ marginBottom: 14 }} />
+            <Skeleton width="100%" height={12} style={{ marginBottom: 8 }} />
+            <Skeleton width="92%" height={12} style={{ marginBottom: 8 }} />
+            <Skeleton width="78%" height={12} />
+          </div>
+        </div>
       ) : items.length === 0 ? (
         <div style={{
           background: '#fff', border: '1px dashed var(--line-md)',

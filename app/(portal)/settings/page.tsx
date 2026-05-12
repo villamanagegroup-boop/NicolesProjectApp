@@ -107,9 +107,6 @@ export default function SettingsPage() {
     window.scrollTo({ top, behavior: 'smooth' })
   }
 
-  // ── Danger zone confirmation ────────────────────────────────────────────
-  const [confirmDelete, setConfirmDelete] = useState(false)
-
   const photoSrc = avatarUrl ?? getArchetypePlaceholder(user.quizResult)
 
   return (
@@ -955,61 +952,36 @@ export default function SettingsPage() {
                 <div>
                   <div style={{ fontSize: 13, color: 'var(--ink)', fontFamily: 'var(--font-body)' }}>Delete account</div>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)', marginTop: 2, lineHeight: 1.5 }}>
-                    Erases your profile, reflections, and journey history. Cannot be undone.
+                    To protect your data we handle deletions manually. Email support and Nicole
+                    will confirm your identity and erase your profile, reflections, and journey
+                    history.
                   </div>
                 </div>
-                {confirmDelete ? (
-                  <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                    <button
-                      onClick={() => { alert('Account deletion — coming soon') }}
+                {(() => {
+                  const subject = encodeURIComponent('Account deletion request')
+                  const bodyText = encodeURIComponent(
+                    `Hi Nicole,\n\nI'd like to delete my account. Please confirm what gets removed and let me know if you need anything from me to verify it's me.\n\nAccount email: ${user.email || '(filled in by email client)'}\n\nThanks.`,
+                  )
+                  return (
+                    <a
+                      href={`mailto:nicole@theenergyleader.com?subject=${subject}&body=${bodyText}`}
                       style={{
                         fontSize: 12,
                         padding: '8px 14px',
                         borderRadius: 6,
-                        border: 'none',
-                        background: 'var(--red)',
-                        color: 'white',
-                        fontFamily: 'var(--font-body)',
-                        cursor: 'pointer',
-                        fontWeight: 500,
-                      }}
-                    >
-                      Confirm delete
-                    </button>
-                    <button
-                      onClick={() => setConfirmDelete(false)}
-                      style={{
-                        fontSize: 12,
-                        padding: '8px 14px',
-                        borderRadius: 6,
-                        border: '1px solid var(--line-md)',
+                        border: '1px solid rgba(178,60,60,0.4)',
                         background: 'white',
-                        color: 'var(--text-soft)',
+                        color: 'var(--red)',
                         fontFamily: 'var(--font-body)',
                         cursor: 'pointer',
+                        flexShrink: 0,
+                        textDecoration: 'none',
                       }}
                     >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setConfirmDelete(true)}
-                    style={{
-                      fontSize: 12,
-                      padding: '8px 14px',
-                      borderRadius: 6,
-                      border: '1px solid rgba(178,60,60,0.4)',
-                      background: 'white',
-                      color: 'var(--red)',
-                      fontFamily: 'var(--font-body)',
-                      cursor: 'pointer',
-                      flexShrink: 0,
-                    }}
-                  >
-                    Request deletion
-                  </button>
-                )}
+                      Email support →
+                    </a>
+                  )
+                })()}
               </div>
             </div>
           </section>

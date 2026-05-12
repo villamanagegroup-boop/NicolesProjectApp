@@ -1480,8 +1480,12 @@ export interface SupportMessage {
   user_email: string | null
 }
 
+export type SupportCategory =
+  | 'bug' | 'login' | 'payment' | 'content' | 'account' | 'feature' | 'other'
+
 export async function submitSupportMessage(input: {
   body: string
+  category?: SupportCategory | null
   page_path?: string | null
   user_agent?: string | null
 }) {
@@ -1490,6 +1494,7 @@ export async function submitSupportMessage(input: {
   return supabase.from('support_messages').insert({
     user_id:    user.id,
     body:       input.body,
+    category:   input.category ?? 'other',
     page_path:  input.page_path  ?? null,
     user_agent: input.user_agent ?? null,
   })

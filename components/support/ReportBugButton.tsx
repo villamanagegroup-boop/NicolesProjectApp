@@ -1,18 +1,27 @@
 'use client'
 
 // components/support/ReportBugButton.tsx
-// Sidebar-anchored "Report a bug" button. Opens a right-side slide-in panel
-// where the user describes what went wrong; submission writes to
-// public.support_messages. Visible to all signed-in users.
+// Sidebar-anchored "Contact support" button. Opens a right-side slide-in
+// panel where the user picks a category + describes what they need help
+// with; submission writes to public.support_messages.
 //
-// The panel is portaled to document.body so it escapes the sidebar's
-// position:sticky stacking context — otherwise the topbar (which has its
-// own sibling sticky context with z-index:30) renders on top of the panel.
+// (Filename kept for git history continuity — the surface is broader than
+// "bug reports" now: login, payment, content, account, feature, other.)
 
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { usePathname } from 'next/navigation'
-import { submitSupportMessage } from '@/lib/admin/hooks'
+import { submitSupportMessage, type SupportCategory } from '@/lib/admin/hooks'
+
+const CATEGORIES: { id: SupportCategory; label: string; placeholder: string }[] = [
+  { id: 'bug',     label: '🐞 Bug or technical issue',  placeholder: 'Walk us through what you were trying to do and what happened instead.' },
+  { id: 'login',   label: '🔑 Sign-in or password',     placeholder: 'Trouble signing in? Forgot your password? Let us know what you tried.' },
+  { id: 'payment', label: '💳 Payment or billing',      placeholder: 'Stripe receipt missing, charge you didn\'t expect, plan change needed — say more.' },
+  { id: 'content', label: '📚 Content or program',      placeholder: "Question about a day's prompt, a card, the program flow, etc." },
+  { id: 'account', label: '👤 Account or profile',      placeholder: 'Wrong archetype, name needs updating, delete account, anything else profile-related.' },
+  { id: 'feature', label: '✨ Feature request',          placeholder: "What would make the app work better for you? We're listening." },
+  { id: 'other',   label: '✦ Something else',           placeholder: 'Tell us what\'s on your mind.' },
+]
 
 interface Props {
   /** Optional callback so parent surfaces (e.g. mobile drawer) can close
@@ -26,6 +35,7 @@ export default function ReportBugButton({ onOpenChange }: Props) {
   const [mounted, setMounted] = useState(false) // controls render after exit anim
   const [hasDocument, setHasDocument] = useState(false) // SSR guard for createPortal
   const [body, setBody] = useState('')
+  const [category, setCategory] = useState<SupportCategory>('bug')
   const [submitting, setSubmitting] = useState(false)
   const [submittedAt, setSubmittedAt] = useState<Date | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -70,6 +80,7 @@ export default function ReportBugButton({ onOpenChange }: Props) {
 
   function reset() {
     setBody('')
+    setCategory('bug')
     setError(null)
     setSubmittedAt(null)
   }
@@ -80,6 +91,7 @@ export default function ReportBugButton({ onOpenChange }: Props) {
     setError(null)
     const result = await submitSupportMessage({
       body: body.trim(),
+      category,
       page_path: pathname ?? null,
       user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
     })
@@ -118,7 +130,7 @@ export default function ReportBugButton({ onOpenChange }: Props) {
           ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--line-md)'
         }}
       >
-        🐞 Report a bug
+        ✦ Contact support
       </button>
 
       {mounted && hasDocument && createPortal(
@@ -142,7 +154,7 @@ export default function ReportBugButton({ onOpenChange }: Props) {
           <aside
             ref={panelRef}
             role="dialog"
-            aria-label="Report a bug"
+            aria-label="Contact support"
             style={{
               position: 'fixed',
               top: 0, right: 0, bottom: 0,
@@ -169,10 +181,10 @@ export default function ReportBugButton({ onOpenChange }: Props) {
             }}>
               <div>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 400, color: 'var(--ink)' }}>
-                  Report a bug
+                  Contact support
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3 }}>
-                  We&apos;ll read every one. Reply may come through your Coach chat.
+                  Nicole reads every message. Reply lands in your inbox.
                 </div>
               </div>
               <button
@@ -233,13 +245,37 @@ export default function ReportBugButton({ onOpenChange }: Props) {
                     letterSpacing: '0.1em', textTransform: 'uppercase',
                     color: 'var(--text-muted)', marginBottom: 6,
                   }}>
-                    What went wrong?
+                    What's this about?
+                  </label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value as SupportCategory)}
+                    style={{
+                      width: '100%', boxSizing: 'border-box',
+                      padding: '10px 12px',
+                      border: '1px solid var(--line-md)', borderRadius: 8,
+                      background: '#fff',
+                      fontFamily: 'inherit', fontSize: 13, color: 'var(--ink)',
+                      outline: 'none', marginBottom: 14, cursor: 'pointer',
+                    }}
+                  >
+                    {CATEGORIES.map(c => (
+                      <option key={c.id} value={c.id}>{c.label}</option>
+                    ))}
+                  </select>
+
+                  <label style={{
+                    display: 'block', fontSize: 10, fontWeight: 700,
+                    letterSpacing: '0.1em', textTransform: 'uppercase',
+                    color: 'var(--text-muted)', marginBottom: 6,
+                  }}>
+                    Tell us more
                   </label>
                   <textarea
                     autoFocus
                     value={body}
                     onChange={(e) => setBody(e.target.value)}
-                    placeholder="Walk us through what you were trying to do and what happened instead."
+                    placeholder={CATEGORIES.find(c => c.id === category)?.placeholder ?? ''}
                     rows={8}
                     style={{
                       width: '100%', boxSizing: 'border-box',
@@ -292,7 +328,7 @@ export default function ReportBugButton({ onOpenChange }: Props) {
                     fontFamily: 'inherit',
                   }}
                 >
-                  {submitting ? 'Sending…' : 'Send report'}
+                  {submitting ? 'Sending…' : 'Send to Nicole'}
                 </button>
               </footer>
             )}
