@@ -71,7 +71,7 @@ export default function CircleWelcomePage() {
         borderTop: `2px solid ${ORANGE}`,
         borderBottom: '1px solid var(--line)',
         padding: '40px 4px 40px 24px',
-        marginBottom: 36,
+        marginBottom: 22,
       }}>
         <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: ORANGE, margin: '0 0 14px', fontFamily: 'var(--font-body)' }}>
           Welcome to The Circle
@@ -113,8 +113,8 @@ export default function CircleWelcomePage() {
       <div style={{ position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 24 }}>
         {cohort && startsAt && endsAt && (
           <Section title="Your cohort">
-            <div style={{ padding: '20px 20px 20px 22px', position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 0, top: 18, bottom: 18, width: 3, background: ORANGE, borderRadius: 2 }} />
+            <div style={{ padding: '14px 16px 14px 18px', position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 0, top: 14, bottom: 14, width: 3, background: ORANGE, borderRadius: 2 }} />
               <p style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 400, margin: '0 0 6px', color: 'var(--ink)' }}>
                 {cohort.name}
               </p>
@@ -127,8 +127,8 @@ export default function CircleWelcomePage() {
 
         {nextCall && (
           <Section title="Your first live call">
-            <div style={{ padding: '20px 20px 20px 22px', position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 0, top: 18, bottom: 18, width: 3, background: ORANGE, borderRadius: 2 }} />
+            <div style={{ padding: '14px 16px 14px 18px', position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 0, top: 14, bottom: 14, width: 3, background: ORANGE, borderRadius: 2 }} />
               <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)', margin: '0 0 6px', lineHeight: 1.4 }}>{nextCall.title}</p>
               <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0, lineHeight: 1.55 }}>
                 {new Date(nextCall.scheduled_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
@@ -171,10 +171,10 @@ export default function CircleWelcomePage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section style={{ marginBottom: 36 }}>
-      <header style={{ marginBottom: 14 }}>
+    <section style={{ marginBottom: 24 }}>
+      <header style={{ marginBottom: 10 }}>
         <h2 style={{
-          fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+          fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500,
           color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
         }}>
           {title}
@@ -182,7 +182,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       </header>
       <div style={{
         background: 'var(--card)', border: '1px solid var(--line)',
-        borderRadius: 12, overflow: 'hidden',
+        borderRadius: 10, overflow: 'hidden',
       }}>{children}</div>
     </section>
   )
@@ -192,11 +192,11 @@ function ExpectRow({ num, title, body }: { num: number; title: string; body: str
   return (
     <div className="expect-row" style={{
       display: 'flex', alignItems: 'flex-start', gap: 14,
-      padding: '20px 20px 20px 22px',
+      padding: '14px 16px 14px 18px',
       borderBottom: '1px solid var(--line)',
       position: 'relative',
     }}>
-      <span style={{ position: 'absolute', left: 0, top: 18, bottom: 18, width: 3, background: ORANGE, borderRadius: 2 }} />
+      <span style={{ position: 'absolute', left: 0, top: 14, bottom: 14, width: 3, background: ORANGE, borderRadius: 2 }} />
       <div style={{
         width: 26, height: 26, borderRadius: '50%',
         background: ORANGE_PALE, color: ORANGE,

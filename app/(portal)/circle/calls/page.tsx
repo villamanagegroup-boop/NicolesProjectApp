@@ -85,14 +85,14 @@ export default function CallsPage() {
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
       {/* Hero */}
-      <div style={{ marginBottom: 40 }}>
-        <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 12px' }}>
+      <div style={{ marginBottom: 24 }}>
+        <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 8px' }}>
           The Circle
         </p>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300, color: 'var(--ink)', margin: 0, letterSpacing: '-0.015em', lineHeight: 1.1 }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', margin: 0, letterSpacing: '-0.015em', lineHeight: 1.1 }}>
           Live calls
         </h1>
-        <p style={{ fontSize: 15, color: 'var(--text-soft)', margin: '12px 0 0', lineHeight: 1.55, maxWidth: 520 }}>
+        <p style={{ fontSize: 13, color: 'var(--text-soft)', margin: '8px 0 0', lineHeight: 1.55, maxWidth: 520 }}>
           6 calls across your 12-week journey · {past.length} complete, {upcoming.length} upcoming.
         </p>
       </div>
@@ -161,8 +161,8 @@ function NextUpHero({ call }: { call: LiveCall }) {
       background: `linear-gradient(135deg, ${ORANGE_PALE} 0%, #fff 70%)`,
       borderTop: `2px solid ${ORANGE}`,
       borderBottom: '1px solid var(--line)',
-      padding: '32px 4px 32px 24px',
-      marginBottom: 36,
+      padding: '22px 4px 22px 20px',
+      marginBottom: 22,
     }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 280 }}>
@@ -184,7 +184,7 @@ function NextUpHero({ call }: { call: LiveCall }) {
           <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
             {call.zoom_url && (
               <a href={call.zoom_url} target="_blank" rel="noreferrer" style={{
-                padding: '10px 18px', borderRadius: 8,
+                padding: '8px 14px', borderRadius: 8,
                 background: ORANGE, color: '#fff',
                 fontSize: 13, fontWeight: 600,
                 textDecoration: 'none',
@@ -222,20 +222,20 @@ function CallRow({ call, kind }: { call: LiveCall; kind: 'upcoming' | 'past' }) 
       className="call-row"
       style={{
         display: 'flex', alignItems: 'center', gap: 16,
-        padding: '20px 20px 20px 22px',
+        padding: '14px 16px 14px 18px',
         borderBottom: '1px solid var(--line)',
         position: 'relative', flexWrap: 'wrap',
         transition: 'background 0.15s',
       }}
     >
       <span style={{
-        position: 'absolute', left: 0, top: 18, bottom: 18,
+        position: 'absolute', left: 0, top: 14, bottom: 14,
         width: 3, background: isPast ? 'var(--line-md)' : ORANGE,
         borderRadius: 2,
       }} />
 
       <div style={{ flex: 1, minWidth: 220 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: isPast ? 'var(--text-muted)' : ORANGE, marginBottom: 8, fontFamily: 'var(--font-body)' }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: isPast ? 'var(--text-muted)' : ORANGE, marginBottom: 6, fontFamily: 'var(--font-body)' }}>
           {meta?.label ?? ''} · Call {call.call_number}
           <span style={{
             marginLeft: 10, fontWeight: 600, fontSize: 9,
@@ -302,13 +302,13 @@ function CallRow({ call, kind }: { call: LiveCall; kind: 'upcoming' | 'past' }) 
 
 function Section({ title, count, children }: { title: string; count?: number; children: React.ReactNode }) {
   return (
-    <section style={{ marginBottom: 36 }}>
+    <section style={{ marginBottom: 24 }}>
       <header style={{
         display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-        marginBottom: 14,
+        marginBottom: 10,
       }}>
         <h2 style={{
-          fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+          fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500,
           color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
         }}>
           {title}
@@ -321,7 +321,7 @@ function Section({ title, count, children }: { title: string; count?: number; ch
       </header>
       <div style={{
         background: 'var(--card)', border: '1px solid var(--line)',
-        borderRadius: 12, overflow: 'hidden',
+        borderRadius: 10, overflow: 'hidden',
       }}>{children}</div>
     </section>
   )

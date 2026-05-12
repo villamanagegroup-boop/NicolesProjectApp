@@ -148,23 +148,23 @@ function JournalInner() {
 
       {/* ── LEFT — Editor ── */}
       <div style={{ flex: 1 }}>
-        <div style={{ marginBottom: 40 }}>
+        <div style={{ marginBottom: 24 }}>
           <p style={{
             fontSize: 11, fontWeight: 500, letterSpacing: '0.14em',
             textTransform: 'uppercase', color: 'var(--text-muted)',
-            margin: '0 0 12px', fontFamily: 'var(--font-body)',
+            margin: '0 0 8px', fontFamily: 'var(--font-body)',
           }}>
             Journal · Day {journalDay}
           </p>
           <h1 style={{
-            fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300,
+            fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300,
             color: 'var(--ink)', margin: 0, letterSpacing: '-0.015em',
             lineHeight: 1.1,
           }}>
             Your reflections
           </h1>
           <p style={{
-            fontSize: 15, color: 'var(--text-soft)', margin: '12px 0 0',
+            fontSize: 13, color: 'var(--text-soft)', margin: '8px 0 0',
             lineHeight: 1.55, maxWidth: 520, fontFamily: 'var(--font-body)',
           }}>
             One prompt a day. Write, speak, or just notice — there&apos;s no wrong way.

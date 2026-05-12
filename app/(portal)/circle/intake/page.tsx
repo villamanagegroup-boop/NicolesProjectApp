@@ -163,13 +163,13 @@ export default function CircleIntakePage() {
     <Shell>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 12px', fontFamily: 'var(--font-body)' }}>
+        <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 8px', fontFamily: 'var(--font-body)' }}>
           The Circle · Intake
         </p>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300, color: 'var(--ink)', margin: 0, letterSpacing: '-0.015em', lineHeight: 1.1 }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', margin: 0, letterSpacing: '-0.015em', lineHeight: 1.1 }}>
           {user.name ? `A few more things, ${user.name.split(' ')[0]}.` : 'Finish your Circle profile'}
         </h1>
-        <p style={{ fontSize: 15, color: 'var(--text-soft)', lineHeight: 1.55, margin: '12px 0 0', maxWidth: 520 }}>
+        <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.55, margin: '8px 0 0', maxWidth: 520 }}>
           These answers power your partner pairing and shape the prompts you see each week. About 3 minutes.
         </p>
       </div>
@@ -312,7 +312,7 @@ function SectionHead({ children }: { children: React.ReactNode }) {
 }
 
 function H2({ children }: { children: React.ReactNode }) {
-  return <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400, margin: '0 0 6px', color: 'var(--ink)' }}>{children}</h2>
+  return <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500, margin: '0 0 6px', color: 'var(--ink)' }}>{children}</h2>
 }
 
 function Sub({ children }: { children: React.ReactNode }) {

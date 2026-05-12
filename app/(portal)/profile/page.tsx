@@ -321,10 +321,10 @@ export default function ProfilePage() {
       </div>
 
       {/* ── 2. Your programs ────────────────────────────────────────────────── */}
-      <section style={{ marginBottom: 44 }}>
-        <header style={{ marginBottom: 14 }}>
+      <section style={{ marginBottom: 24 }}>
+        <header style={{ marginBottom: 10 }}>
           <h2 style={{
-            fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+            fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500,
             color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
           }}>
             Your programs
@@ -425,10 +425,10 @@ export default function ProfilePage() {
       </section>
 
       {/* ── 3. KPI strip ───────────────────────────────────────────────────── */}
-      <section style={{ marginBottom: 44 }}>
-        <header style={{ marginBottom: 14 }}>
+      <section style={{ marginBottom: 24 }}>
+        <header style={{ marginBottom: 10 }}>
           <h2 style={{
-            fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+            fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500,
             color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
           }}>
             At a glance
@@ -447,7 +447,7 @@ export default function ProfilePage() {
                 background: '#fff',
                 border: '1px solid var(--line)',
                 borderRadius: 10,
-                padding: '18px 18px 16px',
+                padding: '14px 16px 12px',
                 position: 'relative',
                 overflow: 'hidden',
               }}
@@ -460,7 +460,7 @@ export default function ProfilePage() {
               }} />
               <div style={{
                 fontFamily: 'var(--font-display)',
-                fontSize: 30, fontWeight: 300,
+                fontSize: 24, fontWeight: 300,
                 color: 'var(--ink)', lineHeight: 1,
               }}>
                 {value}
@@ -468,7 +468,7 @@ export default function ProfilePage() {
               <div style={{
                 fontSize: 10, textTransform: 'uppercase',
                 letterSpacing: '0.12em', color: 'var(--text-muted)',
-                fontFamily: 'var(--font-body)', marginTop: 8,
+                fontFamily: 'var(--font-body)', marginTop: 6,
                 fontWeight: 600,
               }}>
                 {label}
@@ -480,9 +480,9 @@ export default function ProfilePage() {
 
       {/* ── 4. Reflections thread (universal) ───────────────────────────────── */}
       <section style={{ marginBottom: 44 }}>
-        <header style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14, gap: 12 }}>
+        <header style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10, gap: 12 }}>
           <h2 style={{
-            fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+            fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500,
             color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
           }}>
             Your reflections
@@ -492,7 +492,7 @@ export default function ProfilePage() {
           </span>
         </header>
 
-        <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden' }}>
           {recentReflections.length === 0 ? (
             <div style={{ padding: '40px 24px', textAlign: 'center' }}>
               <p style={{
@@ -531,7 +531,7 @@ export default function ProfilePage() {
                   >
                     <div
                       style={{
-                        padding: '16px 22px',
+                        padding: '12px 18px',
                         borderBottom: isLast ? 'none' : '1px solid var(--line)',
                         transition: 'background 120ms ease',
                       }}
@@ -582,10 +582,10 @@ export default function ProfilePage() {
 
       {/* ── 5. Theme compass — Cards users only ─────────────────────────────── */}
       {hasCardsAccess && themes.length > 0 && (
-        <section style={{ marginBottom: 44 }}>
-          <header style={{ marginBottom: 14 }}>
+        <section style={{ marginBottom: 24 }}>
+          <header style={{ marginBottom: 10 }}>
             <h2 style={{
-              fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+              fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500,
               color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
             }}>
               Your theme compass
@@ -596,8 +596,8 @@ export default function ProfilePage() {
           </header>
 
           <div style={{
-            background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12,
-            padding: '22px 22px',
+            background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 10,
+            padding: '14px 18px',
             display: 'flex', flexDirection: 'column', gap: 14,
           }}>
             {themes.map(({ theme, totalInTheme, unlockedInTheme, reflectedInTheme }) => {
@@ -645,10 +645,10 @@ export default function ProfilePage() {
 
       {/* ── 6. Milestones — path-specific ───────────────────────────────────── */}
       {(hasWorkAccess || hasCardsAccess || hasCircleAccess) && (
-        <section style={{ marginBottom: 44 }}>
-          <header style={{ marginBottom: 14 }}>
+        <section style={{ marginBottom: 24 }}>
+          <header style={{ marginBottom: 10 }}>
             <h2 style={{
-              fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+              fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500,
               color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
             }}>
               Milestones
@@ -746,8 +746,8 @@ function MilestoneGrid({
 }) {
   return (
     <div style={{
-      background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12,
-      padding: '18px 22px',
+      background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 10,
+      padding: '14px 18px',
     }}>
       <div style={{
         fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',

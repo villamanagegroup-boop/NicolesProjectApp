@@ -1055,11 +1055,11 @@ function RecordedSection({ routeId, route, currentDay }: {
 
   return (
     <div style={{ marginTop: '48px' }}>
-      <header style={{ marginBottom: 14 }}>
+      <header style={{ marginBottom: 10 }}>
         <h2 style={{
           fontFamily: 'var(--font-display)',
-          fontSize: 22,
-          fontWeight: 400,
+          fontSize: 18,
+          fontWeight: 500,
           color: 'var(--ink)',
           margin: 0,
           letterSpacing: '-0.01em',
@@ -1076,7 +1076,7 @@ function RecordedSection({ routeId, route, currentDay }: {
           <div key={day} style={{
             background: 'var(--card)',
             border: '1px solid var(--line)',
-            borderRadius: '12px',
+            borderRadius: '10px',
             overflow: 'hidden',
           }}>
             <div style={{ height: '3px', background: route.color }} />

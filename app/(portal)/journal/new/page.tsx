@@ -102,17 +102,17 @@ export default function NewJournalEntryPage() {
       </div>
 
       {/* Header */}
-      <div style={{ marginBottom: 40 }}>
+      <div style={{ marginBottom: 24 }}>
         <p style={{
           fontSize: 11, fontWeight: 500, letterSpacing: '0.14em',
           textTransform: 'uppercase', color: 'var(--text-muted)',
-          margin: '0 0 12px', fontFamily: 'var(--font-body)',
+          margin: '0 0 8px', fontFamily: 'var(--font-body)',
         }}>
           Free write
         </p>
         <h1 style={{
           fontFamily: 'var(--font-display)',
-          fontSize: 32,
+          fontSize: 28,
           fontWeight: 300,
           color: 'var(--ink)',
           margin: 0,
@@ -121,7 +121,7 @@ export default function NewJournalEntryPage() {
         }}>
           What&apos;s on your mind?
         </h1>
-        <p style={{ fontSize: 15, color: 'var(--text-soft)', margin: '12px 0 0', lineHeight: 1.55, maxWidth: 520, fontFamily: 'var(--font-body)' }}>
+        <p style={{ fontSize: 13, color: 'var(--text-soft)', margin: '8px 0 0', lineHeight: 1.55, maxWidth: 520, fontFamily: 'var(--font-body)' }}>
           This entry is yours — no prompts, no structure. Just truth.
         </p>
       </div>

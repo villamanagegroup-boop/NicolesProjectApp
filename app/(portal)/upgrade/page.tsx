@@ -21,13 +21,13 @@ export default function UpgradePage() {
 
   return (
     <div style={{ maxWidth: 1040, margin: '0 auto' }}>
-      <div style={{ marginBottom: 40 }}>
+      <div style={{ marginBottom: 24 }}>
         <p style={{
           fontSize: 11,
           letterSpacing: '0.14em',
           textTransform: 'uppercase',
           color: 'var(--text-muted)',
-          margin: '0 0 12px',
+          margin: '0 0 8px',
           fontWeight: 500,
           fontFamily: 'var(--font-body)',
         }}>
@@ -35,7 +35,7 @@ export default function UpgradePage() {
         </p>
         <h1 style={{
           fontFamily: 'var(--font-display)',
-          fontSize: 32,
+          fontSize: 28,
           fontWeight: 300,
           color: 'var(--ink)',
           margin: 0,
@@ -45,10 +45,10 @@ export default function UpgradePage() {
           Add another path.
         </h1>
         <p style={{
-          fontSize: 15,
+          fontSize: 13,
           color: 'var(--text-soft)',
           fontFamily: 'var(--font-body)',
-          margin: '12px 0 0',
+          margin: '8px 0 0',
           lineHeight: 1.55,
           maxWidth: 520,
         }}>
@@ -165,7 +165,7 @@ export default function UpgradePage() {
                   onClick={() => startUpgrade(pathId)}
                   style={{
                     marginTop: 8,
-                    padding: '11px 16px',
+                    padding: '9px 14px',
                     background: p.accent,
                     color: 'white',
                     border: 'none',

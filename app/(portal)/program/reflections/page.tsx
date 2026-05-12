@@ -58,7 +58,7 @@ function DownloadAllButton({ routeId, route, currentDay }: {
       onClick={handleDownload}
       style={{
         display: 'inline-flex', alignItems: 'center', gap: '6px',
-        padding: '10px 18px', borderRadius: '8px',
+        padding: '8px 14px', borderRadius: '8px',
         background: 'white', color: 'var(--text-soft)',
         border: '1px solid var(--line)', fontSize: '13px',
         fontWeight: 500, fontFamily: 'var(--font-body)',
@@ -163,10 +163,10 @@ function ReflectionsInner() {
                 {route.name}
               </span>
             </div>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300, color: 'var(--ink)', margin: 0, letterSpacing: '-0.015em', lineHeight: 1.1 }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', margin: 0, letterSpacing: '-0.015em', lineHeight: 1.1 }}>
               Reflections
             </h1>
-            <p style={{ fontSize: 15, color: 'var(--text-soft)', fontFamily: 'var(--font-body)', margin: '12px 0 0', lineHeight: 1.55, maxWidth: 520 }}>
+            <p style={{ fontSize: 13, color: 'var(--text-soft)', fontFamily: 'var(--font-body)', margin: '8px 0 0', lineHeight: 1.55, maxWidth: 520 }}>
               Your daily reflection prompts for the {route.name} track. Tap a day to review what you wrote.
             </p>
           </div>

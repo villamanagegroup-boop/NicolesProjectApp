@@ -181,24 +181,24 @@ export default function DashboardPage() {
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
       {/* Hero */}
-      <div style={{ marginBottom: 44 }}>
+      <div style={{ marginBottom: 24 }}>
         <p style={{
           fontSize: 11, fontWeight: 500, letterSpacing: '0.14em',
           textTransform: 'uppercase', color: 'var(--text-muted)',
-          fontFamily: 'var(--font-body)', margin: '0 0 12px',
+          fontFamily: 'var(--font-body)', margin: '0 0 8px',
         }}>
           {todayLabel}
         </p>
         <h1 style={{
-          fontFamily: 'var(--font-display)', fontSize: 42, fontWeight: 300,
+          fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 300,
           color: 'var(--ink)', margin: 0, lineHeight: 1.1,
           letterSpacing: '-0.015em',
         }}>
           Good {timeOfDay}, <span style={{ fontStyle: 'italic' }}>{firstName}</span>.
         </h1>
         <p style={{
-          fontSize: 15, color: 'var(--text-soft)',
-          fontFamily: 'var(--font-body)', margin: '12px 0 0',
+          fontSize: 13, color: 'var(--text-soft)',
+          fontFamily: 'var(--font-body)', margin: '8px 0 0',
           lineHeight: 1.55, maxWidth: 480,
         }}>
           {hasWorkAccess || hasCardsAccess || hasCircleAccess
@@ -387,13 +387,13 @@ export default function DashboardPage() {
 // Reads less utilitarian, more like a magazine deck.
 function Section({ title, count, children }: { title: string; count?: number; children: React.ReactNode }) {
   return (
-    <section style={{ marginBottom: 44 }}>
+    <section style={{ marginBottom: 24 }}>
       <header style={{
         display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-        marginBottom: 14, gap: 12,
+        marginBottom: 10, gap: 12,
       }}>
         <h2 style={{
-          fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+          fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500,
           color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
         }}>
           {title}
@@ -411,7 +411,7 @@ function Section({ title, count, children }: { title: string; count?: number; ch
       </header>
       <div style={{
         background: 'var(--card)', border: '1px solid var(--line)',
-        borderRadius: 12, overflow: 'hidden',
+        borderRadius: 10, overflow: 'hidden',
         backdropFilter: 'blur(6px)',
         WebkitBackdropFilter: 'blur(6px)',
       }}>
@@ -438,8 +438,8 @@ function Row({
       <div
         className="dash-row"
         style={{
-          display: 'flex', alignItems: 'center', gap: 18,
-          padding: '20px 20px 20px 22px',
+          display: 'flex', alignItems: 'center', gap: 14,
+          padding: '14px 16px 14px 18px',
           borderBottom: '1px solid var(--line)',
           position: 'relative',
           transition: 'background 120ms ease',
@@ -447,16 +447,16 @@ function Row({
       >
         {/* Accent strip */}
         <span style={{
-          position: 'absolute', left: 0, top: 18, bottom: 18,
+          position: 'absolute', left: 0, top: 14, bottom: 14,
           width: 3, background: accent, borderRadius: 0,
         }} />
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
+            display: 'flex', alignItems: 'center', gap: 8,
             fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
             textTransform: 'uppercase', color: accent,
-            fontFamily: 'var(--font-body)', marginBottom: 8,
+            fontFamily: 'var(--font-body)', marginBottom: 6,
             flexWrap: 'wrap',
           }}>
             <span>{eyebrow}</span>
@@ -481,7 +481,7 @@ function Row({
           {caption && (
             <div style={{
               fontSize: 12, color: 'var(--text-muted)',
-              fontFamily: 'var(--font-body)', marginTop: 6, lineHeight: 1.5,
+              fontFamily: 'var(--font-body)', marginTop: 4, lineHeight: 1.5,
             }}>
               {caption}
             </div>
@@ -523,15 +523,15 @@ function CardsRow({
       <div
         className="dash-row"
         style={{
-          display: 'flex', alignItems: 'center', gap: 18,
-          padding: '20px 20px 20px 22px',
+          display: 'flex', alignItems: 'center', gap: 14,
+          padding: '14px 16px 14px 18px',
           borderBottom: '1px solid var(--line)',
           position: 'relative',
           transition: 'background 120ms ease',
         }}
       >
         <span style={{
-          position: 'absolute', left: 0, top: 18, bottom: 18,
+          position: 'absolute', left: 0, top: 14, bottom: 14,
           width: 3, background: CARDS,
         }} />
 
@@ -553,10 +553,10 @@ function CardsRow({
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
+            display: 'flex', alignItems: 'center', gap: 8,
             fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
             textTransform: 'uppercase', color: CARDS,
-            fontFamily: 'var(--font-body)', marginBottom: 8,
+            fontFamily: 'var(--font-body)', marginBottom: 6,
             flexWrap: 'wrap',
           }}>
             <span>365 Cards · {todayCard.theme}</span>
@@ -579,7 +579,7 @@ function CardsRow({
           {todayCard.bodyText && (
             <div style={{
               fontSize: 12, color: 'var(--text-muted)',
-              fontFamily: 'var(--font-body)', marginTop: 6, lineHeight: 1.5,
+              fontFamily: 'var(--font-body)', marginTop: 4, lineHeight: 1.5,
               display: '-webkit-box',
               WebkitLineClamp: 1,
               WebkitBoxOrient: 'vertical',
@@ -615,8 +615,8 @@ function ActivityRow({
 
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 18,
-      padding: '18px 20px 18px 22px',
+      display: 'flex', alignItems: 'center', gap: 14,
+      padding: '13px 16px 13px 18px',
       borderBottom: '1px solid var(--line)',
       position: 'relative', flexWrap: 'wrap',
     }}>

@@ -85,7 +85,7 @@ export default function InboxPage() {
           display: 'grid', gridTemplateColumns: 'minmax(0, 340px) minmax(0, 1fr)',
           gap: 20, alignItems: 'flex-start',
         }} className="inbox-grid">
-          <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden' }}>
             {[0, 1, 2].map(i => (
               <div key={i} style={{
                 padding: '14px 16px',
@@ -98,7 +98,7 @@ export default function InboxPage() {
               </div>
             ))}
           </div>
-          <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12, padding: '28px 30px' }}>
+          <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 10, padding: '18px 20px' }}>
             <Skeleton width={120} height={10} style={{ marginBottom: 16 }} />
             <Skeleton width="80%" height={20} style={{ marginBottom: 14 }} />
             <Skeleton width="100%" height={12} style={{ marginBottom: 8 }} />
@@ -109,7 +109,7 @@ export default function InboxPage() {
       ) : items.length === 0 ? (
         <div style={{
           background: '#fff', border: '1px dashed var(--line-md)',
-          borderRadius: 12, padding: '40px 24px', textAlign: 'center',
+          borderRadius: 10, padding: '40px 24px', textAlign: 'center',
         }}>
           <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>
             No messages yet. Nicole will write here as the program unfolds.
@@ -123,7 +123,7 @@ export default function InboxPage() {
 
           {/* Left — list */}
           <div style={{
-            background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12,
+            background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 10,
             overflow: 'hidden',
           }}>
             {items.map((item, i) => {
@@ -174,8 +174,8 @@ export default function InboxPage() {
 
           {/* Right — detail */}
           <div style={{
-            background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12,
-            padding: '28px 30px', minHeight: 240,
+            background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 10,
+            padding: '18px 20px', minHeight: 240,
           }}>
             {openItem ? (
               <>

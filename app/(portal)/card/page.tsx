@@ -831,10 +831,10 @@ function CardPageInner() {
         </div>
 
         {/* Section 5 — Coming next */}
-        <section style={{ marginBottom: 36 }}>
-          <header style={{ marginBottom: 14 }}>
+        <section style={{ marginBottom: 24 }}>
+          <header style={{ marginBottom: 10 }}>
             <h2 style={{
-              fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+              fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500,
               color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
             }}>
               Coming next
@@ -842,20 +842,20 @@ function CardPageInner() {
           </header>
           <div style={{
             background: 'var(--card)', border: '1px solid var(--line)',
-            borderRadius: 12, overflow: 'hidden',
+            borderRadius: 10, overflow: 'hidden',
           }}>
             {upcomingCards.map((upCard, idx) => (
               <div
                 key={upCard.id}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 14,
-                  padding: '20px 20px 20px 22px',
+                  padding: '14px 16px 14px 18px',
                   borderBottom: idx === upcomingCards.length - 1 ? 'none' : '1px solid var(--line)',
                   position: 'relative',
                 }}
               >
                 <span style={{
-                  position: 'absolute', left: 0, top: 18, bottom: 18,
+                  position: 'absolute', left: 0, top: 14, bottom: 14,
                   width: 3, background: 'var(--line-md)', borderRadius: 2,
                 }} />
                 <span style={{ fontSize: 14, opacity: 0.55, flexShrink: 0 }}>🔒</span>
@@ -863,7 +863,7 @@ function CardPageInner() {
                   <div style={{
                     fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
                     textTransform: 'uppercase', color: 'var(--text-muted)',
-                    marginBottom: 8, fontFamily: 'var(--font-body)',
+                    marginBottom: 6, fontFamily: 'var(--font-body)',
                   }}>
                     Day {upCard.dayNumber}
                   </div>

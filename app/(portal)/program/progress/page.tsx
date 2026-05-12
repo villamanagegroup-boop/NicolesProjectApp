@@ -89,14 +89,14 @@ function DayCard({ dayData, color, isCompleted }: { dayData: ProgramDay; color: 
   return (
     <div style={{
       border: '1px solid rgba(12,12,10,0.08)',
-      borderRadius: '12px',
+      borderRadius: '10px',
       overflow: 'hidden',
       backgroundColor: 'white',
     }}>
       {/* Top accent */}
       <div style={{ height: '3px', background: color }} />
 
-      <div style={{ padding: '24px' }}>
+      <div style={{ padding: '16px 20px' }}>
         {/* Day header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
           <PhaseTag phase={dayData.phase} color={color} />
@@ -342,7 +342,7 @@ export default function MyProgressPage() {
             </div>
             <h1 style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 32,
+              fontSize: 28,
               fontWeight: 300,
               color: 'var(--ink)',
               margin: 0,
@@ -351,16 +351,16 @@ export default function MyProgressPage() {
             }}>
               My progress
             </h1>
-            <p style={{ fontSize: 15, color: 'var(--text-soft)', fontFamily: 'var(--font-body)', margin: '12px 0 0', lineHeight: 1.55, maxWidth: 520 }}>
+            <p style={{ fontSize: 13, color: 'var(--text-soft)', fontFamily: 'var(--font-body)', margin: '8px 0 0', lineHeight: 1.55, maxWidth: 520 }}>
               {route.coreWound}
             </p>
           </div>
 
           {/* Stats — hairline section, no card chrome */}
           <section>
-            <header style={{ marginBottom: 14 }}>
+            <header style={{ marginBottom: 10 }}>
               <h2 style={{
-                fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+                fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500,
                 color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
               }}>
                 Your numbers
@@ -391,9 +391,9 @@ export default function MyProgressPage() {
 
           {/* Day selector — hairline section */}
           <section>
-            <header style={{ marginBottom: 14 }}>
+            <header style={{ marginBottom: 10 }}>
               <h2 style={{
-                fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+                fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500,
                 color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
               }}>
                 Your journey

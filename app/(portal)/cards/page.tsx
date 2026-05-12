@@ -155,22 +155,22 @@ export default function CardsHomePage() {
       )}
 
       {/* Hero */}
-      <div style={{ marginBottom: 40 }}>
+      <div style={{ marginBottom: 24 }}>
         <p style={{
           fontSize: 11, fontWeight: 500, letterSpacing: '0.14em',
           textTransform: 'uppercase', color: 'var(--text-muted)',
-          margin: '0 0 12px', fontFamily: 'var(--font-body)',
+          margin: '0 0 8px', fontFamily: 'var(--font-body)',
         }}>
           365 Cards · Daily alignment
         </p>
         <h1 style={{
-          fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300,
+          fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300,
           color: 'var(--ink)', margin: 0, letterSpacing: '-0.015em',
           lineHeight: 1.1,
         }}>
           Good {timeOfDay}, {firstName}.
         </h1>
-        <p style={{ fontSize: 15, color: 'var(--text-soft)', margin: '12px 0 0', lineHeight: 1.55, maxWidth: 520 }}>
+        <p style={{ fontSize: 13, color: 'var(--text-soft)', margin: '8px 0 0', lineHeight: 1.55, maxWidth: 520 }}>
           Day {visibleDay} of {TOTAL_DAYS}
           {streakCount > 0 && <> · <strong style={{ color: CARDS_GREEN }}>🔥 {streakCount}-day streak</strong></>}
         </p>
@@ -181,8 +181,8 @@ export default function CardsHomePage() {
         background: `linear-gradient(135deg, ${CARDS_PALE} 0%, #fff 70%)`,
         borderTop: `2px solid ${CARDS_GREEN}`,
         borderBottom: '1px solid var(--line)',
-        padding: '32px 4px 32px 24px',
-        marginBottom: 36,
+        padding: '22px 4px 22px 20px',
+        marginBottom: 22,
       }}>
         <p style={{
           fontSize: 10, fontWeight: 700, letterSpacing: '0.14em',
@@ -365,9 +365,9 @@ function TodayCardRow({
   if (!card) {
     return (
       <div style={{
-        padding: '20px 20px 20px 22px', position: 'relative',
+        padding: '14px 16px 14px 18px', position: 'relative',
       }}>
-        <span style={{ position: 'absolute', left: 0, top: 18, bottom: 18, width: 3, background: CARDS_GREEN, borderRadius: 2 }} />
+        <span style={{ position: 'absolute', left: 0, top: 14, bottom: 14, width: 3, background: CARDS_GREEN, borderRadius: 2 }} />
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
           Today&apos;s card is loading…
         </p>
@@ -380,7 +380,7 @@ function TodayCardRow({
       <div
         style={{
           display: 'flex', gap: 18, alignItems: 'flex-start',
-          padding: '20px 20px 20px 22px',
+          padding: '14px 16px 14px 18px',
           position: 'relative',
           transition: 'background 0.15s',
           flexWrap: 'wrap',
@@ -389,7 +389,7 @@ function TodayCardRow({
         onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent' }}
       >
         <span style={{
-          position: 'absolute', left: 0, top: 18, bottom: 18,
+          position: 'absolute', left: 0, top: 14, bottom: 14,
           width: 3, background: CARDS_GREEN, borderRadius: 2,
         }} />
 
@@ -459,11 +459,11 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="stat-row" style={{
       display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-      padding: '18px 20px 18px 22px',
+      padding: '13px 16px 13px 18px',
       borderBottom: '1px solid var(--line)',
       position: 'relative',
     }}>
-      <span style={{ position: 'absolute', left: 0, top: 18, bottom: 18, width: 3, background: CARDS_GREEN, borderRadius: 2 }} />
+      <span style={{ position: 'absolute', left: 0, top: 14, bottom: 14, width: 3, background: CARDS_GREEN, borderRadius: 2 }} />
       <span style={{
         fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
         textTransform: 'uppercase', color: 'var(--text-muted)',
@@ -488,15 +488,15 @@ function ActivityRow({
 }) {
   return (
     <div className="activity-row" style={{
-      padding: '20px 20px 20px 22px',
+      padding: '14px 16px 14px 18px',
       borderBottom: '1px solid var(--line)',
       position: 'relative',
     }}>
-      <span style={{ position: 'absolute', left: 0, top: 18, bottom: 18, width: 3, background: CARDS_GREEN, borderRadius: 2 }} />
+      <span style={{ position: 'absolute', left: 0, top: 14, bottom: 14, width: 3, background: CARDS_GREEN, borderRadius: 2 }} />
       <div style={{
         fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
         textTransform: 'uppercase', color: CARDS_GREEN,
-        marginBottom: 8, fontFamily: 'var(--font-body)',
+        marginBottom: 6, fontFamily: 'var(--font-body)',
       }}>
         {eyebrow}
         <span style={{ marginLeft: 8, fontWeight: 500, color: 'var(--text-muted)' }}>· {meta}</span>
@@ -522,13 +522,13 @@ function Section({
   children: React.ReactNode
 }) {
   return (
-    <section style={{ marginBottom: 36 }}>
+    <section style={{ marginBottom: 24 }}>
       <header style={{
         display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-        marginBottom: 14,
+        marginBottom: 10,
       }}>
         <h2 style={{
-          fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+          fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500,
           color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
         }}>
           {title}
@@ -537,7 +537,7 @@ function Section({
       </header>
       <div style={{
         background: 'var(--card)', border: '1px solid var(--line)',
-        borderRadius: 12, overflow: 'hidden',
+        borderRadius: 10, overflow: 'hidden',
       }}>{children}</div>
     </section>
   )

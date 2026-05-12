@@ -63,23 +63,23 @@ function ProgramOverviewInner() {
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
       {/* Hero */}
-      <div style={{ marginBottom: 40 }}>
+      <div style={{ marginBottom: 24 }}>
         <p style={{
           fontSize: 11, fontWeight: 500, letterSpacing: '0.14em',
           textTransform: 'uppercase', color: 'var(--text-muted)',
-          margin: '0 0 12px', fontFamily: 'var(--font-body)',
+          margin: '0 0 8px', fontFamily: 'var(--font-body)',
         }}>
           Seal the Leak · {route.name}
         </p>
         <h1 style={{
-          fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300,
+          fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300,
           color: 'var(--ink)', margin: 0, letterSpacing: '-0.015em',
           lineHeight: 1.1,
         }}>
           {firstName ? `Welcome back, ${firstName}.` : 'Welcome back.'}
         </h1>
         <p style={{
-          fontSize: 15, color: 'var(--text-soft)', margin: '12px 0 0',
+          fontSize: 13, color: 'var(--text-soft)', margin: '8px 0 0',
           lineHeight: 1.55, maxWidth: 520, fontFamily: 'var(--font-body)',
         }}>
           Day {currentDay} of 7 · <em>{route.coreShift}</em>
@@ -91,8 +91,8 @@ function ProgramOverviewInner() {
         background: `linear-gradient(135deg, ${route.color}10 0%, #fff 70%)`,
         borderTop: `2px solid ${route.color}`,
         borderBottom: '1px solid var(--line)',
-        padding: '32px 4px 32px 24px',
-        marginBottom: 36,
+        padding: '22px 4px 22px 20px',
+        marginBottom: 22,
       }}>
         <p style={{
           fontSize: 10, fontWeight: 700, letterSpacing: '0.14em',
@@ -167,7 +167,7 @@ function ProgramOverviewInner() {
                     className="program-day-row"
                     style={{
                       display: 'flex', alignItems: 'flex-start', gap: 14,
-                      padding: '20px 20px 20px 22px',
+                      padding: '14px 16px 14px 18px',
                       borderBottom: '1px solid var(--line)',
                       background: isToday ? `${route.color}08` : 'transparent',
                       position: 'relative',
@@ -180,7 +180,7 @@ function ProgramOverviewInner() {
                     onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = isToday ? `${route.color}08` : 'transparent' }}
                   >
                     <span style={{
-                      position: 'absolute', left: 0, top: 18, bottom: 18,
+                      position: 'absolute', left: 0, top: 14, bottom: 14,
                       width: 3,
                       background: isFuture ? 'var(--line-md)' : route.color,
                       borderRadius: 2,
@@ -363,13 +363,13 @@ function Section({
   children: React.ReactNode
 }) {
   return (
-    <section style={{ marginBottom: 36 }}>
+    <section style={{ marginBottom: 24 }}>
       <header style={{
         display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-        marginBottom: 14,
+        marginBottom: 10,
       }}>
         <h2 style={{
-          fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+          fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500,
           color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
         }}>
           {title}
@@ -378,7 +378,7 @@ function Section({
       </header>
       <div style={{
         background: 'var(--card)', border: '1px solid var(--line)',
-        borderRadius: 12, overflow: 'hidden',
+        borderRadius: 10, overflow: 'hidden',
       }}>{children}</div>
     </section>
   )
@@ -400,21 +400,21 @@ function ProgramRow({
       className="program-row"
       style={{
         display: 'flex', alignItems: 'center', gap: 16,
-        padding: '20px 20px 20px 22px',
+        padding: '14px 16px 14px 18px',
         borderBottom: '1px solid var(--line)',
         position: 'relative', flexWrap: 'wrap',
         transition: 'background 0.15s',
       }}
     >
       <span style={{
-        position: 'absolute', left: 0, top: 18, bottom: 18,
+        position: 'absolute', left: 0, top: 14, bottom: 14,
         width: 3, background: accent, borderRadius: 2,
       }} />
       <div style={{ flex: 1, minWidth: 200 }}>
         <div style={{
           fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
           textTransform: 'uppercase', color: accent,
-          fontFamily: 'var(--font-body)', marginBottom: 8,
+          fontFamily: 'var(--font-body)', marginBottom: 6,
         }}>
           {eyebrow}
           {badge && (
@@ -438,7 +438,7 @@ function ProgramRow({
         {caption && (
           <div style={{
             fontSize: 12, color: 'var(--text-muted)',
-            fontFamily: 'var(--font-body)', marginTop: 6, lineHeight: 1.5,
+            fontFamily: 'var(--font-body)', marginTop: 4, lineHeight: 1.5,
           }}>
             {caption}
           </div>
@@ -464,12 +464,12 @@ function Stat({ accent, label, value }: { accent: string; label: string; value: 
   return (
     <div className="program-stat" style={{
       display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-      padding: '18px 20px 18px 22px',
+      padding: '13px 16px 13px 18px',
       borderBottom: '1px solid var(--line)',
       position: 'relative',
     }}>
       <span style={{
-        position: 'absolute', left: 0, top: 18, bottom: 18,
+        position: 'absolute', left: 0, top: 14, bottom: 14,
         width: 3, background: accent, borderRadius: 2,
       }} />
       <span style={{
