@@ -77,7 +77,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   return (
     <>
     <SkeletonStyles />
-    <div className="portal-shell" style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#ffffff' }}>
+    <div className="portal-shell" style={{ display: 'flex', minHeight: '100vh' }}>
       <div className="sidebar">
         <Sidebar />
       </div>

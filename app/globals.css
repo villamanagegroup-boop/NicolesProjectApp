@@ -53,7 +53,17 @@
 html, body {
   margin: 0;
   padding: 0;
-  background-color: #ffffff;
+  background-color: #fafaf7;
+  /* Subtle Pan-African iridescence — same color family as the quiz pages
+     but lower alpha so portal/admin surfaces stay readable. Cards on top
+     stay opaque white; the iridescence breathes around them. */
+  background-image:
+    radial-gradient(ellipse at 12% 18%, rgba(122,31,31,0.06)   0%, transparent 52%),
+    radial-gradient(ellipse at 88% 12%, rgba(15,77,46,0.055)   0%, transparent 48%),
+    radial-gradient(ellipse at 55% 88%, rgba(200,148,31,0.06)  0%, transparent 52%),
+    radial-gradient(ellipse at 80% 65%, rgba(15,77,46,0.04)    0%, transparent 44%),
+    radial-gradient(ellipse at 18% 80%, rgba(122,31,31,0.045)  0%, transparent 48%);
+  background-attachment: fixed;
   color: #0c0c0a;
   font-family: 'Instrument Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
