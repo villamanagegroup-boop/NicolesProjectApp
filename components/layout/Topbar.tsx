@@ -29,7 +29,14 @@ export default function Topbar({ onMenuOpen }: TopbarProps) {
         position: 'sticky',
         top: 0,
         zIndex: 30,
-        background: 'rgba(247, 244, 239, 0.85)',
+        // Matches Sidebar: same warm-white base + the same three Pan-African
+        // radial ellipses, placed horizontally so they read along the bar.
+        backgroundColor: '#fbfaf7',
+        backgroundImage: `
+          radial-gradient(ellipse at 0% 50%,   rgba(122,31,31,0.07)  0%, transparent 55%),
+          radial-gradient(ellipse at 50% 0%,   rgba(200,148,31,0.06) 0%, transparent 50%),
+          radial-gradient(ellipse at 100% 50%, rgba(15,77,46,0.06)   0%, transparent 55%)
+        `,
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
         borderBottom: '1px solid var(--line)',
