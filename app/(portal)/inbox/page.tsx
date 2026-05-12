@@ -85,7 +85,7 @@ export default function InboxPage() {
           display: 'grid', gridTemplateColumns: 'minmax(0, 340px) minmax(0, 1fr)',
           gap: 20, alignItems: 'flex-start',
         }} className="inbox-grid">
-          <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
             {[0, 1, 2].map(i => (
               <div key={i} style={{
                 padding: '14px 16px',
@@ -98,7 +98,7 @@ export default function InboxPage() {
               </div>
             ))}
           </div>
-          <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 12, padding: '28px 30px' }}>
+          <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12, padding: '28px 30px' }}>
             <Skeleton width={120} height={10} style={{ marginBottom: 16 }} />
             <Skeleton width="80%" height={20} style={{ marginBottom: 14 }} />
             <Skeleton width="100%" height={12} style={{ marginBottom: 8 }} />
@@ -123,7 +123,7 @@ export default function InboxPage() {
 
           {/* Left — list */}
           <div style={{
-            background: '#fff', border: '1px solid var(--line)', borderRadius: 12,
+            background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12,
             overflow: 'hidden',
           }}>
             {items.map((item, i) => {
@@ -174,7 +174,7 @@ export default function InboxPage() {
 
           {/* Right — detail */}
           <div style={{
-            background: '#fff', border: '1px solid var(--line)', borderRadius: 12,
+            background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12,
             padding: '28px 30px', minHeight: 240,
           }}>
             {openItem ? (

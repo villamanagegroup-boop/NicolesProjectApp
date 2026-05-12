@@ -97,7 +97,7 @@ export default function WeekPage() {
 
   if (!universal) {
     return (
-      <div style={{ maxWidth: 520, margin: '40px auto', textAlign: 'center', background: '#fff', border: '1px solid var(--line)', borderRadius: 14, padding: 40 }}>
+      <div style={{ maxWidth: 520, margin: '40px auto', textAlign: 'center', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: 40 }}>
         <p style={{ fontSize: 13, color: 'var(--text-soft)' }}>Content for week {weekNum} isn&apos;t available yet.</p>
       </div>
     )
@@ -286,7 +286,7 @@ export default function WeekPage() {
 
 function Panel({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 14, padding: 20 }}>
+    <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: 20 }}>
       {children}
     </div>
   )

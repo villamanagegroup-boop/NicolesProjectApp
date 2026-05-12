@@ -492,7 +492,7 @@ export default function ProfilePage() {
           </span>
         </header>
 
-        <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
           {recentReflections.length === 0 ? (
             <div style={{ padding: '40px 24px', textAlign: 'center' }}>
               <p style={{
@@ -596,7 +596,7 @@ export default function ProfilePage() {
           </header>
 
           <div style={{
-            background: '#fff', border: '1px solid var(--line)', borderRadius: 12,
+            background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12,
             padding: '22px 22px',
             display: 'flex', flexDirection: 'column', gap: 14,
           }}>
@@ -746,7 +746,7 @@ function MilestoneGrid({
 }) {
   return (
     <div style={{
-      background: '#fff', border: '1px solid var(--line)', borderRadius: 12,
+      background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12,
       padding: '18px 22px',
     }}>
       <div style={{

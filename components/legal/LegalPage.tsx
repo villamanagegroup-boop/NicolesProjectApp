@@ -27,7 +27,7 @@ export default function LegalPage({ title, lastUpdated, children }: Props) {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '20px 28px',
         borderBottom: '1px solid var(--line)',
-        background: '#fff',
+        background: 'var(--card)',
       }}>
         <Link href="/" style={{
           fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 400,
@@ -81,7 +81,7 @@ export default function LegalPage({ title, lastUpdated, children }: Props) {
       <footer style={{
         padding: '24px 28px',
         borderTop: '1px solid var(--line)',
-        background: '#fff',
+        background: 'var(--card)',
         display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap',
         gap: 12, fontSize: 12, color: 'var(--text-muted)',
       }}>

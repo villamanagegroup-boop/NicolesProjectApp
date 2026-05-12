@@ -297,7 +297,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 
 function Card({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 14, padding: 28 }}>
+    <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: 28 }}>
       {children}
     </div>
   )

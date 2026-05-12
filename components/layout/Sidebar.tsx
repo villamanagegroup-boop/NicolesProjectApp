@@ -175,6 +175,13 @@ export default function Sidebar() {
       width: 'var(--sidebar)', minWidth: 'var(--sidebar)',
       height: '100vh', position: 'sticky', top: 0,
       backgroundColor: '#fbfaf7',
+      // Subtle Pan-African iridescence anchored top-left so it doesn't
+      // overlap with the body gradient's top-right ellipses.
+      backgroundImage: `
+        radial-gradient(ellipse at 0% 0%,   rgba(122,31,31,0.07)  0%, transparent 55%),
+        radial-gradient(ellipse at 100% 30%, rgba(200,148,31,0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 20% 100%, rgba(15,77,46,0.06)   0%, transparent 55%)
+      `,
       borderRight: '1px solid var(--line)',
       padding: '20px 0 0',
       display: 'flex', flexDirection: 'column',

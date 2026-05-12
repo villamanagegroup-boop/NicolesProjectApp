@@ -410,8 +410,10 @@ function Section({ title, count, children }: { title: string; count?: number; ch
         )}
       </header>
       <div style={{
-        background: '#fff', border: '1px solid var(--line)',
+        background: 'var(--card)', border: '1px solid var(--line)',
         borderRadius: 12, overflow: 'hidden',
+        backdropFilter: 'blur(6px)',
+        WebkitBackdropFilter: 'blur(6px)',
       }}>
         {children}
       </div>

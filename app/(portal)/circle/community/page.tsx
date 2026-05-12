@@ -215,7 +215,7 @@ export default function CommunityPage() {
 
       {/* Compose */}
       {showCompose && (
-        <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 14, padding: 18, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: 18, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
             <p style={eyebrow}>Post type</p>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>

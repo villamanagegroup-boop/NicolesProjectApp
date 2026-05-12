@@ -43,7 +43,7 @@ export default function ForgotPasswordPage() {
     }}>
       <div style={{
         width: '100%', maxWidth: 420,
-        background: '#fff', border: '1px solid var(--line)',
+        background: 'var(--card)', border: '1px solid var(--line)',
         borderRadius: 16, padding: '40px 32px',
         boxShadow: '0 4px 14px rgba(12,12,10,0.04)',
       }}>

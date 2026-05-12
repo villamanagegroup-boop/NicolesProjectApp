@@ -134,7 +134,7 @@ export default function PartnerPage() {
     return (
       <div style={{
         maxWidth: 520, margin: '40px auto', textAlign: 'center',
-        background: '#fff', border: '1px solid var(--line)', borderRadius: 14, padding: 40,
+        background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: 40,
       }}>
         <div style={{
           width: 56, height: 56, borderRadius: '50%',
@@ -233,7 +233,7 @@ export default function PartnerPage() {
       {/* Wednesday prompt */}
       {weekPrompt && weekNumber && (
         <div style={{
-          background: '#fff', border: '1px solid var(--line)',
+          background: 'var(--card)', border: '1px solid var(--line)',
           borderRadius: 12, padding: 14,
           margin: '6px 0 10px',
           flexShrink: 0,

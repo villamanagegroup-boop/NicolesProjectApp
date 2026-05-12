@@ -276,7 +276,7 @@ export default function CardsHomePage() {
                   style={{
                     aspectRatio: '3/4', borderRadius: 8,
                     border: '1.5px dashed var(--line-md)',
-                    background: '#fff',
+                    background: 'var(--card)',
                     display: 'flex', flexDirection: 'column',
                     alignItems: 'center', justifyContent: 'center',
                     padding: 10, textAlign: 'center',

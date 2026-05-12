@@ -263,7 +263,7 @@ export default function SettingsPage() {
           <section
             id="profile"
             ref={el => { sectionRefs.current.profile = el }}
-            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: '#ffffff' }}
+            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: 'var(--card)' }}
           >
             <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 400, color: 'var(--ink)', margin: 0 }}>Profile</h2>
@@ -413,7 +413,7 @@ export default function SettingsPage() {
           <section
             id="notifications"
             ref={el => { sectionRefs.current.notifications = el }}
-            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: '#ffffff' }}
+            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: 'var(--card)' }}
           >
             <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 400, color: 'var(--ink)', margin: 0 }}>Notifications</h2>
@@ -462,7 +462,7 @@ export default function SettingsPage() {
           <section
             id="delivery"
             ref={el => { sectionRefs.current.delivery = el }}
-            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: '#ffffff' }}
+            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: 'var(--card)' }}
           >
             <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 400, color: 'var(--ink)', margin: 0 }}>Card Delivery</h2>
@@ -491,7 +491,7 @@ export default function SettingsPage() {
           <section
             id="circle"
             ref={el => { sectionRefs.current.circle = el }}
-            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: '#ffffff' }}
+            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: 'var(--card)' }}
           >
             <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 400, color: 'var(--ink)', margin: 0 }}>The Circle</h2>
@@ -536,7 +536,7 @@ export default function SettingsPage() {
           <section
             id="plan"
             ref={el => { sectionRefs.current.plan = el }}
-            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: '#ffffff' }}
+            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: 'var(--card)' }}
           >
             <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 400, color: 'var(--ink)', margin: 0 }}>Your Plan</h2>
@@ -847,7 +847,7 @@ export default function SettingsPage() {
           <section
             id="billing"
             ref={el => { sectionRefs.current.billing = el }}
-            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: '#ffffff' }}
+            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: 'var(--card)' }}
           >
             <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 400, color: 'var(--ink)', margin: 0 }}>Billing</h2>
@@ -893,7 +893,7 @@ export default function SettingsPage() {
           <section
             id="security"
             ref={el => { sectionRefs.current.security = el }}
-            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: '#ffffff' }}
+            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: 'var(--card)' }}
           >
             <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 400, color: 'var(--ink)', margin: 0 }}>Security</h2>
