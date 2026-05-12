@@ -38,6 +38,7 @@ function ProgramOverviewInner() {
   const userRouteId = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
   const routeId     = (preview?.path === 'A' && preview.archetypeOverride) ? preview.archetypeOverride : userRouteId
   const route       = programRoutes[routeId]
+  const canViewFuture = user.isAdmin || (preview?.path === 'A')
   const currentDay      = Math.min(dayNumber, 7)
   const completedDays   = currentDay - 1
   const today           = route.days[currentDay - 1]
@@ -151,9 +152,17 @@ function ProgramOverviewInner() {
               const isComplete = day.day < currentDay
               const isToday    = day.day === currentDay
               const isFuture   = day.day > currentDay
+              const isLocked   = isFuture && !canViewFuture
               const snippet    = snippets[day.day]
+              // Locked future days render as a flat <div> (no <Link>) so a
+              // misclick doesn't navigate. canViewFuture admins/preview still
+              // get the link and the content preview.
+              const Wrapper = isLocked ? 'div' : Link
+              const wrapperProps = isLocked
+                ? { style: { textDecoration: 'none', display: 'block', cursor: 'default' as const } }
+                : { href: dayHref(day.day), style: { textDecoration: 'none', display: 'block' } }
               return (
-                <Link key={day.day} href={dayHref(day.day)} style={{ textDecoration: 'none', display: 'block' }}>
+                <Wrapper key={day.day} {...(wrapperProps as { href: string; style: React.CSSProperties })}>
                   <div
                     style={{
                       display: 'flex', alignItems: 'flex-start', gap: 14,
@@ -164,7 +173,9 @@ function ProgramOverviewInner() {
                       transition: 'background 0.15s',
                       opacity: isFuture ? 0.7 : 1,
                     }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = isToday ? `${route.color}10` : 'var(--paper2)' }}
+                    onMouseEnter={e => {
+                      if (!isLocked) (e.currentTarget as HTMLDivElement).style.background = isToday ? `${route.color}10` : 'var(--paper2)'
+                    }}
                     onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = isToday ? `${route.color}08` : 'transparent' }}
                   >
                     <span style={{
@@ -202,39 +213,53 @@ function ProgramOverviewInner() {
                           <span style={{ marginLeft: 8, color: route.color, fontWeight: 600 }}>← today</span>
                         )}
                       </div>
-                      <p style={{
-                        fontSize: 15, fontWeight: 600, color: 'var(--ink)',
-                        margin: '0 0 6px', lineHeight: 1.4,
-                        fontFamily: 'var(--font-body)',
-                      }}>
-                        {day.title}
-                      </p>
-                      <p style={{
-                        fontSize: 13, fontStyle: 'italic', color: 'var(--text-soft)',
-                        margin: 0, fontFamily: 'var(--font-display)', lineHeight: 1.5,
-                        display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                      }}>
-                        &ldquo;{day.seal}&rdquo;
-                      </p>
-                      {snippet && (
+                      {isLocked ? (
                         <p style={{
-                          fontSize: 12, color: 'var(--text-muted)',
-                          lineHeight: 1.55, margin: '8px 0 0',
-                          fontStyle: 'italic', fontFamily: 'var(--font-body)',
+                          fontSize: 13, color: 'var(--text-muted)',
+                          margin: 0, fontFamily: 'var(--font-body)', lineHeight: 1.5,
+                          fontStyle: 'italic',
                         }}>
-                          You wrote: &ldquo;{snippet}{snippet.length >= 110 ? '…' : ''}&rdquo;
+                          Unlocks at 4:00 AM on Day {day.day}.
                         </p>
+                      ) : (
+                        <>
+                          <p style={{
+                            fontSize: 15, fontWeight: 600, color: 'var(--ink)',
+                            margin: '0 0 6px', lineHeight: 1.4,
+                            fontFamily: 'var(--font-body)',
+                          }}>
+                            {day.title}
+                          </p>
+                          <p style={{
+                            fontSize: 13, fontStyle: 'italic', color: 'var(--text-soft)',
+                            margin: 0, fontFamily: 'var(--font-display)', lineHeight: 1.5,
+                            display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                          }}>
+                            &ldquo;{day.seal}&rdquo;
+                          </p>
+                          {snippet && (
+                            <p style={{
+                              fontSize: 12, color: 'var(--text-muted)',
+                              lineHeight: 1.55, margin: '8px 0 0',
+                              fontStyle: 'italic', fontFamily: 'var(--font-body)',
+                            }}>
+                              You wrote: &ldquo;{snippet}{snippet.length >= 110 ? '…' : ''}&rdquo;
+                            </p>
+                          )}
+                        </>
                       )}
                     </div>
 
-                    <span style={{
-                      color: 'var(--text-muted)', fontSize: 16,
-                      alignSelf: 'center', flexShrink: 0, paddingRight: 4,
-                    }}>
-                      ›
-                    </span>
+                    {!isLocked && (
+                      <span style={{
+                        color: 'var(--text-muted)', fontSize: 16,
+                        alignSelf: 'center', flexShrink: 0, paddingRight: 4,
+                      }}>
+                        ›
+                      </span>
+                    )}
                   </div>
-                </Link>
+                </Wrapper>
               )
             })}
           </Section>

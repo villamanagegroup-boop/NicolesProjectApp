@@ -201,10 +201,18 @@ function TodaysSessionInner() {
 
   const currentDay = Math.min(dayNumber, 7)
 
-  // Allow any day 1-7 via ?day= (so users can revisit past days). Future days
-  // are read-only "preview" — they can read ahead but not seal.
+  // Admins (and admins inside /admin/preview) can scrub through any day; real
+  // users can only revisit past days or look at today. Future days are locked
+  // and unlock at 4 AM the next morning.
+  const canViewFuture = user.isAdmin || (preview?.path === 'A')
+
+  // ?day= URL param: honor it for past or today, ignore for future unless
+  // the viewer is allowed to look ahead.
   const paramDay   = searchParams ? Number(searchParams.get('day')) : 0
-  const initialDay = paramDay >= 1 && paramDay <= 7 ? paramDay : currentDay
+  const paramDayInRange = paramDay >= 1 && paramDay <= 7
+  const initialDay = paramDayInRange && (paramDay <= currentDay || canViewFuture)
+    ? paramDay
+    : currentDay
 
   const [viewingDay, setViewingDay] = useState(initialDay)
   const [sealedDays, setSealedDays] = useState<Set<number>>(new Set())
@@ -326,18 +334,34 @@ function TodaysSessionInner() {
             const isActive     = viewingDay === d.day
             const isDoneOnOwn  = d.day < currentDay
             const isTodayOnOwn = d.day === currentDay
+            const isLockedDay  = d.day > currentDay && !canViewFuture
+            const clickable    = !isLockedDay
             return (
               <button
                 key={d.day}
-                onClick={() => setViewingDay(d.day)}
-                title={`Day ${d.day} — ${d.title}`}
+                onClick={() => { if (clickable) setViewingDay(d.day) }}
+                disabled={isLockedDay}
+                title={isLockedDay ? `Day ${d.day} unlocks at 4:00 AM` : `Day ${d.day} — ${d.title}`}
                 style={{
                   width: 32, height: 32, borderRadius: '50%',
-                  border: isActive ? `2px solid ${route.color}` : isDoneOnOwn ? `2px solid ${route.color}` : isTodayOnOwn ? `2px dashed ${route.color}` : '2px solid rgba(12,12,10,0.1)',
-                  background: isActive ? route.color : isDoneOnOwn ? `${route.color}18` : 'white',
-                  color: isActive ? 'white' : isDoneOnOwn ? route.color : 'var(--text-muted)',
+                  border:
+                    isActive       ? `2px solid ${route.color}` :
+                    isDoneOnOwn    ? `2px solid ${route.color}` :
+                    isTodayOnOwn   ? `2px dashed ${route.color}` :
+                    isLockedDay    ? '1px dashed rgba(12,12,10,0.18)' :
+                                     '2px solid rgba(12,12,10,0.1)',
+                  background:
+                    isActive       ? route.color :
+                    isDoneOnOwn    ? `${route.color}18` :
+                    isLockedDay    ? 'rgba(12,12,10,0.03)' :
+                                     'white',
+                  color:
+                    isActive       ? 'white' :
+                    isDoneOnOwn    ? route.color :
+                    isLockedDay    ? 'rgba(12,12,10,0.35)' :
+                                     'var(--text-muted)',
                   fontSize: '11px', fontWeight: 600, fontFamily: 'var(--font-body)',
-                  cursor: 'pointer',
+                  cursor: clickable ? 'pointer' : 'not-allowed',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                   outline: isActive ? `3px solid ${route.color}25` : 'none',
                   outlineOffset: '2px', transition: 'all 0.15s ease',
