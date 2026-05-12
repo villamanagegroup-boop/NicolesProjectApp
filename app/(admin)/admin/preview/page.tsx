@@ -8,9 +8,16 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { usePreviewMode, type PreviewPath } from '@/hooks/usePreviewMode'
+import { usePreviewMode, type PreviewPath, type ArchetypeRoute } from '@/hooks/usePreviewMode'
 import { fetchAdminCohorts } from '@/lib/admin/hooks'
 import { useEffect } from 'react'
+
+const ARCHETYPES: { id: ArchetypeRoute; name: string; color: string }[] = [
+  { id: 'door',   name: 'The Open Door',          color: '#3D3080' },
+  { id: 'throne', name: 'The Overthink Throne',   color: '#9B2C2C' },
+  { id: 'engine', name: 'The Interrupted Engine', color: '#1F5C3A' },
+  { id: 'push',   name: 'The Pushthrough',        color: '#B8922A' },
+]
 
 interface PathDescriptor {
   id: PreviewPath
@@ -64,6 +71,7 @@ export default function AdminPreviewPage() {
   const [day, setDay] = useState<number>(preview?.dayOverride ?? 1)
   const [cohortId, setCohortId] = useState<string>(preview?.cohortId ?? '')
   const [cohorts, setCohorts] = useState<{ id: string; name: string }[]>([])
+  const [archetype, setArchetype] = useState<ArchetypeRoute>(preview?.archetypeOverride ?? 'door')
 
   useEffect(() => {
     fetchAdminCohorts().then(c => setCohorts(c.filter(x => x.status === 'active').map(x => ({ id: x.id, name: x.name }))))
@@ -76,6 +84,7 @@ export default function AdminPreviewPage() {
       path: pathId,
       dayOverride: day,
       cohortId: pathId === 'C' ? (cohortId || null) : null,
+      archetypeOverride: pathId === 'A' ? archetype : null,
       startedAt: Date.now(),
     })
     // For Seal the Leak the today page already supports ?day=N — pass it
@@ -160,7 +169,11 @@ export default function AdminPreviewPage() {
           <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--gold)' }}>
             Currently active
           </span>
-          <span>{PATHS.find(p => p.id === preview.path)?.title}{preview.dayOverride ? ` · Day ${preview.dayOverride}` : ''}</span>
+          <span>
+            {PATHS.find(p => p.id === preview.path)?.title}
+            {preview.archetypeOverride ? ` · ${ARCHETYPES.find(a => a.id === preview.archetypeOverride)?.name}` : ''}
+            {preview.dayOverride ? ` · Day ${preview.dayOverride}` : ''}
+          </span>
           <button onClick={stop} style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 500, color: 'var(--text-soft)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
             Clear active preview
           </button>
@@ -218,6 +231,37 @@ export default function AdminPreviewPage() {
             {pathId === 'C' && 'Cohort phase / week reference.'}
           </p>
         </div>
+        {pathId === 'A' && (
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={S.label}>Archetype</label>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {ARCHETYPES.map(a => {
+                const on = archetype === a.id
+                return (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => setArchetype(a.id)}
+                    style={{
+                      fontSize: 12, fontWeight: 600,
+                      padding: '7px 14px', borderRadius: 999,
+                      border: `1.5px solid ${on ? a.color : 'var(--line-md)'}`,
+                      background: on ? a.color : '#fff',
+                      color: on ? '#fff' : 'var(--text-soft)',
+                      cursor: 'pointer', fontFamily: 'inherit',
+                      transition: 'background 0.15s ease, border-color 0.15s ease, color 0.15s ease',
+                    }}
+                  >
+                    {a.name}
+                  </button>
+                )
+              })}
+            </div>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '6px 0 0' }}>
+              Overrides the user&apos;s quiz result so you see the program through this archetype&apos;s lens.
+            </p>
+          </div>
+        )}
         {pathId === 'C' && (
           <div>
             <label style={S.label}>Cohort scope</label>

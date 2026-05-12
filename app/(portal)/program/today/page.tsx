@@ -8,6 +8,7 @@ import type { ProgramRoute } from '@/data/sealTheLeakProgram'
 import MediaSlot from '@/components/media/MediaSlot'
 import { upsertReflection } from '@/lib/admin/hooks'
 import { supabaseClient } from '@/lib/supabase/client'
+import { usePreviewMode } from '@/hooks/usePreviewMode'
 
 function CheckIcon() {
   return (
@@ -189,12 +190,14 @@ function PromptItems({
 function TodaysSessionInner() {
   const { user, dayNumber, streakCount, refreshUser } = useApp()
   const searchParams = useSearchParams()
+  const { preview } = usePreviewMode()
 
-  // The user is always on their own archetype track. The cross-path preview
-  // (?path= URL override) was removed — users only see their own assigned
-  // path. Admins use /admin/preview for cross-archetype browsing.
-  const routeId = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
-  const route   = programRoutes[routeId]
+  // Users normally see their own archetype track. Admins in /admin/preview
+  // can pin an archetypeOverride to view any archetype's variant of the
+  // program — that override wins here.
+  const userRouteId = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
+  const routeId     = (preview?.path === 'A' && preview.archetypeOverride) ? preview.archetypeOverride : userRouteId
+  const route       = programRoutes[routeId]
 
   const currentDay = Math.min(dayNumber, 7)
 

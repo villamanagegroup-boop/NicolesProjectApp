@@ -8,11 +8,16 @@
 import { useEffect, useState, useCallback } from 'react'
 
 export type PreviewPath = 'A' | 'B' | 'C'
+export type ArchetypeRoute = 'door' | 'throne' | 'engine' | 'push'
 
 export interface PreviewState {
   path: PreviewPath
   dayOverride?: number | null
   cohortId?: string | null
+  /** Path A only: forces a specific archetype route regardless of the
+   *  signed-in user's quiz result. Lets admins walk the Open Door variant
+   *  of Day 3, the Pushthrough variant of Day 5, etc. */
+  archetypeOverride?: ArchetypeRoute | null
   startedAt: number
 }
 

@@ -6,13 +6,20 @@
 // clears sessionStorage and takes the admin back to the admin shell.
 
 import { useRouter } from 'next/navigation'
-import { usePreviewMode } from '@/hooks/usePreviewMode'
+import { usePreviewMode, type ArchetypeRoute } from '@/hooks/usePreviewMode'
 
 const PATH_LABELS: Record<'A' | 'B' | 'C', string> = {
   A: 'Path A · Cohort + Cards',
   B: 'Path B · Daily Cards',
   C: 'Path C · Circle',
 }
+
+const ARCHETYPE_CHIPS: { id: ArchetypeRoute; short: string; color: string }[] = [
+  { id: 'door',   short: 'Door',     color: '#3D3080' },
+  { id: 'throne', short: 'Throne',   color: '#9B2C2C' },
+  { id: 'engine', short: 'Engine',   color: '#1F5C3A' },
+  { id: 'push',   short: 'Push',     color: '#B8922A' },
+]
 
 export default function PreviewBanner() {
   const { preview, setPreview } = usePreviewMode()
@@ -45,6 +52,36 @@ export default function PreviewBanner() {
         {preview.dayOverride ? <> · Day {preview.dayOverride}</> : null}
         {preview.cohortId ? <> · cohort scope active</> : null}
       </span>
+
+      {/* Path A only: in-place archetype switcher so the admin can flip
+          between the four variants without leaving the program view. */}
+      {preview.path === 'A' && (
+        <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}>
+          <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            Archetype
+          </span>
+          {ARCHETYPE_CHIPS.map(a => {
+            const on = preview.archetypeOverride === a.id
+            return (
+              <button
+                key={a.id}
+                onClick={() => setPreview({ ...preview, archetypeOverride: a.id })}
+                style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: '0.04em',
+                  padding: '3px 9px', borderRadius: 999,
+                  border: `1px solid ${on ? a.color : 'var(--line-md)'}`,
+                  background: on ? a.color : '#fff',
+                  color: on ? '#fff' : 'var(--text-soft)',
+                  cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                {a.short}
+              </button>
+            )
+          })}
+        </span>
+      )}
+
       <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
         Members can&apos;t see this banner.
       </span>

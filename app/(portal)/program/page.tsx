@@ -3,6 +3,7 @@ import React, { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useApp } from '@/context/AppContext'
 import { programRoutes, archetypeToRoute } from '@/data/sealTheLeakProgram'
+import { usePreviewMode } from '@/hooks/usePreviewMode'
 
 const PHASE_COLOR: Record<string, string> = {
   Awareness:    'var(--green)',
@@ -30,10 +31,13 @@ export default function ProgramOverviewPage() {
 
 function ProgramOverviewInner() {
   const { user, dayNumber } = useApp()
+  const { preview } = usePreviewMode()
 
-  // Each user is anchored to their own archetype track.
-  const routeId    = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
-  const route      = programRoutes[routeId]
+  // Each user is anchored to their own archetype track. Admins in preview
+  // mode can override the archetype to walk other variants of the program.
+  const userRouteId = archetypeToRoute[user.quizResult ?? 'seeker'] ?? 'door'
+  const routeId     = (preview?.path === 'A' && preview.archetypeOverride) ? preview.archetypeOverride : userRouteId
+  const route       = programRoutes[routeId]
   const currentDay      = Math.min(dayNumber, 7)
   const completedDays   = currentDay - 1
   const today           = route.days[currentDay - 1]
