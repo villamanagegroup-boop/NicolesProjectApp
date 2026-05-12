@@ -408,7 +408,10 @@ function friendlyUploadError(message: string, fileSizeBytes: number): string {
   const m = message.toLowerCase()
   if (m.includes('payload too large') || m.includes('exceeded the maximum')) {
     const mb = +(fileSizeBytes / 1024 / 1024).toFixed(1)
-    return `File is too large (${mb} MB). Limit is 500 MB — try compressing or trimming the video.`
+    // The effective cap is min(bucket file_size_limit, project global limit).
+    // We don't know either from the client, so don't hardcode a number — just
+    // tell the user to compress and try again.
+    return `File is too large (${mb} MB). Compress the video and try again — HandBrake's "Fast 1080p30" preset usually shrinks files 3–5×.`
   }
   if (m.includes('mime type') || m.includes('not allowed')) {
     return 'File type not allowed. Use a standard video/audio/image format (mp4, mov, mp3, jpg, png, heic).'
