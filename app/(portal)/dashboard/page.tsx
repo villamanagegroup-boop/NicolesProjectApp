@@ -181,25 +181,25 @@ export default function DashboardPage() {
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
       {/* Hero */}
-      <div style={{ marginBottom: 36 }}>
+      <div style={{ marginBottom: 44 }}>
         <p style={{
-          fontSize: 11, fontWeight: 500, letterSpacing: '0.06em',
-          color: 'var(--text-muted)',
-          fontFamily: 'var(--font-body)', margin: '0 0 10px',
+          fontSize: 11, fontWeight: 500, letterSpacing: '0.14em',
+          textTransform: 'uppercase', color: 'var(--text-muted)',
+          fontFamily: 'var(--font-body)', margin: '0 0 12px',
         }}>
           {todayLabel}
         </p>
         <h1 style={{
-          fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300,
-          color: 'var(--ink)', margin: 0, lineHeight: 1.15,
-          letterSpacing: '-0.01em',
+          fontFamily: 'var(--font-display)', fontSize: 42, fontWeight: 300,
+          color: 'var(--ink)', margin: 0, lineHeight: 1.1,
+          letterSpacing: '-0.015em',
         }}>
-          Good {timeOfDay}, {firstName}.
+          Good {timeOfDay}, <span style={{ fontStyle: 'italic' }}>{firstName}</span>.
         </h1>
         <p style={{
-          fontSize: 14, color: 'var(--text-soft)',
-          fontFamily: 'var(--font-body)', margin: '8px 0 0',
-          lineHeight: 1.5,
+          fontSize: 15, color: 'var(--text-soft)',
+          fontFamily: 'var(--font-body)', margin: '12px 0 0',
+          lineHeight: 1.55, maxWidth: 480,
         }}>
           {hasWorkAccess || hasCardsAccess || hasCircleAccess
             ? "Here's what's waiting for you today."
@@ -359,6 +359,18 @@ export default function DashboardPage() {
       </div>
 
       <style>{`
+        /* Last row in each Section sits flush against the parent border. */
+        .dash-row:last-child { border-bottom: none !important; }
+
+        /* Subtle hover: faint warm tint + chevron nudge. */
+        .row-link:hover .dash-row {
+          background: rgba(200,148,31,0.04);
+        }
+        .row-link:hover .dash-row-chevron {
+          color: var(--gold);
+          transform: translateX(3px);
+        }
+
         @media (max-width: 900px) {
           .dashboard-cols {
             grid-template-columns: 1fr !important;
@@ -371,31 +383,38 @@ export default function DashboardPage() {
 }
 
 // ── Section wrapper ──────────────────────────────────────────────────────────
+// Editorial title (display font) instead of an all-caps eyebrow + hairline.
+// Reads less utilitarian, more like a magazine deck.
 function Section({ title, count, children }: { title: string; count?: number; children: React.ReactNode }) {
   return (
-    <section style={{ marginBottom: 36 }}>
+    <section style={{ marginBottom: 44 }}>
       <header style={{
         display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-        paddingBottom: 8, borderBottom: '1px solid var(--line)',
-        marginBottom: 4,
+        marginBottom: 14, gap: 12,
       }}>
         <h2 style={{
-          fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
-          textTransform: 'uppercase', color: 'var(--text-soft)',
-          margin: 0, fontFamily: 'var(--font-body)',
+          fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400,
+          color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
         }}>
           {title}
         </h2>
-        {count !== undefined && (
+        {count !== undefined && count > 0 && (
           <span style={{
-            fontSize: 11, color: 'var(--text-muted)',
+            fontSize: 11, fontWeight: 600, letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            color: 'var(--text-muted)',
             fontFamily: 'var(--font-body)',
           }}>
             {count} {count === 1 ? 'item' : 'items'}
           </span>
         )}
       </header>
-      <div>{children}</div>
+      <div style={{
+        background: '#fff', border: '1px solid var(--line)',
+        borderRadius: 12, overflow: 'hidden',
+      }}>
+        {children}
+      </div>
     </section>
   )
 }
@@ -413,36 +432,37 @@ function Row({
   italic?: boolean
 }) {
   return (
-    <Link href={href} style={{ textDecoration: 'none', display: 'block' }}>
+    <Link href={href} className="row-link" style={{ textDecoration: 'none', display: 'block' }}>
       <div
+        className="dash-row"
         style={{
-          display: 'flex', alignItems: 'center', gap: 16,
-          padding: '18px 4px 18px 16px',
+          display: 'flex', alignItems: 'center', gap: 18,
+          padding: '20px 20px 20px 22px',
           borderBottom: '1px solid var(--line)',
           position: 'relative',
-          transition: 'background 0.15s',
+          transition: 'background 120ms ease',
         }}
-        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'var(--paper2)' }}
-        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent' }}
       >
         {/* Accent strip */}
         <span style={{
           position: 'absolute', left: 0, top: 18, bottom: 18,
-          width: 2, background: accent, borderRadius: 2,
+          width: 3, background: accent, borderRadius: 0,
         }} />
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontSize: 10, fontWeight: 700, letterSpacing: '0.09em',
+            display: 'flex', alignItems: 'center', gap: 10,
+            fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
             textTransform: 'uppercase', color: accent,
-            fontFamily: 'var(--font-body)', marginBottom: 6,
+            fontFamily: 'var(--font-body)', marginBottom: 8,
+            flexWrap: 'wrap',
           }}>
-            {eyebrow}
+            <span>{eyebrow}</span>
             <span style={{
-              marginLeft: 10, fontWeight: 500,
-              padding: '2px 8px', borderRadius: 999,
-              background: 'var(--paper2)', color: 'var(--text-muted)',
-              letterSpacing: '0.04em',
+              fontWeight: 600, fontSize: 9,
+              padding: '3px 8px', borderRadius: 6,
+              background: `${accent}14`, color: accent,
+              letterSpacing: '0.08em',
             }}>
               {badge}
             </span>
@@ -450,24 +470,25 @@ function Row({
           <div style={{
             fontFamily: italic ? 'var(--font-display)' : 'var(--font-body)',
             fontStyle: italic ? 'italic' : 'normal',
-            fontSize: 16, fontWeight: italic ? 300 : 600,
+            fontSize: italic ? 18 : 16, fontWeight: italic ? 300 : 600,
             color: 'var(--ink)', lineHeight: 1.4,
+            letterSpacing: italic ? '-0.005em' : 0,
           }}>
             {title}
           </div>
           {caption && (
             <div style={{
-              fontSize: 12, color: 'var(--text-soft)',
-              fontFamily: 'var(--font-body)', marginTop: 4, lineHeight: 1.5,
+              fontSize: 12, color: 'var(--text-muted)',
+              fontFamily: 'var(--font-body)', marginTop: 6, lineHeight: 1.5,
             }}>
               {caption}
             </div>
           )}
         </div>
 
-        <span style={{
-          color: 'var(--text-muted)', fontSize: 16,
-          flexShrink: 0, paddingRight: 4,
+        <span className="dash-row-chevron" style={{
+          color: 'var(--text-muted)', fontSize: 18,
+          flexShrink: 0, transition: 'transform 120ms ease, color 120ms ease',
         }}>
           ›
         </span>
@@ -496,33 +517,33 @@ function CardsRow({
     )
   }
   return (
-    <Link href="/card" style={{ textDecoration: 'none', display: 'block' }}>
+    <Link href="/card" className="row-link" style={{ textDecoration: 'none', display: 'block' }}>
       <div
+        className="dash-row"
         style={{
-          display: 'flex', alignItems: 'center', gap: 16,
-          padding: '18px 4px 18px 16px',
+          display: 'flex', alignItems: 'center', gap: 18,
+          padding: '20px 20px 20px 22px',
           borderBottom: '1px solid var(--line)',
           position: 'relative',
-          transition: 'background 0.15s',
+          transition: 'background 120ms ease',
         }}
-        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'var(--paper2)' }}
-        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent' }}
       >
         <span style={{
           position: 'absolute', left: 0, top: 18, bottom: 18,
-          width: 2, background: CARDS, borderRadius: 2,
+          width: 3, background: CARDS,
         }} />
 
         {/* Card thumbnail */}
         <div style={{
-          width: 56, height: 56, borderRadius: 8,
+          width: 60, height: 60, borderRadius: 10,
           background: todayCard.cardColor || 'rgba(15,77,46,0.07)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 22, flexShrink: 0,
+          fontSize: 24, flexShrink: 0, color: '#fff',
           position: 'relative', overflow: 'hidden',
+          boxShadow: '0 1px 3px rgba(12,12,10,0.10)',
         }}>
           {todayCard.imageUrl ? (
-            <Image src={todayCard.imageUrl} alt="" fill sizes="56px" style={{ objectFit: 'cover' }} />
+            <Image src={todayCard.imageUrl} alt="" fill sizes="60px" style={{ objectFit: 'cover' }} />
           ) : (
             <span>{todayCard.emoji || '✦'}</span>
           )}
@@ -530,16 +551,18 @@ function CardsRow({
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontSize: 10, fontWeight: 700, letterSpacing: '0.09em',
+            display: 'flex', alignItems: 'center', gap: 10,
+            fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
             textTransform: 'uppercase', color: CARDS,
-            fontFamily: 'var(--font-body)', marginBottom: 6,
+            fontFamily: 'var(--font-body)', marginBottom: 8,
+            flexWrap: 'wrap',
           }}>
-            365 Cards · {todayCard.theme}
+            <span>365 Cards · {todayCard.theme}</span>
             <span style={{
-              marginLeft: 10, fontWeight: 500,
-              padding: '2px 8px', borderRadius: 999,
-              background: 'var(--paper2)', color: 'var(--text-muted)',
-              letterSpacing: '0.04em',
+              fontWeight: 600, fontSize: 9,
+              padding: '3px 8px', borderRadius: 6,
+              background: `${CARDS}14`, color: CARDS,
+              letterSpacing: '0.08em',
             }}>
               Day {dayNumber}
             </span>
@@ -553,8 +576,8 @@ function CardsRow({
           </div>
           {todayCard.bodyText && (
             <div style={{
-              fontSize: 12, color: 'var(--text-soft)',
-              fontFamily: 'var(--font-body)', marginTop: 4, lineHeight: 1.5,
+              fontSize: 12, color: 'var(--text-muted)',
+              fontFamily: 'var(--font-body)', marginTop: 6, lineHeight: 1.5,
               display: '-webkit-box',
               WebkitLineClamp: 1,
               WebkitBoxOrient: 'vertical',
@@ -565,9 +588,9 @@ function CardsRow({
           )}
         </div>
 
-        <span style={{
-          color: 'var(--text-muted)', fontSize: 16,
-          flexShrink: 0, paddingRight: 4,
+        <span className="dash-row-chevron" style={{
+          color: 'var(--text-muted)', fontSize: 18,
+          flexShrink: 0, transition: 'transform 120ms ease, color 120ms ease',
         }}>
           ›
         </span>
@@ -590,21 +613,21 @@ function ActivityRow({
 
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 16,
-      padding: '14px 4px 14px 16px',
+      display: 'flex', alignItems: 'center', gap: 18,
+      padding: '18px 20px 18px 22px',
       borderBottom: '1px solid var(--line)',
       position: 'relative', flexWrap: 'wrap',
     }}>
       <span style={{
-        position: 'absolute', left: 0, top: 14, bottom: 14,
-        width: 2, background: accent, borderRadius: 2,
+        position: 'absolute', left: 0, top: 18, bottom: 18,
+        width: 3, background: accent,
       }} />
 
       <div style={{ flex: 1, minWidth: 200 }}>
         <div style={{
-          fontSize: 10, fontWeight: 700, letterSpacing: '0.09em',
+          fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
           textTransform: 'uppercase', color: accent,
-          fontFamily: 'var(--font-body)', marginBottom: 4,
+          fontFamily: 'var(--font-body)', marginBottom: 6,
         }}>
           {kind}
         </div>
@@ -615,7 +638,7 @@ function ActivityRow({
           {title}
         </div>
         <div style={{
-          fontSize: 12, color: 'var(--text-soft)',
+          fontSize: 12, color: 'var(--text-muted)',
           fontFamily: 'var(--font-body)', lineHeight: 1.5,
         }}>
           {meta}
@@ -627,10 +650,10 @@ function ActivityRow({
           <Link
             href={link.href}
             style={{
-              padding: '6px 11px', borderRadius: 6,
+              padding: '7px 14px', borderRadius: 8,
               border: '1px solid var(--line-md)',
               color: 'var(--text-soft)', background: '#fff',
-              fontSize: 11, fontWeight: 600,
+              fontSize: 12, fontWeight: 600,
               textDecoration: 'none', fontFamily: 'var(--font-body)',
               whiteSpace: 'nowrap',
             }}
@@ -642,9 +665,9 @@ function ActivityRow({
           <a
             href={cta.href} target="_blank" rel="noopener noreferrer"
             style={{
-              padding: '6px 12px', borderRadius: 6,
+              padding: '7px 14px', borderRadius: 8,
               background: accent, color: '#fff',
-              fontSize: 11, fontWeight: 600,
+              fontSize: 12, fontWeight: 600,
               textDecoration: 'none', fontFamily: 'var(--font-body)',
               whiteSpace: 'nowrap',
             }}
@@ -655,9 +678,9 @@ function ActivityRow({
           <Link
             href={cta.href}
             style={{
-              padding: '6px 12px', borderRadius: 6,
+              padding: '7px 14px', borderRadius: 8,
               background: accent, color: '#fff',
-              fontSize: 11, fontWeight: 600,
+              fontSize: 12, fontWeight: 600,
               textDecoration: 'none', fontFamily: 'var(--font-body)',
               whiteSpace: 'nowrap',
             }}
