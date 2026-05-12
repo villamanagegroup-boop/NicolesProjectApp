@@ -73,37 +73,48 @@ export const quizQuestions: QuizQuestion[] = [
   },
 ]
 
+// IMPORTANT: titles and emojis here are the canonical archetype names used
+// across the portal, emails, admin, and the Seal the Leak program. They must
+// stay in sync with components/result/ArchetypeReveal.tsx and the route
+// names in data/sealTheLeakProgram.ts.
+//
+// The id field maps the quiz score → the program route via archetypeToRoute
+// in sealTheLeakProgram.ts:
+//   seeker    → throne   (Overthinker's Throne)
+//   healer    → door     (Open Door)
+//   builder   → engine   (Interrupted Engine)
+//   visionary → push     (Pushthrough)
 export const quizResults: QuizResult[] = [
   {
     id: 'seeker',
-    title: 'The Seeker',
+    title: "The Overthinker's Throne",
     emoji: '🌿',
     description:
-      'You are driven by an insatiable hunger for truth and meaning. You do not settle for surface answers — you dig until you find the root. Your inner world is rich and complex, and you are most alive when you are learning, questioning, and uncovering layers others miss.',
-    strengths: ['Deep curiosity', 'Intellectual courage', 'Visionary thinking'],
+      "Your mind doesn't clock out. You think through things before they happen, while they're happening, and long after they're done. You catch what others miss — but it doesn't feel like rest. The exhaustion isn't from doing too much; it's from a mind that's been on surveillance mode for years.",
+    strengths: ['Pattern recognition', 'Anticipation', 'Mental endurance'],
   },
   {
     id: 'builder',
-    title: 'The Builder',
+    title: 'The Interrupted Engine',
     emoji: '⚡',
     description:
-      'You turn vision into reality. Where others see obstacles, you see blueprints. You are energized by progress, driven by discipline, and you do not stop until something is made. Your growth comes through action — through building the life you can see clearly in your mind.',
-    strengths: ['Discipline', 'Strategic thinking', 'Resilience'],
+      "When you move, you're unstoppable. You don't lack drive or discipline — when momentum is on your side, you can outwork almost anyone. But life keeps interrupting, and every restart costs more than just time. You don't need more motivation. You need to stop bleeding energy at the breaks.",
+    strengths: ['Drive', 'Strategic execution', 'Resilience under pressure'],
   },
   {
     id: 'healer',
-    title: 'The Healer',
+    title: 'The Open Door',
     emoji: '🌸',
     description:
-      'You carry a gift for restoration — of self, of relationships, of community. You feel deeply, love generously, and often know what others need before they do. Your path to growth moves through the heart, and your greatest power lies in your ability to hold space for transformation.',
-    strengths: ['Deep empathy', 'Intuitive wisdom', 'Generosity of spirit'],
+      "You don't wait to be needed — you just open. Someone walks in with a problem and your energy shows up before they finish the sentence. You hold space so naturally that most people don't even notice you had to. You're not tired because you gave too much; you're tired because no one has been holding space for you.",
+    strengths: ['Deep empathy', 'Intuitive presence', 'Generosity of spirit'],
   },
   {
     id: 'visionary',
-    title: 'The Visionary',
+    title: 'The Pushthrough',
     emoji: '✨',
     description:
-      'You see what does not yet exist and believe it into being. You are drawn to purpose, legacy, and the bigger picture. Your growth unfolds when you align your daily life with your deepest calling — when every action becomes an act of creation rather than just survival.',
-    strengths: ['Creative vision', 'Spiritual depth', 'Purpose clarity'],
+      "You don't wait for permission — you just go. Tired? You keep going. Overwhelmed? You manage it. That ability is real, and it's how you've gotten everything you have. But your body has been asking you to stop for a long time. Rest isn't a retreat for you — it's the power move you haven't let yourself make yet.",
+    strengths: ['Decisive action', 'Endurance', 'Self-trust in motion'],
   },
 ]

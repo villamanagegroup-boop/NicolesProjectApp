@@ -15,7 +15,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createSupabaseServer } from '@/lib/supabase/server'
-import { sendEmail } from '@/lib/email/emailit'
+import { sendEmail, removeSubscriber } from '@/lib/email/emailit'
 import {
   signupCompleteUserEmail,
   signupCompleteAdminEmail,
@@ -137,6 +137,14 @@ export async function POST(request: NextRequest) {
       return { sent: false } as const
     })
     adminSent = res.sent
+  }
+
+  // Once a user signs up they've converted from "lead" to "customer", so
+  // pull them out of the Quiz Takers audience to stop the nurture sequence.
+  // Idempotent — already-removed = 404 which removeSubscriber swallows.
+  const quizAudience = process.env.EMAILIT_QUIZ_AUDIENCE_ID
+  if (quizAudience && userEmail) {
+    void removeSubscriber({ audienceId: quizAudience, email: userEmail })
   }
 
   return NextResponse.json({ sent: { user: userSent, admin: adminSent } })

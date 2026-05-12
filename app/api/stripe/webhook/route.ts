@@ -131,19 +131,21 @@ export async function POST(request: NextRequest) {
           console.log(`checkout: stored pending purchase for ${email} (Path ${path})`)
         }
 
-        // Path A = Seal the Leak. Move the buyer out of the quiz-takers
-        // lead audience and into the buyers audience. Fire-and-forget —
-        // we never want an Emailit hiccup to fail the webhook (Stripe will
-        // retry and we'd double-grant access).
+        // Any purchase converts a lead to a customer — remove them from the
+        // Quiz Takers audience on every path so they don't keep receiving
+        // the nurture sequence after they've already bought. Path A buyers
+        // also land in the dedicated Seal the Leak Buyers audience.
+        // Fire-and-forget — Emailit hiccups must not fail the webhook
+        // (Stripe will retry and we'd double-grant access).
+        const firstName = session.customer_details?.name?.split(' ')[0]
+        const quizAudience = process.env.EMAILIT_QUIZ_AUDIENCE_ID
+        if (quizAudience) {
+          void removeSubscriber({ audienceId: quizAudience, email })
+        }
         if (path === 'A') {
-          const firstName = session.customer_details?.name?.split(' ')[0]
           const buyersAudience = process.env.EMAILIT_BUYERS_AUDIENCE_ID
-          const quizAudience   = process.env.EMAILIT_QUIZ_AUDIENCE_ID
           if (buyersAudience) {
             void addSubscriber({ audienceId: buyersAudience, email, firstName })
-          }
-          if (quizAudience) {
-            void removeSubscriber({ audienceId: quizAudience, email })
           }
         }
         break
