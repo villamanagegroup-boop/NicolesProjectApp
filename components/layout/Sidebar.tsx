@@ -105,9 +105,17 @@ export default function Sidebar() {
   const owned   = (Object.keys(access) as ProgramKey[]).filter(k => access[k])
   const locked  = (Object.keys(access) as ProgramKey[]).filter(k => !access[k])
 
-  // Default the selected program to whatever the user owns first, or 'cards'
-  // if they own nothing (rare — admin without a path).
-  const naturalDefault = owned[0] ?? 'cards'
+  // Default the selected program to the user's actual selected_path first,
+  // then fall back to the first owned program, then 'cards'. Honoring
+  // selected_path matters for users with multiple access (e.g. Path A
+  // with cards add-on, or an admin previewing) — they should land in
+  // their own program on /dashboard, not whichever the access map
+  // happens to enumerate first.
+  const pathToProgram: Record<'A' | 'B' | 'C', ProgramKey> = { A: 'seal', B: 'cards', C: 'circle' }
+  const naturalDefault: ProgramKey =
+    (user.selectedPath && pathToProgram[user.selectedPath]) ??
+    owned[0] ??
+    'cards'
   const [selected, setSelected] = useState<ProgramKey>(programFromPath(pathname, naturalDefault))
 
   // When the URL changes, follow it. Keeps the dropdown in sync if the user

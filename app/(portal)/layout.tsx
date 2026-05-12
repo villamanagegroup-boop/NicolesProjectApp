@@ -20,8 +20,13 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
 
   // Keep mobile nav/drawer themed correctly. The desktop sidebar is now
   // unified and ignores sidebarMode, but MobileNav and MobileDrawer still
-  // use it to swap their per-program nav lists. Update mode based on
-  // the current route — shared routes don't change it.
+  // use it to swap their per-program nav lists.
+  //
+  // For program-prefixed routes (/program, /circle, /cards…) the mode
+  // follows the URL. For shared routes (/dashboard, /inbox, /journal,
+  // /wins, etc.) we DON'T default to cards — we honor the user's
+  // selected_path so a Path A or Path C user clicking "Home" stays
+  // in their own program instead of getting flipped to Cards nav.
   useEffect(() => {
     if (!pathname) return
     const isShared =
@@ -29,11 +34,21 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
       pathname === '/profile'  || pathname.startsWith('/profile/')  ||
       pathname === '/upgrade'
     if (isShared) return
-    if (pathname.startsWith('/circle'))      setSidebarMode('circle')
-    else if (pathname.startsWith('/program')) setSidebarMode('work')
-    else                                       setSidebarMode('cards')
+    if (pathname.startsWith('/circle'))      { setSidebarMode('circle'); return }
+    if (pathname.startsWith('/program'))     { setSidebarMode('work');   return }
+    if (pathname === '/cards' || pathname.startsWith('/cards') ||
+        pathname === '/card'  || pathname.startsWith('/card')  ||
+        pathname === '/past'  || pathname.startsWith('/past')  ||
+        pathname === '/vault' || pathname.startsWith('/vault')) {
+      setSidebarMode('cards'); return
+    }
+    // Cross-cutting routes (/dashboard, /journal, /wins, /inbox…):
+    // pin to the user's own program.
+    if (user.selectedPath === 'A')      setSidebarMode('work')
+    else if (user.selectedPath === 'C') setSidebarMode('circle')
+    else                                setSidebarMode('cards')
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname])
+  }, [pathname, user.selectedPath])
 
   // Route-level path isolation: each persona only sees their own content.
   // A: /program + (when unlocked) /card·/dashboard·... — no /circle.
