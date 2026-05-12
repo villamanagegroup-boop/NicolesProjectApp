@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 import Button from '@/components/ui/Button'
+import { usePreviewMode } from '@/hooks/usePreviewMode'
 
 function getCardPillStyle(cardColor: string) {
   const colorMap: Record<string, { bg: string; color: string; border: string }> = {
@@ -30,7 +31,17 @@ function CardPageInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const dayParam = searchParams.get('day')
-  const { user, cards, dayNumber, todayCard, cardsAccess, journalEntries, addJournalEntry, updateJournalEntry } = useApp()
+  const { user, cards, dayNumber: realDayNumber, todayCard: realTodayCard, cardsAccess, journalEntries, addJournalEntry, updateJournalEntry } = useApp()
+  const { preview } = usePreviewMode()
+
+  // When an admin is in Path B preview mode, the previewed day stands in for
+  // "today" everywhere — day badge, locked-card list, progress bar, etc. —
+  // so the admin sees what a user whose Day N is today would actually see.
+  const previewDay = (preview?.path === 'B' && preview.dayOverride) ? preview.dayOverride : null
+  const dayNumber  = previewDay ?? realDayNumber
+  const todayCard  = previewDay
+    ? cards.find(c => c.dayNumber === previewDay) ?? realTodayCard
+    : realTodayCard
 
   // If ?day= param exists, find that card; otherwise show today's card
   const displayCard = dayParam

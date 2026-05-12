@@ -87,9 +87,10 @@ export default function AdminPreviewPage() {
       archetypeOverride: pathId === 'A' ? archetype : null,
       startedAt: Date.now(),
     })
-    // For Seal the Leak the today page already supports ?day=N — pass it
-    // along so the admin lands directly on the chosen day.
-    const target = pathId === 'A' ? `${path.home}?day=${day}` : path.home
+    // Both Seal the Leak (?day on /program/today) and Daily Cards (?day on
+    // /card) already support landing on a specific day. Pass it along so the
+    // admin doesn't have to navigate inside the program.
+    const target = (pathId === 'A' || pathId === 'B') ? `${path.home}?day=${day}` : path.home
     router.push(target)
   }
 
@@ -227,7 +228,7 @@ export default function AdminPreviewPage() {
           />
           <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '6px 0 0' }}>
             {pathId === 'A' && 'Lands you on /program/today?day=N.'}
-            {pathId === 'B' && 'Used as a hint — actual day comes from the user’s signup date.'}
+            {pathId === 'B' && 'Lands you on /card?day=N. The day badge and locked-cards list also reflect this day while preview is active.'}
             {pathId === 'C' && 'Cohort phase / week reference.'}
           </p>
         </div>
