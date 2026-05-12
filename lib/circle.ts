@@ -326,16 +326,39 @@ export async function createPost(
   return !error
 }
 
-/** Upload a file to the public circle-uploads bucket and return its URL. */
+/** Upload a file to the public circle-uploads bucket and return its URL.
+ *  Returns null on failure but logs the underlying cause to console.error so
+ *  the actual reason (auth expired, bucket missing, file too large, MIME
+ *  rejected, RLS mismatch) is visible in browser DevTools — the call sites
+ *  only know "it failed" otherwise. */
 export async function uploadCircleAttachment(file: File): Promise<string | null> {
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+  if (!user) {
+    console.error('[uploadCircleAttachment] no auth session — user must be signed in', {
+      fileName: file.name, fileSize: file.size, fileType: file.type,
+    })
+    return null
+  }
   const ext = file.name.split('.').pop() ?? 'bin'
   const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
   const { error } = await supabase.storage
     .from('circle-uploads')
     .upload(path, file, { contentType: file.type, upsert: false })
-  if (error) return null
+  if (error) {
+    console.error('[uploadCircleAttachment] Supabase Storage rejected upload', {
+      message: error.message,
+      // Common shapes: { statusCode, error, message } on StorageApiError.
+      raw: error,
+      fileName: file.name,
+      fileSizeBytes: file.size,
+      fileSizeMB: +(file.size / 1024 / 1024).toFixed(2),
+      contentType: file.type,
+      bucket: 'circle-uploads',
+      path,
+      userId: user.id,
+    })
+    return null
+  }
   const { data } = supabase.storage.from('circle-uploads').getPublicUrl(path)
   return data.publicUrl
 }
