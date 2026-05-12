@@ -785,30 +785,35 @@ export default function SettingsPage() {
             <div style={{ padding: '0 24px' }}>
               <div style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '16px 0', borderBottom: '1px solid var(--line)',
+                padding: '20px 0',
               }}>
-                <span style={{ fontSize: 13, color: 'var(--ink)', fontFamily: 'var(--font-body)' }}>Payment method</span>
-                <button style={{ fontSize: 12, color: 'var(--gold)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
-                  Add payment method
-                </button>
-              </div>
-              <div style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '16px 0', borderBottom: '1px solid var(--line)',
-              }}>
-                <span style={{ fontSize: 13, color: 'var(--ink)', fontFamily: 'var(--font-body)' }}>Billing history</span>
-                <span style={{ fontSize: 13, color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>No charges yet</span>
-              </div>
-              <div style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '16px 0',
-              }}>
-                <span style={{ fontSize: 13, color: 'var(--ink)', fontFamily: 'var(--font-body)' }}>Cancel subscription</span>
+                <div>
+                  <div style={{ fontSize: 13, color: 'var(--ink)', fontFamily: 'var(--font-body)' }}>
+                    Manage subscription
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)', marginTop: 2, lineHeight: 1.5, maxWidth: 320 }}>
+                    Update your payment method, view invoices, change plans, or cancel.
+                  </div>
+                </div>
                 <button
-                  style={{ fontSize: 12, color: 'var(--red)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
-                  onClick={() => { /* TODO */ }}
+                  onClick={async () => {
+                    const res = await fetch('/api/stripe/portal', { method: 'POST' })
+                    if (!res.ok) {
+                      const body = await res.json().catch(() => null)
+                      alert(body?.error ?? 'Could not open billing portal. Try again or contact support.')
+                      return
+                    }
+                    const { url } = await res.json()
+                    window.location.href = url
+                  }}
+                  style={{
+                    fontSize: 12, color: '#fff', background: 'var(--gold)',
+                    border: 'none', cursor: 'pointer',
+                    padding: '8px 14px', borderRadius: 7, fontWeight: 600,
+                    fontFamily: 'var(--font-body)',
+                  }}
                 >
-                  Request cancellation
+                  Open billing portal →
                 </button>
               </div>
             </div>
@@ -830,11 +835,19 @@ export default function SettingsPage() {
               }}>
                 <div>
                   <div style={{ fontSize: 13, color: 'var(--ink)', fontFamily: 'var(--font-body)' }}>Password</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)', marginTop: 2 }}>Last changed — never</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)', marginTop: 2 }}>
+                    We&apos;ll email you a secure link to set a new one.
+                  </div>
                 </div>
-                <button style={{ fontSize: 12, color: 'var(--gold)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
-                  Change password
-                </button>
+                <Link
+                  href="/forgot-password"
+                  style={{
+                    fontSize: 12, color: 'var(--gold)', textDecoration: 'none',
+                    fontFamily: 'var(--font-body)', fontWeight: 600,
+                  }}
+                >
+                  Change password →
+                </Link>
               </div>
               <div style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',

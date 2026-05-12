@@ -204,17 +204,30 @@ export default function LoginPage() {
 
           {/* Password */}
           <div>
-            <label style={{
-              display: 'block',
-              fontSize: '10px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              color: 'var(--text-soft)',
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
               marginBottom: '6px',
-              fontFamily: 'var(--font-body)',
             }}>
-              Password
-            </label>
+              <label style={{
+                display: 'block',
+                fontSize: '10px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                color: 'var(--text-soft)',
+                fontFamily: 'var(--font-body)',
+              }}>
+                Password
+              </label>
+              <Link
+                href="/forgot-password"
+                style={{
+                  fontSize: '11px', color: 'var(--gold)', textDecoration: 'none',
+                  fontFamily: 'var(--font-body)',
+                }}
+              >
+                Forgot password?
+              </Link>
+            </div>
             <input
               type="password"
               value={password}
