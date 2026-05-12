@@ -86,19 +86,19 @@ export default function TakeTheQuizPage() {
       <div style={{ width: '100%', maxWidth: 540 }}>
 
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        <div style={{ textAlign: 'center', marginBottom: 36 }}>
           <p style={{
-            fontSize: 10, fontWeight: 600,
-            letterSpacing: '0.18em', textTransform: 'uppercase',
+            fontSize: 11, fontWeight: 500,
+            letterSpacing: '0.14em', textTransform: 'uppercase',
             color: 'var(--green)', margin: '0 0 14px',
           }}>
             ✦ A quick step before you start
           </p>
           <h1 style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 38, fontWeight: 300, fontStyle: 'italic',
+            fontSize: 36, fontWeight: 300, fontStyle: 'italic',
             color: 'var(--ink)',
-            margin: 0, lineHeight: 1.15,
+            margin: 0, lineHeight: 1.1, letterSpacing: '-0.015em',
           }}>
             Welcome, {firstName}.
           </h1>
@@ -106,10 +106,10 @@ export default function TakeTheQuizPage() {
 
         {/* Letter */}
         <div style={{
-          background: '#ffffff',
+          background: 'var(--card)',
           border: '1px solid var(--line)',
-          borderRadius: 14,
-          padding: '32px 32px 28px',
+          borderRadius: 12,
+          padding: '22px 24px',
           marginBottom: 16,
           boxShadow: '0 4px 24px rgba(12,12,10,0.04)',
         }}>
@@ -140,13 +140,13 @@ export default function TakeTheQuizPage() {
             width: '100%',
             background: 'var(--green)',
             color: '#ffffff',
-            padding: '15px 18px',
-            borderRadius: 10,
-            fontSize: 15, fontWeight: 600,
+            padding: '11px 18px',
+            borderRadius: 8,
+            fontSize: 14, fontWeight: 600,
             fontFamily: 'var(--font-body)',
             textAlign: 'center',
             textDecoration: 'none',
-            letterSpacing: '0.2px',
+            letterSpacing: '0.01em',
             boxSizing: 'border-box',
             marginBottom: 10,
           }}
@@ -160,11 +160,11 @@ export default function TakeTheQuizPage() {
           style={{
             display: 'block',
             width: '100%',
-            background: '#ffffff',
+            background: 'transparent',
             color: 'var(--ink)',
-            padding: '13px 18px',
-            borderRadius: 10,
-            fontSize: 14, fontWeight: 500,
+            padding: '11px 18px',
+            borderRadius: 8,
+            fontSize: 14, fontWeight: 600,
             fontFamily: 'var(--font-body)',
             textAlign: 'center',
             textDecoration: 'none',

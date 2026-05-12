@@ -87,8 +87,8 @@ export default function ResetPasswordPage() {
         </div>
 
         <h1 style={{
-          fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 300,
-          margin: '0 0 8px', lineHeight: 1.2,
+          fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300,
+          margin: '0 0 10px', lineHeight: 1.1, letterSpacing: '-0.015em',
         }}>
           Set a new password
         </h1>
@@ -96,12 +96,12 @@ export default function ResetPasswordPage() {
         {!ready ? (
           <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '12px 0 0' }}>Loading…</p>
         ) : success ? (
-          <p style={{ fontSize: 14, color: 'var(--green)', lineHeight: 1.7, margin: '12px 0 0' }}>
+          <p style={{ fontSize: 14, color: 'var(--green)', lineHeight: 1.65, margin: '12px 0 0' }}>
             Password updated. Redirecting you to your dashboard…
           </p>
         ) : !hasSession ? (
           <>
-            <p style={{ fontSize: 14, color: 'var(--text-soft)', lineHeight: 1.7, margin: '0 0 18px' }}>
+            <p style={{ fontSize: 14, color: 'var(--text-soft)', lineHeight: 1.65, margin: '0 0 18px' }}>
               This reset link has expired or already been used. Request a new one to continue.
             </p>
             <Link href="/forgot-password" style={{
@@ -114,7 +114,7 @@ export default function ResetPasswordPage() {
           </>
         ) : (
           <>
-            <p style={{ fontSize: 14, color: 'var(--text-soft)', lineHeight: 1.7, margin: '0 0 22px' }}>
+            <p style={{ fontSize: 14, color: 'var(--text-soft)', lineHeight: 1.65, margin: '0 0 22px' }}>
               Choose a new password. At least 8 characters.
             </p>
 

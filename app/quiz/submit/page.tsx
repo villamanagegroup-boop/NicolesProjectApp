@@ -129,11 +129,11 @@ export default function QuizSubmitPage() {
       <div style={{ width: '100%', maxWidth: '480px' }}>
         <p
           style={{
-            fontSize: '10px',
-            letterSpacing: '1.5px',
+            fontSize: '11px',
+            letterSpacing: '0.14em',
             textTransform: 'uppercase',
             color: 'var(--green)',
-            margin: '0 0 16px',
+            margin: '0 0 14px',
             fontWeight: 500,
             textAlign: 'center',
           }}
@@ -144,12 +144,13 @@ export default function QuizSubmitPage() {
         <h1
           style={{
             fontFamily: 'var(--font-display)',
-            fontSize: '42px',
+            fontSize: '36px',
             fontWeight: 300,
             color: 'var(--ink)',
-            margin: '0 0 16px',
+            margin: '0 0 18px',
             textAlign: 'center',
             lineHeight: 1.1,
+            letterSpacing: '-0.015em',
           }}
         >
           One last step.
@@ -157,12 +158,13 @@ export default function QuizSubmitPage() {
 
         <p
           style={{
-            fontSize: '14px',
-            color: 'rgba(12,12,10,0.55)',
-            fontWeight: 300,
+            fontSize: '15px',
+            color: 'var(--text-soft)',
+            fontWeight: 400,
             textAlign: 'center',
-            lineHeight: 1.7,
-            margin: '0 0 40px',
+            lineHeight: 1.65,
+            margin: '0 auto 40px',
+            maxWidth: 460,
           }}
         >
           Enter your name and email to unlock your archetype result
@@ -276,16 +278,16 @@ export default function QuizSubmitPage() {
             aria-label="Reveal my quiz result"
             style={{
               width: '100%',
-              background: submitting ? 'rgba(31,92,58,0.5)' : 'var(--green)',
+              background: submitting ? 'rgba(15,77,46,0.5)' : 'var(--green)',
               color: 'white',
               border: 'none',
-              borderRadius: '6px',
-              padding: '15px',
+              borderRadius: '8px',
+              padding: '11px 18px',
               fontSize: '14px',
-              fontWeight: 500,
+              fontWeight: 600,
               fontFamily: 'var(--font-body)',
               cursor: submitting ? 'not-allowed' : 'pointer',
-              letterSpacing: '0.2px',
+              letterSpacing: '0.01em',
               transition: 'background 0.15s',
             }}
           >

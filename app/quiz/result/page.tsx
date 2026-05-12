@@ -76,12 +76,14 @@ export default function QuizResultPage() {
         {/* Greeting */}
         {name && (
           <p style={{
-            fontSize: '13px',
-            color: 'rgba(12,12,10,0.35)',
+            fontSize: '11px',
+            color: 'var(--text-muted)',
             marginBottom: '32px',
-            letterSpacing: '0.5px',
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            fontWeight: 500,
           }}>
-            {name.split(' ')[0]}, here is your result.
+            {name.split(' ')[0]}, here is your result
           </p>
         )}
 
@@ -134,13 +136,13 @@ export default function QuizResultPage() {
               background: 'var(--ink)',
               color: 'white',
               border: 'none',
-              borderRadius: '6px',
-              padding: '14px 32px',
+              borderRadius: '8px',
+              padding: '11px 18px',
               fontSize: '14px',
-              fontWeight: 500,
+              fontWeight: 600,
               fontFamily: 'var(--font-body)',
               cursor: 'pointer',
-              letterSpacing: '0.2px',
+              letterSpacing: '0.01em',
               maxWidth: '360px',
               width: '100%',
             }}

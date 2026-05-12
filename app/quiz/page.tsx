@@ -131,11 +131,11 @@ export default function QuizPage() {
         <div style={{ position: 'absolute', bottom: '48px', left: '48px', right: '48px', zIndex: 1 }}>
           <p
             style={{
-              fontSize: '10px',
-              letterSpacing: '1.5px',
+              fontSize: '11px',
+              letterSpacing: '0.14em',
               textTransform: 'uppercase',
               color: 'var(--gold)',
-              margin: '0 0 8px',
+              margin: '0 0 10px',
               fontWeight: 500,
             }}
           >

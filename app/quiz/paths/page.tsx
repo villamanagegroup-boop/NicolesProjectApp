@@ -38,12 +38,12 @@ export default function QuizPathsPage() {
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
           <p style={{
-            fontSize: '10px',
-            letterSpacing: '0.18em',
+            fontSize: '11px',
+            letterSpacing: '0.14em',
             textTransform: 'uppercase',
             color: 'var(--green)',
             margin: '0 0 16px',
-            fontWeight: 600,
+            fontWeight: 500,
           }}>
             ✦ Pick your path
           </p>
@@ -56,7 +56,7 @@ export default function QuizPathsPage() {
               color: 'var(--ink)',
               margin: '0 0 18px',
               lineHeight: 1.05,
-              letterSpacing: '-0.02em',
+              letterSpacing: '-0.015em',
             }}
           >
             Three ways in.
@@ -67,7 +67,7 @@ export default function QuizPathsPage() {
             fontSize: '15px',
             color: 'var(--text-soft)',
             margin: '0 auto',
-            lineHeight: 1.7,
+            lineHeight: 1.65,
             maxWidth: 540,
           }}>
             Every path is built around your archetype. Pick the one that meets you where you are —

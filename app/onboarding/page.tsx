@@ -169,7 +169,7 @@ function RadioOption({ name, value, checked, label, sub, onChange, imageUrl }: {
 
 function SectionHead({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#C9A84C', marginBottom: '12px' }}>
+    <div style={{ fontSize: '11px', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#C9A84C', marginBottom: '14px' }}>
       {children}
     </div>
   )
@@ -339,7 +339,7 @@ export default function OnboardingPage() {
 
         {/* Progress */}
         <div style={{ marginBottom: '32px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', color: '#888', marginBottom: '8px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#888', marginBottom: '10px' }}>
             {step < 6 ? `Step ${progress} of 5 — ${stepLabels[progress]}` : 'Complete — welcome to The Circle'}
           </div>
           <div style={{ height: '4px', background: '#e8e4dc', borderRadius: '2px' }}>
@@ -352,8 +352,14 @@ export default function OnboardingPage() {
           <>
             <Card>
               <SectionHead>Welcome to The Circle</SectionHead>
-              <div style={{ fontSize: '17px', fontWeight: 600, marginBottom: '6px' }}>Let&apos;s build your profile</div>
-              <div style={{ fontSize: '13px', color: '#666', lineHeight: 1.6, marginBottom: '20px' }}>
+              <div style={{
+                fontFamily: 'var(--font-display)', fontSize: '24px', fontWeight: 400,
+                color: 'var(--ink)', letterSpacing: '-0.015em', lineHeight: 1.1,
+                marginBottom: '10px',
+              }}>
+                Let&apos;s build your profile
+              </div>
+              <div style={{ fontSize: '14px', color: 'var(--text-soft)', lineHeight: 1.65, marginBottom: '22px', maxWidth: 540 }}>
                 This takes about 8 minutes. Your answers power your accountability pairing — no manual steps required.
               </div>
               <div style={{ fontSize: '14px', fontWeight: 500, marginBottom: '10px' }}>

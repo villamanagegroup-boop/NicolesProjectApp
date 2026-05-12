@@ -156,8 +156,8 @@ export default function StandaloneQuizPage() {
         }} />
         <div style={{ position: 'absolute', bottom: 48, left: 48, right: 48, zIndex: 1 }}>
           <p style={{
-            fontSize: 10, letterSpacing: '1.5px', textTransform: 'uppercase',
-            color: 'var(--gold)', margin: '0 0 8px', fontWeight: 500,
+            fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase',
+            color: 'var(--gold)', margin: '0 0 10px', fontWeight: 500,
           }}>
             Question {questionNumber} of {TOTAL}
           </p>

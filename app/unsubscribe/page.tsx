@@ -51,7 +51,7 @@ function UnsubscribeInner() {
     }}>
       <div style={{
         width: '100%', maxWidth: 480,
-        background: '#fff', border: '1px solid var(--line)',
+        background: 'var(--card)', border: '1px solid var(--line)',
         borderRadius: 16, padding: '40px 32px',
         boxShadow: '0 4px 14px rgba(12,12,10,0.04)',
         textAlign: 'center',
@@ -69,17 +69,17 @@ function UnsubscribeInner() {
         {state.kind === 'ok' && (
           <>
             <h1 style={{
-              fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300,
-              margin: '0 0 12px', lineHeight: 1.2,
+              fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300,
+              margin: '0 0 14px', lineHeight: 1.1, letterSpacing: '-0.015em',
             }}>
               You&apos;re unsubscribed.
             </h1>
-            <p style={{ fontSize: 14, color: 'var(--text-soft)', lineHeight: 1.7, margin: '0 0 24px' }}>
+            <p style={{ fontSize: 14, color: 'var(--text-soft)', lineHeight: 1.65, margin: '0 0 24px' }}>
               We won&apos;t send you {state.what} anymore. You can change this anytime in
               your settings.
             </p>
             <Link href="/settings" style={{
-              display: 'inline-block', padding: '11px 22px', borderRadius: 8,
+              display: 'inline-block', padding: '11px 18px', borderRadius: 8,
               background: 'var(--ink)', color: '#fff',
               fontSize: 14, fontWeight: 600, textDecoration: 'none',
             }}>
@@ -91,19 +91,19 @@ function UnsubscribeInner() {
         {state.kind === 'err' && (
           <>
             <h1 style={{
-              fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 300,
-              margin: '0 0 12px', lineHeight: 1.2,
+              fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300,
+              margin: '0 0 14px', lineHeight: 1.1, letterSpacing: '-0.015em',
             }}>
               Something went wrong.
             </h1>
-            <p style={{ fontSize: 14, color: 'var(--text-soft)', lineHeight: 1.7, margin: '0 0 18px' }}>
+            <p style={{ fontSize: 14, color: 'var(--text-soft)', lineHeight: 1.65, margin: '0 0 18px' }}>
               {state.message}
             </p>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 24px' }}>
               You can also update your notification preferences from your settings page.
             </p>
             <Link href="/settings" style={{
-              display: 'inline-block', padding: '11px 22px', borderRadius: 8,
+              display: 'inline-block', padding: '11px 18px', borderRadius: 8,
               background: 'var(--ink)', color: '#fff',
               fontSize: 14, fontWeight: 600, textDecoration: 'none',
             }}>

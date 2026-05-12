@@ -40,11 +40,12 @@ export default function WelcomeCardsPage() {
 
         {/* Hero */}
         <div style={{
-          background: '#fff',
+          background: 'var(--card)',
           border: '1px solid rgba(31,92,58,0.15)',
           borderRadius: 16,
           padding: '40px 36px',
           textAlign: 'center',
+          marginBottom: 16,
         }}>
           <div style={{
             width: 56, height: 56, borderRadius: '50%',
@@ -55,20 +56,22 @@ export default function WelcomeCardsPage() {
             🌿
           </div>
           <p style={{
-            fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
-            textTransform: 'uppercase', color: GREEN, margin: '0 0 10px',
+            fontSize: 11, fontWeight: 500, letterSpacing: '0.14em',
+            textTransform: 'uppercase', color: GREEN, margin: '0 0 12px',
           }}>
             365 Days of Alignment
           </p>
           <h1 style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 30, fontWeight: 300,
-            color: 'var(--ink)', margin: '0 0 14px', lineHeight: 1.2,
+            fontSize: 32, fontWeight: 300,
+            color: 'var(--ink)', margin: '0 0 16px',
+            lineHeight: 1.1, letterSpacing: '-0.015em',
           }}>
             Payment confirmed. Your practice begins today.
           </h1>
           <p style={{
-            fontSize: 14, color: 'var(--text-soft)', lineHeight: 1.7, margin: 0,
+            fontSize: 15, color: 'var(--text-soft)', lineHeight: 1.65,
+            margin: '0 auto', maxWidth: 540,
           }}>
             You&apos;ve committed to showing up for yourself every single day.
             Here&apos;s exactly what that looks like inside the app.
@@ -77,24 +80,30 @@ export default function WelcomeCardsPage() {
 
         {/* What to expect */}
         <div style={{
-          background: '#fff',
-          border: '1px solid rgba(31,92,58,0.12)',
-          borderRadius: 14, padding: '28px 28px',
+          background: 'var(--card)',
+          border: '1px solid var(--line)',
+          borderRadius: 12, padding: '22px 24px',
         }}>
-          <Eyebrow>What to expect</Eyebrow>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginTop: 16 }}>
+          <h2 style={{
+            fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 400,
+            color: 'var(--ink)', letterSpacing: '-0.01em',
+            margin: '0 0 16px',
+          }}>
+            What to expect
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             {STEPS.map(({ title, body }, i) => (
               <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
                 <div style={{
                   width: 24, height: 24, borderRadius: '50%',
                   background: GREEN, color: '#fff',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 1,
+                  fontSize: 11, fontWeight: 600, flexShrink: 0, marginTop: 1,
                 }}>
                   {i + 1}
                 </div>
                 <div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', margin: '0 0 3px' }}>{title}</p>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', margin: '0 0 4px' }}>{title}</p>
                   <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.65, margin: 0 }}>{body}</p>
                 </div>
               </div>
@@ -120,8 +129,8 @@ export default function WelcomeCardsPage() {
             <button style={{
               width: '100%',
               background: GREEN, color: '#fff',
-              padding: '15px 32px', borderRadius: 12,
-              fontSize: 15, fontWeight: 600,
+              padding: '13px 18px', borderRadius: 8,
+              fontSize: 14, fontWeight: 600,
               border: 'none', cursor: 'pointer',
               fontFamily: 'inherit', letterSpacing: '0.01em',
             }}>
@@ -142,17 +151,5 @@ export default function WelcomeCardsPage() {
 
       </div>
     </div>
-  )
-}
-
-function Eyebrow({ children }: { children: React.ReactNode }) {
-  return (
-    <span style={{
-      fontSize: 10, fontWeight: 700,
-      letterSpacing: '0.12em', textTransform: 'uppercase',
-      color: 'var(--text-muted)',
-    }}>
-      {children}
-    </span>
   )
 }

@@ -52,15 +52,15 @@ export default function ForgotPasswordPage() {
         </div>
 
         <h1 style={{
-          fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 300,
-          margin: '0 0 8px', lineHeight: 1.2,
+          fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 300,
+          margin: '0 0 10px', lineHeight: 1.1, letterSpacing: '-0.015em',
         }}>
           Reset your password
         </h1>
 
         {submitted ? (
           <>
-            <p style={{ fontSize: 14, color: 'var(--text-soft)', lineHeight: 1.7, margin: '0 0 18px' }}>
+            <p style={{ fontSize: 14, color: 'var(--text-soft)', lineHeight: 1.65, margin: '0 0 18px' }}>
               If an account exists for <strong>{email}</strong>, we&apos;ve sent a password reset
               link. It expires in 1 hour.
             </p>
@@ -76,7 +76,7 @@ export default function ForgotPasswordPage() {
           </>
         ) : (
           <>
-            <p style={{ fontSize: 14, color: 'var(--text-soft)', lineHeight: 1.7, margin: '0 0 22px' }}>
+            <p style={{ fontSize: 14, color: 'var(--text-soft)', lineHeight: 1.65, margin: '0 0 22px' }}>
               Enter the email on your account. We&apos;ll send you a link to set a new password.
             </p>
 

@@ -46,22 +46,25 @@ export default function ChoosePathPage() {
       {/* Heading */}
       <h1 style={{
         fontFamily: 'var(--font-display)',
-        fontSize: '38px',
+        fontSize: '36px',
         fontWeight: 300,
         fontStyle: 'italic',
         color: 'var(--ink)',
         textAlign: 'center',
-        margin: '0 0 12px',
-        lineHeight: 1.2,
+        margin: '0 0 16px',
+        lineHeight: 1.1,
+        letterSpacing: '-0.015em',
       }}>
         Where would you like to start?
       </h1>
       <p style={{
         fontFamily: 'var(--font-body)',
-        fontSize: '14px',
-        color: 'var(--text-muted)',
+        fontSize: '15px',
+        color: 'var(--text-soft)',
         textAlign: 'center',
-        margin: '0 0 48px',
+        margin: '0 auto 48px',
+        lineHeight: 1.65,
+        maxWidth: 540,
       }}>
         You can switch between your programs anytime from the sidebar.
       </p>
