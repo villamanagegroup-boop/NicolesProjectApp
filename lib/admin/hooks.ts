@@ -48,6 +48,7 @@ export interface AdminMemberRow {
   user_id: string
   full_name: string | null
   email: string | null
+  avatar_url: string | null
   cohort_id: string
   archetype: string
   enneagram_type: string | null
@@ -295,7 +296,7 @@ export async function fetchAdminMembers(cohortId: string, currentWeek: number): 
     .from('circle_members')
     .select(`
       *,
-      user:user_id (name, email),
+      user:user_id (name, email, avatar_url),
       partner:partner_id (
         user:user_id (name)
       )
@@ -354,6 +355,7 @@ export async function fetchAdminMembers(cohortId: string, currentWeek: number): 
 
     const userName = (m as any).user?.name ?? null
     const userEmail = (m as any).user?.email ?? null
+    const userAvatar = (m as any).user?.avatar_url ?? null
     const partnerName = (m as any).partner?.user?.name ?? null
 
     rows.push({
@@ -361,6 +363,7 @@ export async function fetchAdminMembers(cohortId: string, currentWeek: number): 
       user_id: m.user_id,
       full_name: userName,
       email: userEmail,
+      avatar_url: userAvatar,
       cohort_id: m.cohort_id,
       archetype: m.archetype,
       enneagram_type: m.enneagram_type,
@@ -918,6 +921,7 @@ export interface AdminUserRow {
   id: string
   name: string | null
   email: string | null
+  avatar_url: string | null
   selected_path: 'A' | 'B' | 'C' | null
   quiz_result: string | null
   has_paid: boolean
@@ -933,7 +937,7 @@ export interface AdminUserRow {
 export async function fetchAllUsersAdmin(): Promise<AdminUserRow[]> {
   const { data: users } = await supabase
     .from('users')
-    .select('id, name, email, selected_path, quiz_result, has_paid, is_admin, signup_date, cards_addon_started_at')
+    .select('id, name, email, avatar_url, selected_path, quiz_result, has_paid, is_admin, signup_date, cards_addon_started_at')
     .order('signup_date', { ascending: false })
   if (!users) return []
 
@@ -981,6 +985,7 @@ export async function fetchAllUsersAdmin(): Promise<AdminUserRow[]> {
       id: u.id,
       name: u.name as string | null,
       email: u.email as string | null,
+      avatar_url: (u.avatar_url as string | null) ?? null,
       selected_path: u.selected_path as 'A' | 'B' | 'C' | null,
       quiz_result: u.quiz_result as string | null,
       has_paid: !!u.has_paid,

@@ -300,8 +300,12 @@ function MembersInner() {
                           background: ARCHETYPE_COLORS[m.archetype] ?? 'var(--line)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontSize: '11px', fontWeight: 700, color: '#fff',
+                          overflow: 'hidden',
                         }}>
-                          {(m.full_name ?? 'M').slice(0, 2).toUpperCase()}
+                          {m.avatar_url ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img src={m.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (m.full_name ?? 'M').slice(0, 2).toUpperCase()}
                         </div>
                         <div>
                           <div style={{ fontWeight: 600, fontSize: '13px' }}>{m.full_name ?? 'Unknown'}</div>
@@ -380,8 +384,12 @@ function MembersInner() {
                   background: ARCHETYPE_COLORS[selectedMember.archetype] ?? 'var(--line)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '14px', fontWeight: 700, color: '#fff',
+                  overflow: 'hidden',
                 }}>
-                  {(selectedMember.full_name ?? 'M').slice(0, 2).toUpperCase()}
+                  {selectedMember.avatar_url ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={selectedMember.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (selectedMember.full_name ?? 'M').slice(0, 2).toUpperCase()}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)' }}>

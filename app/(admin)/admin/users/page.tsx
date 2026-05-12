@@ -249,8 +249,12 @@ export default function AdminUsersPage() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 11, fontWeight: 700,
                   border: `1px solid ${cfg.border}`,
+                  overflow: 'hidden',
                 }}>
-                  {initials}
+                  {u.avatar_url ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={u.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : initials}
                 </div>
                 <div style={{ minWidth: 0, flex: '1 1 200px' }}>
                   <div style={{

@@ -7,8 +7,12 @@ import { quizResults } from '@/data/quizData'
 import { PATHS, PATH_ORDER, getPath, type PathId } from '@/data/paths'
 import { signOut } from '@/lib/supabase/auth'
 
-const SECTIONS = [
+// Master list of every possible section. The settings page renders a
+// path-aware subset of these — Card Delivery only for users with cards,
+// Circle only for Path C members, etc.
+const ALL_SECTIONS = [
   { id: 'profile',       label: 'Profile' },
+  { id: 'circle',        label: 'The Circle' },
   { id: 'notifications', label: 'Notifications' },
   { id: 'delivery',      label: 'Card Delivery' },
   { id: 'plan',          label: 'Your Plan' },
@@ -16,11 +20,23 @@ const SECTIONS = [
   { id: 'security',      label: 'Security' },
 ] as const
 
-type SectionId = typeof SECTIONS[number]['id']
+type SectionId = typeof ALL_SECTIONS[number]['id']
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { user, updateUser, avatarUrl, setAvatarUrl, notificationPrefs, setNotificationPref } = useApp()
+  const {
+    user, updateUser, avatarUrl, setAvatarUrl,
+    notificationPrefs, setNotificationPref,
+    hasCardsAccess, hasCircleAccess,
+  } = useApp()
+
+  // Path-aware section list — hide what doesn't apply so the page isn't a
+  // tour of features the user doesn't have.
+  const SECTIONS = ALL_SECTIONS.filter(s => {
+    if (s.id === 'delivery') return hasCardsAccess
+    if (s.id === 'circle')   return hasCircleAccess
+    return true
+  })
 
   // ── Profile autosave ─────────────────────────────────────────────────────
   const [name, setName] = useState(user.name)
@@ -148,12 +164,16 @@ export default function SettingsPage() {
             <span style={{ color: 'var(--green)', fontWeight: 500 }}>Active</span>
             <span style={{ color: 'var(--text-muted)' }}>·</span>
             <span>{billingLabel(currentPath.billing)}</span>
-            <span style={{ color: 'var(--text-muted)' }}>·</span>
-            <span>Next card at 4:00 AM</span>
-            {notificationPrefs.daily_reminder ? null : (
+            {hasCardsAccess && (
               <>
                 <span style={{ color: 'var(--text-muted)' }}>·</span>
-                <span style={{ color: 'var(--red)' }}>Reminders off</span>
+                <span>Next card at 4:00 AM</span>
+                {notificationPrefs.daily_reminder ? null : (
+                  <>
+                    <span style={{ color: 'var(--text-muted)' }}>·</span>
+                    <span style={{ color: 'var(--red)' }}>Reminders off</span>
+                  </>
+                )}
               </>
             )}
           </div>
@@ -403,7 +423,10 @@ export default function SettingsPage() {
             </div>
             <div style={{ padding: '0 24px' }}>
               {([
-                { label: 'Daily card reminder',       sub: 'One gentle nudge each morning',       kind: 'daily_reminder' as const,   value: notificationPrefs.daily_reminder },
+                // Daily card reminder only matters to users who actually have
+                // a daily card — Path A users without the add-on never see one,
+                // so hide the toggle for them.
+                ...(hasCardsAccess ? [{ label: 'Daily card reminder', sub: 'One gentle nudge each morning', kind: 'daily_reminder' as const, value: notificationPrefs.daily_reminder }] : []),
                 { label: 'Weekly reflection digest',  sub: 'A summary of your entries on Sunday', kind: 'weekly_digest' as const,    value: notificationPrefs.weekly_digest },
                 { label: 'Milestone alerts',          sub: 'Streak milestones and unlocks',       kind: 'milestone_alerts' as const, value: notificationPrefs.milestone_alerts },
               ]).map((item, i, arr) => (
@@ -437,7 +460,8 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          {/* ── Card Delivery ────────────────────────────────────────── */}
+          {/* ── Card Delivery ─ Path B + Path A-with-add-on only ──────── */}
+          {hasCardsAccess && (
           <section
             id="delivery"
             ref={el => { sectionRefs.current.delivery = el }}
@@ -463,6 +487,53 @@ export default function SettingsPage() {
               ))}
             </div>
           </section>
+          )}
+
+          {/* ── The Circle ─ Path C members only ──────────────────────── */}
+          {hasCircleAccess && (
+          <section
+            id="circle"
+            ref={el => { sectionRefs.current.circle = el }}
+            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: '#ffffff' }}
+          >
+            <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 400, color: 'var(--ink)', margin: 0 }}>The Circle</h2>
+            </div>
+            <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.6, margin: 0, fontFamily: 'var(--font-body)' }}>
+                Your cohort, accountability partner, live calls, and weekly content all live in the Circle area.
+              </p>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <Link href="/circle" style={{
+                  fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-body)',
+                  padding: '8px 14px', borderRadius: 7,
+                  background: '#C97D3A', color: '#fff',
+                  textDecoration: 'none',
+                }}>
+                  Open The Circle →
+                </Link>
+                <Link href="/circle/partner" style={{
+                  fontSize: 12, fontWeight: 500, fontFamily: 'var(--font-body)',
+                  padding: '8px 14px', borderRadius: 7,
+                  background: '#fff', color: '#C97D3A',
+                  border: '1px solid #C97D3A40',
+                  textDecoration: 'none',
+                }}>
+                  Your partner
+                </Link>
+                <Link href="/circle/calls" style={{
+                  fontSize: 12, fontWeight: 500, fontFamily: 'var(--font-body)',
+                  padding: '8px 14px', borderRadius: 7,
+                  background: '#fff', color: '#C97D3A',
+                  border: '1px solid #C97D3A40',
+                  textDecoration: 'none',
+                }}>
+                  Live calls
+                </Link>
+              </div>
+            </div>
+          </section>
+          )}
 
           {/* ── Your Plan ────────────────────────────────────────────── */}
           <section
@@ -756,8 +827,12 @@ export default function SettingsPage() {
                               cursor: 'pointer',
                             }}
                             onClick={() => {
-                              if (p.billing === 'call') { alert('Discovery call — booking coming soon') }
-                              else { alert('Stripe checkout — coming soon') }
+                              // data/paths.ts already resolves ctaHref to the
+                              // right Stripe payment link (or a sensible /signup
+                              // fallback). Use it instead of an alert.
+                              const href = p.ctaHref
+                              if (href) window.location.href = href
+                              else alert(`Checkout for ${p.title} is not configured yet. Contact support.`)
                             }}
                           >
                             {p.billing === 'call' ? 'Book a call →' : 'Upgrade →'}

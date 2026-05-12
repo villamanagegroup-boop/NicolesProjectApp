@@ -1,3 +1,4 @@
+export {}
 // scripts/sync-emailit-audiences.ts
 // Reconciles the Emailit audiences against current user state:
 //   - Any user with selected_path set is a converted customer — remove them

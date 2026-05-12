@@ -22,6 +22,14 @@ import {
 import { useRouter } from 'next/navigation'
 import { uploadCircleAttachment } from '@/lib/circle'
 import FileDropZone from '@/components/ui/FileDropZone'
+import { quizResults } from '@/data/quizData'
+
+// Quiz IDs are stored on users.quiz_result; map them to the canonical
+// display name for read-only summary rows.
+function quizResultLabel(id: string | null): string {
+  if (!id) return '—'
+  return quizResults.find(q => q.id === id)?.title ?? id
+}
 
 const ARCHETYPE_COLORS: Record<string, string> = {
   door: 'var(--green)', throne: '#1a1a2e', engine: 'var(--red)', push: '#3d2c0e',
@@ -998,7 +1006,7 @@ export default function AdminMemberProfilePage() {
                   style={{ ...editInputStyle, resize: 'vertical', minHeight: 60 }}
                 />
               </EditField>
-              <Field label="Quiz result" value={user.quiz_result ?? '—'} />
+              <Field label="Quiz result" value={quizResultLabel(user.quiz_result)} />
             </>
           ) : (
             <>
@@ -1007,7 +1015,7 @@ export default function AdminMemberProfilePage() {
               <Field label="Attachment style"   value={member.attachment_style ?? '—'} />
               <Field label="Feedback preference" value={member.feedback_pref ?? '—'} />
               <Field label="12-week focus"      value={member.goal_90day ?? '—'} multiline />
-              <Field label="Quiz result"        value={user.quiz_result ?? '—'} />
+              <Field label="Quiz result"        value={quizResultLabel(user.quiz_result)} />
             </>
           )}
         </div>

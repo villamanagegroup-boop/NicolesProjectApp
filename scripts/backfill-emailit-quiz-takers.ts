@@ -1,3 +1,4 @@
+export {}
 // scripts/backfill-emailit-quiz-takers.ts
 // One-shot script — pushes every row in public.quiz_leads into the Emailit
 // "Quiz Takers" audience. Safe to re-run; dupes are reported, not retried.

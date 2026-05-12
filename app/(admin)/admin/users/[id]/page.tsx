@@ -390,8 +390,12 @@ export default function AdminUserProfilePage() {
           border: '1px solid var(--gold-line)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 18, fontWeight: 700, flexShrink: 0,
+          overflow: 'hidden',
         }}>
-          {initials}
+          {user.avatar_url ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={user.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : initials}
         </div>
         <div style={{ flex: '1 1 240px', minWidth: 0 }}>
           <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink)', margin: 0 }}>
@@ -526,10 +530,10 @@ export default function AdminUserProfilePage() {
             style={{ ...S.input, flex: 1 }}
           >
             <option value="">Not taken</option>
-            <option value="seeker">Seeker (door)</option>
-            <option value="builder">Builder (engine)</option>
-            <option value="healer">Healer (push)</option>
-            <option value="visionary">Visionary (throne)</option>
+            <option value="seeker">Overthinker&apos;s Throne</option>
+            <option value="healer">Open Door</option>
+            <option value="builder">Interrupted Engine</option>
+            <option value="visionary">Pushthrough</option>
           </select>
           <span style={{ ...S.saved, minWidth: 50, textAlign: 'right' }}>{indicator('quiz')}</span>
         </div>
