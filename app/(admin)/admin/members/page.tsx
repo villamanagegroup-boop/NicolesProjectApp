@@ -164,8 +164,9 @@ function MembersInner() {
 
   const S = {
     page: { color: 'var(--ink)' as const },
-    header: { marginBottom: '24px', display: 'flex', alignItems: 'flex-start' as const, justifyContent: 'space-between' as const, gap: '16px', flexWrap: 'wrap' as const },
-    h1: { fontSize: '20px', fontWeight: 700, color: 'var(--ink)', margin: 0 },
+    header: { marginBottom: 24, display: 'flex', alignItems: 'flex-start' as const, justifyContent: 'space-between' as const, gap: 16, flexWrap: 'wrap' as const },
+    eyebrow: { fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', margin: '0 0 8px' },
+    h1: { fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', letterSpacing: '-0.015em', lineHeight: 1.1, margin: 0 },
     filterBar: { display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' as const, alignItems: 'center' as const },
     select: {
       background: '#ffffff', border: '1px solid var(--line)', borderRadius: '8px',
@@ -178,13 +179,13 @@ function MembersInner() {
     },
     table: { width: '100%', borderCollapse: 'collapse' as const },
     th: {
-      fontSize: '10px', fontWeight: 700, letterSpacing: '.09em',
+      fontSize: 10, fontWeight: 700, letterSpacing: '0.1em',
       textTransform: 'uppercase' as const, color: 'var(--text-muted)',
-      padding: '8px 12px', textAlign: 'left' as const,
+      padding: '10px 14px', textAlign: 'left' as const,
       borderBottom: '1px solid var(--line)',
     },
     tr: { borderBottom: '1px solid var(--line)', cursor: 'pointer', transition: 'background .1s' },
-    td: { padding: '12px', fontSize: '13px', color: 'var(--ink)', verticalAlign: 'middle' as const },
+    td: { padding: '10px 14px', fontSize: 13, color: 'var(--ink)', verticalAlign: 'middle' as const },
     drawer: {
       position: 'fixed' as const, top: 0, right: 0, bottom: 0,
       width: 'min(400px, 100vw)',
@@ -231,8 +232,9 @@ function MembersInner() {
     <div style={S.page}>
       <div style={S.header}>
         <div>
+          <div style={S.eyebrow}>Roster</div>
           <h1 style={S.h1}>Members</h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0' }}>
+          <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.55, margin: '8px 0 0', maxWidth: 520 }}>
             {filtered.length} of {members.length} members
           </p>
         </div>
@@ -273,7 +275,7 @@ function MembersInner() {
       {loading ? (
         <div style={{ color: 'var(--text-muted)', fontSize: '13px', padding: '20px 0' }}>Loading members...</div>
       ) : (
-        <div style={{ background: '#ffffff', border: '1px solid var(--line)', borderRadius: '14px', overflowX: 'auto' }}>
+        <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden', overflowX: 'auto' }}>
           <table style={{ ...S.table, minWidth: 760 }}>
             <thead>
               <tr>

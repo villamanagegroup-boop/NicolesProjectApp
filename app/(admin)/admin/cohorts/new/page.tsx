@@ -8,10 +8,10 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createCohort } from '@/lib/admin/hooks'
 
-const card = { background: '#ffffff', border: '1px solid var(--line)', borderRadius: '14px', padding: '24px', maxWidth: 560 }
-const label: React.CSSProperties = { fontSize: '10px', fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '6px', display: 'block' }
-const input: React.CSSProperties = { width: '100%', background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: '8px', color: 'var(--ink)', fontSize: '13px', padding: '10px 12px', outline: 'none', fontFamily: 'inherit', marginBottom: '14px' }
-const btn: React.CSSProperties = { fontSize: '13px', fontWeight: 600, padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', border: 'none', background: 'var(--green)', color: '#fff' }
+const card = { background: '#fff', border: '1px solid var(--line)', borderRadius: 10, padding: '16px 20px', maxWidth: 560 }
+const label: React.CSSProperties = { fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 6, display: 'block' }
+const input: React.CSSProperties = { width: '100%', background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: 8, color: 'var(--ink)', fontSize: 13, padding: '10px 12px', outline: 'none', fontFamily: 'inherit', marginBottom: 14 }
+const btn: React.CSSProperties = { fontSize: 13, fontWeight: 600, padding: '8px 14px', borderRadius: 8, cursor: 'pointer', border: 'none', background: 'var(--gold)', color: '#fff' }
 
 export default function NewCohortPage() {
   const router = useRouter()
@@ -46,12 +46,15 @@ export default function NewCohortPage() {
 
   return (
     <div style={{ color: 'var(--ink)' }}>
-      <div style={{ marginBottom: '20px' }}>
-        <Link href="/admin/cohorts" style={{ fontSize: '12px', color: 'var(--text-muted)', textDecoration: 'none' }}>
+      <div style={{ marginBottom: 24 }}>
+        <Link href="/admin/cohorts" style={{ fontSize: 12, color: 'var(--text-muted)', textDecoration: 'none' }}>
           ← Back to cohorts
         </Link>
-        <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--ink)', margin: '6px 0 4px' }}>New cohort</h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
+        <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '8px 0 8px' }}>
+          New
+        </div>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', letterSpacing: '-0.015em', lineHeight: 1.1, margin: 0 }}>New cohort</h1>
+        <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.55, margin: '8px 0 0', maxWidth: 520 }}>
           Sets the 12-week window. Weekly content can be seeded later.
         </p>
       </div>

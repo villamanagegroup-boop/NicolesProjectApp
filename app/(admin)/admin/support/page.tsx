@@ -79,8 +79,9 @@ export default function AdminSupportPage() {
   )
 
   const S = {
-    h1: { fontSize: 20, fontWeight: 700, color: 'var(--ink)', margin: 0 },
-    sub: { fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' },
+    eyebrow: { fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', margin: '0 0 8px' },
+    h1: { fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', letterSpacing: '-0.015em', lineHeight: 1.1, margin: 0 },
+    sub: { fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.55, margin: '8px 0 0', maxWidth: 520 },
     tabRow: {
       display: 'flex', gap: 0,
       borderBottom: '1px solid var(--line)',
@@ -101,8 +102,8 @@ export default function AdminSupportPage() {
       letterSpacing: '0.04em',
     },
     card: {
-      background: '#fff', border: '1px solid var(--line)', borderRadius: 12,
-      padding: 14, marginBottom: 10,
+      background: '#fff', border: '1px solid var(--line)', borderRadius: 10,
+      padding: '14px 16px', marginBottom: 10,
     },
     statusPill: (s: SupportMessage['status']) => {
       const c = STATUS_COLORS[s]
@@ -123,8 +124,9 @@ export default function AdminSupportPage() {
 
   return (
     <div style={{ color: 'var(--ink)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
+          <div style={S.eyebrow}>Inbox</div>
           <h1 style={S.h1}>Support — bug reports</h1>
           <p style={S.sub}>
             Submitted from the user-portal &ldquo;Report a bug&rdquo; button.
@@ -164,7 +166,7 @@ export default function AdminSupportPage() {
            'No reports yet.'}
         </div>
       ) : (
-        <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden' }}>
           {messages.map((msg, i) => {
             const memberId = memberLookup[msg.user_id] ?? null
             const isOpen = expanded === msg.id

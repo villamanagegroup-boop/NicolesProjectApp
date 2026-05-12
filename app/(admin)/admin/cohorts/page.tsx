@@ -21,16 +21,19 @@ export default function CohortsPage() {
 
   return (
     <div style={{ color: 'var(--ink)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 4px' }}>Cohorts</h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 8px' }}>
+            Operations
+          </div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', letterSpacing: '-0.015em', lineHeight: 1.1, margin: 0 }}>Cohorts</h1>
+          <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.55, margin: '8px 0 0', maxWidth: 520 }}>
             {cohorts.length} cohort{cohorts.length !== 1 ? 's' : ''} on file
           </p>
         </div>
         <Link href="/admin/cohorts/new" style={{
-          fontSize: '13px', fontWeight: 600, padding: '8px 16px',
-          borderRadius: '8px', background: 'var(--green)', color: '#fff',
+          fontSize: 13, fontWeight: 600, padding: '8px 14px',
+          borderRadius: 8, background: 'var(--gold)', color: '#fff',
           textDecoration: 'none',
         }}>
           + New cohort
@@ -41,8 +44,8 @@ export default function CohortsPage() {
         <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Loading…</div>
       ) : cohorts.length === 0 ? (
         <div style={{
-          background: '#ffffff', border: '1px solid var(--line)',
-          borderRadius: '14px', padding: '40px', textAlign: 'center',
+          background: '#fff', border: '1px solid var(--line)',
+          borderRadius: 10, padding: '32px 24px', textAlign: 'center',
         }}>
           <div style={{ fontSize: '32px', marginBottom: '12px' }}>⬡</div>
           <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)', marginBottom: '6px' }}>
@@ -61,17 +64,17 @@ export default function CohortsPage() {
               style={{ textDecoration: 'none' }}
             >
               <div style={{
-                background: '#ffffff', border: '1px solid var(--line)',
-                borderRadius: '14px', padding: '18px',
+                background: '#fff', border: '1px solid var(--line)',
+                borderRadius: 10, padding: '14px 16px 14px 18px',
                 borderLeft: `3px solid ${PHASE_COLORS[c.phase]}`,
                 cursor: 'pointer',
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                   <div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: '3px' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: PHASE_COLORS[c.phase] ?? 'var(--text-muted)', marginBottom: 3 }}>
                       {c.status}
                     </div>
-                    <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ink)' }}>{c.name}</div>
+                    <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4 }}>{c.name}</div>
                   </div>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                     {new Date(c.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}

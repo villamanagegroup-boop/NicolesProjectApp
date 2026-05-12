@@ -93,13 +93,16 @@ export default function MoneyPage() {
       })
     : users
 
-  const card: React.CSSProperties = { background: '#fff', border: '1px solid var(--line)', borderRadius: 12, padding: 18, marginBottom: 16 }
+  const card: React.CSSProperties = { background: '#fff', border: '1px solid var(--line)', borderRadius: 10, padding: '14px 18px', marginBottom: 16 }
 
   return (
     <div style={{ color: 'var(--ink)' }}>
-      <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink)', margin: '0 0 4px' }}>Money & payments</h1>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 8px' }}>
+          Revenue
+        </div>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', letterSpacing: '-0.015em', lineHeight: 1.1, margin: 0 }}>Money & payments</h1>
+        <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.55, margin: '8px 0 0', maxWidth: 520 }}>
           Paid access, unclaimed Stripe purchases, and Circle conversion in one place.
         </p>
       </div>
@@ -121,7 +124,7 @@ export default function MoneyPage() {
       {/* Unclaimed purchases */}
       <div style={card}>
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12, gap: 8 }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', margin: 0 }}>Unclaimed Stripe purchases</h2>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500, color: 'var(--ink)', letterSpacing: '-0.01em', margin: 0 }}>Unclaimed Stripe purchases</h2>
           <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>· {purchases.length} waiting</span>
         </div>
 
@@ -211,7 +214,7 @@ export default function MoneyPage() {
       {cohorts.length > 0 && (
         <div style={card}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-            <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', margin: 0 }}>Cohort conversion</h2>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500, color: 'var(--ink)', letterSpacing: '-0.01em', margin: 0 }}>Cohort conversion</h2>
             <select
               value={cohortId}
               onChange={e => setCohortId(e.target.value)}
@@ -247,29 +250,29 @@ function StatCard({ label, value, sub, tint, alert }: {
     <div style={{
       background: alert ? 'rgba(184,40,40,0.08)' : (tint?.bg ?? '#fff'),
       border: `1px solid ${alert ? 'rgba(184,40,40,0.3)' : 'var(--line)'}`,
-      borderRadius: 12, padding: 16,
+      borderRadius: 10, padding: '14px 16px 12px',
     }}>
-      <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em' }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.1, marginTop: 4, color: tint?.fg ?? (alert ? 'var(--red)' : 'var(--ink)') }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>{sub}</div>}
+      <div style={{ fontSize: 24, fontWeight: 300, lineHeight: 1.1, color: tint?.fg ?? (alert ? 'var(--red)' : 'var(--ink)') }}>{value}</div>
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 6 }}>{label}</div>
+      {sub && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{sub}</div>}
     </div>
   )
 }
 
 function MiniStat({ label, value }: { label: string; value: number }) {
   return (
-    <div style={{ background: 'var(--paper2)', border: '1px solid var(--line)', borderRadius: 10, padding: 12 }}>
-      <div style={{ fontSize: 22, fontWeight: 700 }}>{value}</div>
-      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{label}</div>
+    <div style={{ background: 'var(--paper2)', border: '1px solid var(--line)', borderRadius: 10, padding: '14px 16px 12px' }}>
+      <div style={{ fontSize: 24, fontWeight: 300, color: 'var(--ink)', lineHeight: 1.1 }}>{value}</div>
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 6 }}>{label}</div>
     </div>
   )
 }
 
 function btnPrimary(disabled: boolean): React.CSSProperties {
   return {
-    fontSize: 12, fontWeight: 600,
-    padding: '7px 14px', borderRadius: 7, border: 'none',
-    background: 'var(--green)', color: '#fff',
+    fontSize: 13, fontWeight: 600,
+    padding: '8px 14px', borderRadius: 8, border: 'none',
+    background: 'var(--gold)', color: '#fff',
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.6 : 1,
     fontFamily: 'inherit',

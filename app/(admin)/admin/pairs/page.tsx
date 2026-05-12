@@ -201,14 +201,15 @@ export default function PairsPage() {
   const quietPairs = pairs.filter(p => p.pair_health === 'quiet')
 
   const S = {
-    h1: { fontSize: '20px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 4px' },
-    section: { marginBottom: '28px' },
+    eyebrow: { fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', margin: '0 0 8px' },
+    h1: { fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', letterSpacing: '-0.015em', lineHeight: 1.1, margin: 0 },
+    section: { marginBottom: 24 },
     sectionHead: {
-      fontSize: '11px', fontWeight: 700, letterSpacing: '.1em',
-      textTransform: 'uppercase' as const, color: 'var(--text-muted)',
-      marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid var(--line)',
+      fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500,
+      color: 'var(--ink)', letterSpacing: '-0.01em',
+      margin: '0 0 12px',
     },
-    card: { background: '#ffffff', border: '1px solid var(--line)', borderRadius: '12px', padding: '16px', marginBottom: '8px' },
+    card: { background: '#fff', border: '1px solid var(--line)', borderRadius: 10, padding: '14px 16px', marginBottom: 8 },
     tag: (arch: string) => ({
       fontSize: '10px', fontWeight: 600, padding: '2px 8px', borderRadius: '8px',
       background: `${ARCHETYPE_COLORS[arch] ?? 'var(--line)'}50`, color: 'var(--gold)',
@@ -227,10 +228,11 @@ export default function PairsPage() {
 
   return (
     <div style={{ color: 'var(--ink)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
+          <div style={S.eyebrow}>Circle operations</div>
           <h1 style={S.h1}>Accountability pairs</h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.55, margin: '8px 0 0', maxWidth: 520 }}>
             {pairs.length} pairs · {silentPairs.length} silent · {pendingRepairs.length} re-pair request{pendingRepairs.length !== 1 ? 's' : ''}
           </p>
         </div>

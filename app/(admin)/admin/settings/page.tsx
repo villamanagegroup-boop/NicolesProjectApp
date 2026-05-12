@@ -181,12 +181,12 @@ export default function AdminSettingsPage() {
       <div style={{
         background: 'linear-gradient(135deg, var(--gold-pale) 0%, var(--paper2) 100%)',
         border: '1px solid var(--line)',
-        borderRadius: '12px',
-        padding: '24px',
-        marginBottom: '24px',
+        borderRadius: 10,
+        padding: '16px 20px',
+        marginBottom: 24,
         display: 'flex',
         alignItems: 'center',
-        gap: '20px',
+        gap: 20,
         flexWrap: 'wrap',
       }}>
         <div style={{
@@ -203,13 +203,17 @@ export default function AdminSettingsPage() {
           {ownerInitials}
         </div>
         <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 8px' }}>
+            Configuration
+          </div>
           <h1 style={{
             fontFamily: 'var(--font-display)',
-            fontSize: '24px',
+            fontSize: 28,
             fontWeight: 300,
             color: 'var(--ink)',
+            letterSpacing: '-0.015em',
             margin: 0,
-            lineHeight: 1.2,
+            lineHeight: 1.1,
           }}>
             Admin settings
           </h1>
@@ -320,15 +324,15 @@ export default function AdminSettingsPage() {
           <section
             id="profile"
             ref={el => { sectionRefs.current.profile = el }}
-            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: '#ffffff' }}
+            style={{ border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden', background: '#fff' }}
           >
-            <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 400, color: 'var(--ink)', margin: 0 }}>Owner profile</h2>
               <p style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '4px 0 0' }}>
                 Your admin account — separate from any member-side profile.
               </p>
             </div>
-            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 440 }}>
+            <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 440 }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                   <label style={{ display: 'block', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-soft)', fontFamily: 'var(--font-body)', marginBottom: 8 }}>
@@ -395,15 +399,15 @@ export default function AdminSettingsPage() {
           <section
             id="team"
             ref={el => { sectionRefs.current.team = el }}
-            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: '#ffffff' }}
+            style={{ border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden', background: '#fff' }}
           >
-            <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 400, color: 'var(--ink)', margin: 0 }}>Admin team</h2>
               <p style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '4px 0 0' }}>
                 People with access to this admin portal. Live from <code style={{ fontSize: 10 }}>admin_roles</code>.
               </p>
             </div>
-            <div style={{ padding: '0 24px' }}>
+            <div style={{ padding: '0 20px' }}>
               {adminsLoading ? (
                 <div style={{ padding: '20px 0', fontSize: 13, color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
                   Loading admins…
@@ -489,7 +493,7 @@ export default function AdminSettingsPage() {
                 })
               )}
             </div>
-            <div style={{ padding: '16px 24px', borderTop: '1px solid var(--line)', background: 'var(--paper)' }}>
+            <div style={{ padding: '14px 20px', borderTop: '1px solid var(--line)', background: 'var(--paper)' }}>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                 <input
                   type="email"
@@ -533,15 +537,15 @@ export default function AdminSettingsPage() {
           <section
             id="workspace"
             ref={el => { sectionRefs.current.workspace = el }}
-            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: '#ffffff' }}
+            style={{ border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden', background: '#fff' }}
           >
-            <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 400, color: 'var(--ink)', margin: 0 }}>Workspace</h2>
               <p style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '4px 0 0' }}>
                 Brand and contact details members see.
               </p>
             </div>
-            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 440 }}>
+            <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 440 }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                   <label style={{ display: 'block', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-soft)', fontFamily: 'var(--font-body)', marginBottom: 8 }}>
@@ -612,15 +616,15 @@ export default function AdminSettingsPage() {
           <section
             id="defaults"
             ref={el => { sectionRefs.current.defaults = el }}
-            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: '#ffffff' }}
+            style={{ border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden', background: '#fff' }}
           >
-            <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 400, color: 'var(--ink)', margin: 0 }}>Member defaults</h2>
               <p style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '4px 0 0' }}>
                 Applied to every new member unless overridden.
               </p>
             </div>
-            <div style={{ padding: '0 24px' }}>
+            <div style={{ padding: '0 20px' }}>
               <div style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16,
                 padding: '16px 0', borderBottom: '1px solid var(--line)',
@@ -685,15 +689,15 @@ export default function AdminSettingsPage() {
           <section
             id="integrations"
             ref={el => { sectionRefs.current.integrations = el }}
-            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: '#ffffff' }}
+            style={{ border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden', background: '#fff' }}
           >
-            <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 400, color: 'var(--ink)', margin: 0 }}>Integrations</h2>
               <p style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '4px 0 0' }}>
                 External services connected to this workspace.
               </p>
             </div>
-            <div style={{ padding: '0 24px' }}>
+            <div style={{ padding: '0 20px' }}>
               {([
                 { name: 'Supabase',     desc: 'Database + auth',        status: 'connected', action: 'Manage' },
                 { name: 'Stripe',       desc: 'Payments + subscriptions', status: 'pending',   action: 'Connect' },
@@ -738,12 +742,12 @@ export default function AdminSettingsPage() {
           <section
             id="security"
             ref={el => { sectionRefs.current.security = el }}
-            style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: '#ffffff' }}
+            style={{ border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden', background: '#fff' }}
           >
-            <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 400, color: 'var(--ink)', margin: 0 }}>Security</h2>
             </div>
-            <div style={{ padding: '0 24px' }}>
+            <div style={{ padding: '0 20px' }}>
               <div style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 padding: '16px 0', borderBottom: '1px solid var(--line)',
@@ -786,17 +790,17 @@ export default function AdminSettingsPage() {
           {/* ── Danger zone ─────────────────────────────────────────── */}
           <section style={{
             border: '1px solid rgba(178,60,60,0.35)',
-            borderRadius: 12,
+            borderRadius: 10,
             overflow: 'hidden',
             background: 'rgba(178,60,60,0.03)',
           }}>
-            <div style={{ padding: '18px 24px', borderBottom: '1px solid rgba(178,60,60,0.2)', background: 'rgba(178,60,60,0.05)' }}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(178,60,60,0.2)', background: 'rgba(178,60,60,0.05)' }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 400, color: 'var(--red)', margin: 0 }}>Danger zone</h2>
               <p style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '4px 0 0' }}>
                 Workspace-level actions. Be sure.
               </p>
             </div>
-            <div style={{ padding: '20px 24px' }}>
+            <div style={{ padding: '16px 20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
                 <div style={{ flex: 1, minWidth: 220 }}>
                   <div style={{ fontSize: 13, color: 'var(--ink)', fontFamily: 'var(--font-body)' }}>Wipe demo data</div>

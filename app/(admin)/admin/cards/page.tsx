@@ -90,8 +90,9 @@ export default function AdminCardsPage() {
     : cards
 
   const S = {
-    h1: { fontSize: 20, fontWeight: 700, color: 'var(--ink)', margin: 0 },
-    sub: { fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' },
+    eyebrow: { fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', margin: '0 0 8px' },
+    h1: { fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', letterSpacing: '-0.015em', lineHeight: 1.1, margin: 0 },
+    sub: { fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.55, margin: '8px 0 0', maxWidth: 520 },
     input: {
       background: '#fff', border: '1px solid var(--line-md)', borderRadius: 8,
       color: 'var(--ink)', fontSize: 13, padding: '7px 10px', outline: 'none',
@@ -108,8 +109,9 @@ export default function AdminCardsPage() {
 
   return (
     <div style={{ color: 'var(--ink)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
+          <div style={S.eyebrow}>Content</div>
           <h1 style={S.h1}>Daily cards — 365 deck</h1>
           <p style={S.sub}>{cards.length} cards on file. Jump to a day, or search to filter.</p>
         </div>
@@ -173,7 +175,7 @@ export default function AdminCardsPage() {
       {loading ? (
         <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading deck…</div>
       ) : (
-        <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden' }}>
           {filtered.map((card, i) => {
             const isEditing = editingId === card.id
             return (

@@ -100,17 +100,17 @@ export default function CohortDetailPage() {
 
       {/* Header */}
       <div style={{
-        background: '#fff', border: '1px solid var(--line)', borderRadius: 14,
-        padding: 24, marginBottom: 20,
-        borderLeft: `4px solid ${PHASE_COLORS[cohort.phase]}`,
+        background: '#fff', border: '1px solid var(--line)', borderRadius: 10,
+        padding: '16px 20px', marginBottom: 24,
+        borderLeft: `3px solid ${PHASE_COLORS[cohort.phase]}`,
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 6 }}>
+            <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 8px' }}>
               {cohort.status} · Week {cohort.current_week} of 12 · {cohort.phase_label}
             </div>
-            <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>{cohort.name}</h1>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', letterSpacing: '-0.015em', lineHeight: 1.1, margin: 0 }}>{cohort.name}</h1>
+            <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.55, margin: '8px 0 0', maxWidth: 520 }}>
               <DateOnly iso={cohort.start_date} /> – <DateOnly iso={cohort.end_date} /> · {cohort.member_count}/{cohort.max_members} members
             </p>
           </div>
@@ -265,9 +265,9 @@ export default function CohortDetailPage() {
 
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div style={{ background: 'var(--paper)', borderRadius: 10, padding: 12 }}>
-      <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--ink)', lineHeight: 1.1 }}>{value}</div>
-      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 4 }}>
+    <div style={{ background: 'var(--paper)', borderRadius: 10, padding: '14px 16px 12px' }}>
+      <div style={{ fontSize: 24, fontWeight: 300, color: 'var(--ink)', lineHeight: 1.1 }}>{value}</div>
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 6 }}>
         {label}
       </div>
     </div>
@@ -278,11 +278,11 @@ function QuickLink({ href, title, sub }: { href: string; title: string; sub: str
   return (
     <Link href={href} style={{ textDecoration: 'none' }}>
       <div style={{
-        background: '#fff', border: '1px solid var(--line)', borderRadius: 12,
-        padding: 14, cursor: 'pointer',
+        background: '#fff', border: '1px solid var(--line)', borderRadius: 10,
+        padding: '14px 16px 14px 18px', cursor: 'pointer',
       }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', margin: '0 0 2px' }}>{title}</div>
-        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{sub}</div>
+        <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4, margin: '0 0 4px' }}>{title}</div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{sub}</div>
       </div>
     </Link>
   )

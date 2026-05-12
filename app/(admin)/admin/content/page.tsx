@@ -142,7 +142,8 @@ export default function ContentPage() {
   const weeks = Array.from(new Set(content.map(c => c.week_number))).sort((a, b) => a - b)
 
   const S = {
-    h1: { fontSize: '20px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 4px' },
+    eyebrow: { fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', margin: '0 0 8px' },
+    h1: { fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', letterSpacing: '-0.015em', lineHeight: 1.1, margin: 0 },
     tabRow: { display: 'flex', gap: 0, borderBottom: '1px solid var(--line)', marginBottom: '20px' },
     tab: (on: boolean) => ({
       padding: '10px 20px', fontSize: '13px', fontWeight: on ? 600 : 500,
@@ -150,22 +151,22 @@ export default function ContentPage() {
       borderBottom: on ? '2px solid var(--gold)' : '2px solid transparent',
       cursor: 'pointer',
     }),
-    weekCard: { background: '#ffffff', border: '1px solid var(--line)', borderRadius: '12px', padding: '14px', marginBottom: '10px' },
+    weekCard: { background: '#fff', border: '1px solid var(--line)', borderRadius: 10, padding: '14px 16px', marginBottom: 10 },
     weekHead: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' as const },
     archTag: () => ({
       fontSize: '10px', fontWeight: 600, padding: '2px 8px', borderRadius: '8px',
       background: 'var(--line)', color: 'var(--text-soft)',
     }),
-    callCard: { background: '#ffffff', border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden', marginBottom: '10px' },
+    callCard: { background: '#fff', border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden', marginBottom: 10 },
     input: {
       width: '100%', background: 'var(--paper)', border: '1px solid var(--line)',
       borderRadius: '8px', color: 'var(--ink)', fontSize: '12px',
       padding: '8px 12px', outline: 'none', fontFamily: 'inherit', marginBottom: '8px',
     },
     btn: (v: 'primary' | 'ghost') => ({
-      fontSize: '12px', fontWeight: 600, padding: '7px 14px', borderRadius: '8px',
-      cursor: 'pointer', border: 'none',
-      background: v === 'primary' ? 'var(--green)' : 'var(--line)',
+      fontSize: 13, fontWeight: 600, padding: '8px 14px', borderRadius: 8,
+      cursor: 'pointer', border: v === 'primary' ? 'none' : '1px solid var(--line-md)',
+      background: v === 'primary' ? 'var(--gold)' : '#fff',
       color: v === 'primary' ? '#fff' : 'var(--text-soft)',
     }),
     select: {
@@ -176,8 +177,11 @@ export default function ContentPage() {
 
   return (
     <div style={{ color: 'var(--ink)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-        <h1 style={S.h1}>Content + calls</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <div style={S.eyebrow}>Production</div>
+          <h1 style={S.h1}>Content + calls</h1>
+        </div>
         <select value={cohortId} onChange={e => setCohortId(e.target.value)} style={S.select}>
           {cohorts.length === 0 && <option value="">No active cohorts</option>}
           {cohorts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}

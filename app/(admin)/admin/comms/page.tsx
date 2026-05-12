@@ -161,20 +161,25 @@ export default function CommsPage() {
   }
 
   const S = {
-    h1: { fontSize: '20px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 4px' },
-    card: { background: '#ffffff', border: '1px solid var(--line)', borderRadius: '14px', padding: '20px', marginBottom: '16px' },
+    eyebrow: { fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', margin: '0 0 8px' },
+    h1: { fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', letterSpacing: '-0.015em', lineHeight: 1.1, margin: 0 },
+    h2: { fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500, color: 'var(--ink)', letterSpacing: '-0.01em', margin: '0 0 12px' },
+    card: { background: '#fff', border: '1px solid var(--line)', borderRadius: 10, padding: '16px 20px', marginBottom: 16 },
     label: { fontSize: '10px', fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', marginBottom: '6px', display: 'block' as const },
     input: { width: '100%', background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: '8px', color: 'var(--ink)', fontSize: '13px', padding: '10px 12px', outline: 'none', fontFamily: 'inherit', marginBottom: '12px' },
     textarea: { width: '100%', background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: '8px', color: 'var(--ink)', fontSize: '13px', padding: '10px 12px', outline: 'none', fontFamily: 'inherit', resize: 'vertical' as const, minHeight: '120px', marginBottom: '12px' },
     select: { background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: '8px', color: 'var(--text-soft)', fontSize: '12px', padding: '8px 12px', cursor: 'pointer', marginBottom: '12px' },
-    btn: { fontSize: '13px', fontWeight: 600, padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', border: 'none', background: 'var(--green)', color: '#fff' },
+    btn: { fontSize: 13, fontWeight: 600, padding: '8px 14px', borderRadius: 8, cursor: 'pointer', border: 'none', background: 'var(--gold)', color: '#fff' },
   }
 
   return (
     <div style={{ color: 'var(--ink)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
-        <h1 style={S.h1}>Broadcast announcement</h1>
-        <select value={cohortId} onChange={e => setCohortId(e.target.value)} style={{ background: '#ffffff', border: '1px solid var(--line)', borderRadius: '8px', color: 'var(--text-soft)', fontSize: '13px', padding: '7px 12px', cursor: 'pointer' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <div style={S.eyebrow}>Comms</div>
+          <h1 style={S.h1}>Broadcast announcement</h1>
+        </div>
+        <select value={cohortId} onChange={e => setCohortId(e.target.value)} style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 8, color: 'var(--text-soft)', fontSize: 13, padding: '7px 12px', cursor: 'pointer' }}>
           {cohorts.length === 0 && <option value="">No active cohorts</option>}
           {cohorts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
@@ -359,8 +364,8 @@ export default function CommsPage() {
       </div>
 
       {/* Direct one-on-one message — pick any signed-up user across paths */}
-      <h2 style={{ ...S.h1, marginTop: '8px' }}>Direct message</h2>
-      <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 16px' }}>
+      <h2 style={S.h2}>Direct message</h2>
+      <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.55, margin: '0 0 16px', maxWidth: 520 }}>
         Send a 1:1 message to any user — Path A (Seal the Leak), Path B (Daily Cards), or Path C (Circle).
         They&apos;ll see it in their Coach chat.
       </p>
@@ -440,8 +445,8 @@ export default function CommsPage() {
       </div>
 
       {/* Coach note in the community feed */}
-      <h2 style={{ ...S.h1, marginTop: '8px' }}>Post to community feed</h2>
-      <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 16px' }}>
+      <h2 style={S.h2}>Post to community feed</h2>
+      <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.55, margin: '0 0 16px', maxWidth: 520 }}>
         Drop a note into the cohort feed. Members will see it tagged as a coach post.
       </p>
       <div style={S.card}>

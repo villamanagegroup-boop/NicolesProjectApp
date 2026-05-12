@@ -96,14 +96,17 @@ export default function AdminRedesignPreview() {
       </div>
 
       {/* Hero */}
-      <div style={{ marginBottom: 28 }}>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 8px' }}>
+          Preview
+        </div>
         <h1 style={{
-          fontSize: 34, fontWeight: 600, lineHeight: 1.1, margin: 0,
-          letterSpacing: '-0.02em',
+          fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, lineHeight: 1.1, margin: 0,
+          letterSpacing: '-0.015em', color: 'var(--ink)',
         }}>
           Welcome back, {name}.
         </h1>
-        <p style={{ fontSize: 15, color: '#6b6b6b', margin: '6px 0 0', lineHeight: 1.5 }}>
+        <p style={{ fontSize: 13, color: 'var(--text-soft)', margin: '8px 0 0', lineHeight: 1.55, maxWidth: 520 }}>
           {loading ? 'Loading the picture…' : (
             <>
               {totalUsers} {totalUsers === 1 ? 'person is' : 'people are'} in the portal {timeOfDay}.

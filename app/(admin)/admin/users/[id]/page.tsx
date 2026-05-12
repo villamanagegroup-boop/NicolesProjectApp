@@ -314,7 +314,7 @@ export default function AdminUserProfilePage() {
   }
 
   const S = {
-    panel: { background: '#fff', border: '1px solid var(--line)', borderRadius: 12, padding: 16, marginBottom: 16 },
+    panel: { background: '#fff', border: '1px solid var(--line)', borderRadius: 10, padding: '14px 18px', marginBottom: 16 },
     label: { fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', display: 'block' as const, marginBottom: 4 },
     input: {
       background: '#fff', border: '1px solid var(--line-md)', borderRadius: 8,
@@ -323,7 +323,7 @@ export default function AdminUserProfilePage() {
     },
     saved: { fontSize: 10, color: 'var(--green)', fontWeight: 600 },
     fieldRow: { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--line)' },
-    sectionH: { fontSize: 13, fontWeight: 700, color: 'var(--ink)', margin: '0 0 12px' },
+    sectionH: { fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500, color: 'var(--ink)', letterSpacing: '-0.01em', margin: '0 0 12px' },
   }
 
   return (
@@ -398,7 +398,10 @@ export default function AdminUserProfilePage() {
           ) : initials}
         </div>
         <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink)', margin: 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 8px' }}>
+            User profile
+          </div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', letterSpacing: '-0.015em', lineHeight: 1.1, margin: 0 }}>
             {display}
             {user.is_admin && (
               <span style={{ marginLeft: 10, fontSize: 9, color: 'var(--gold)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
@@ -406,7 +409,7 @@ export default function AdminUserProfilePage() {
               </span>
             )}
           </h1>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0' }}>
+          <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.55, margin: '8px 0 0', maxWidth: 520 }}>
             {user.email ?? '— no email —'} · Signed up {user.signup_date ? new Date(user.signup_date).toLocaleDateString() : '—'}
           </p>
           {(() => {

@@ -99,8 +99,9 @@ export default function AdminPreviewPage() {
   }
 
   const S = {
-    h1: { fontSize: 20, fontWeight: 700, color: 'var(--ink)', margin: 0 },
-    sub: { fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' },
+    eyebrow: { fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', margin: '0 0 8px' },
+    h1: { fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', letterSpacing: '-0.015em', lineHeight: 1.1, margin: 0 },
+    sub: { fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.55, margin: '8px 0 0', maxWidth: 520 },
     grid: {
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
@@ -148,7 +149,8 @@ export default function AdminPreviewPage() {
 
   return (
     <div style={{ color: 'var(--ink)' }}>
-      <div style={{ marginBottom: 18 }}>
+      <div style={{ marginBottom: 24 }}>
+        <div style={S.eyebrow}>Tools</div>
         <h1 style={S.h1}>View as member</h1>
         <p style={S.sub}>
           Build a preview, save, and land on the user portal as if you were that kind of member.
@@ -214,8 +216,8 @@ export default function AdminPreviewPage() {
         2 · Configure the view
       </div>
       <div style={{
-        background: '#fff', border: '1px solid var(--line)', borderRadius: 12,
-        padding: 16, marginBottom: 18,
+        background: '#fff', border: '1px solid var(--line)', borderRadius: 10,
+        padding: '14px 16px', marginBottom: 24,
         display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14,
       }}>
         <div>

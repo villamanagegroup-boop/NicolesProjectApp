@@ -116,8 +116,9 @@ export default function AdminUsersPage() {
   }
 
   const S = {
-    h1: { fontSize: 20, fontWeight: 700, color: 'var(--ink)', margin: 0 },
-    sub: { fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' },
+    eyebrow: { fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', margin: '0 0 8px' },
+    h1: { fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', letterSpacing: '-0.015em', lineHeight: 1.1, margin: 0 },
+    sub: { fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.55, margin: '8px 0 0', maxWidth: 520 },
     tab: (on: boolean) => ({
       padding: '8px 14px', fontSize: 12, fontWeight: on ? 600 : 500,
       color: on ? 'var(--gold)' : 'var(--text-muted)',
@@ -144,8 +145,9 @@ export default function AdminUsersPage() {
 
   return (
     <div style={{ color: 'var(--ink)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
+          <div style={S.eyebrow}>Roster</div>
           <h1 style={S.h1}>All users</h1>
           <p style={S.sub}>
             Every signed-up account across the three programs.
@@ -231,7 +233,7 @@ export default function AdminUsersPage() {
       {loading ? (
         <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading users…</div>
       ) : (
-        <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden' }}>
           {filtered.map((u, i) => {
             const cfg = PATH_LABELS[u.selected_path ?? 'none']
             const display = u.name?.trim() || u.email?.split('@')[0] || u.id.slice(0, 8) + '…'

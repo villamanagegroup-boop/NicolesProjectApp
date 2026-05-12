@@ -124,13 +124,13 @@ export default function AdminDashboard() {
   return (
     <div>
       {/* Header */}
-      <div style={{ marginBottom: '28px' }}>
+      <div style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
           <div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
+            <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 8px' }}>
               {today}
             </div>
-            <h1 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--ink)', margin: 0 }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', letterSpacing: '-0.015em', lineHeight: 1.1, margin: 0 }}>
               Welcome back, {firstName}
             </h1>
           </div>
@@ -148,7 +148,7 @@ export default function AdminDashboard() {
             ✦ Preview modern look
           </Link>
         </div>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0' }}>
+        <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.55, margin: '8px 0 0', maxWidth: 520 }}>
           {activeCohorts.length} active cohort{activeCohorts.length !== 1 ? 's' : ''}
           {totalAlerts > 0 && ` · ${totalAlerts} member${totalAlerts !== 1 ? 's' : ''} need${totalAlerts === 1 ? 's' : ''} attention`}
           {redAlerts > 0 && ` (${redAlerts} at risk)`}
@@ -174,13 +174,13 @@ export default function AdminDashboard() {
               .slice(0, 5)
 
             return (
-              <div style={{ marginBottom: 28 }}>
+              <div style={{ marginBottom: 24 }}>
                 <SectionHeader>All programs at a glance</SectionHeader>
 
                 <div style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                  gap: 12, marginBottom: 14,
+                  gap: 12, marginBottom: 12,
                 }}>
                   <BigStat label="Total users" value={totalUsers} sub={`${paid} paid`} />
                   <BigStat label="Seal the Leak" value={a.total} sub={`${a.paid} paid`} accent="var(--gold)" />
@@ -197,7 +197,7 @@ export default function AdminDashboard() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
                   {/* Recent signups */}
-                  <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 12, padding: 14 }}>
+                  <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 10, padding: '14px 16px' }}>
                     <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 10 }}>
                       Recent signups
                     </div>
@@ -236,7 +236,7 @@ export default function AdminDashboard() {
                   </div>
 
                   {/* Quick links */}
-                  <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 12, padding: 14 }}>
+                  <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 10, padding: '14px 16px' }}>
                     <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 10 }}>
                       Quick actions
                     </div>
@@ -253,7 +253,7 @@ export default function AdminDashboard() {
           })()}
 
           {/* Top stat row — auto-wraps to 2x2 on narrow screens */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '28px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 24 }}>
             {[
               { label: 'Active cohorts', value: activeCohorts.length, color: 'var(--green)' },
               { label: 'Total members', value: activeCohorts.reduce((s, c) => s + c.member_count, 0), color: 'var(--gold)' },
@@ -261,13 +261,13 @@ export default function AdminDashboard() {
               { label: 'At-risk members', value: redAlerts, color: redAlerts > 0 ? 'var(--red)' : 'var(--text-muted)' },
             ].map(s => (
               <div key={s.label} style={{
-                background: '#ffffff', border: '1px solid var(--line)',
-                borderRadius: '12px', padding: '16px',
+                background: '#fff', border: '1px solid var(--line)',
+                borderRadius: 10, padding: '14px 16px 12px',
               }}>
-                <div style={{ fontSize: '28px', fontWeight: 800, color: s.color, lineHeight: 1.1 }}>
+                <div style={{ fontSize: 24, fontWeight: 300, color: s.color, lineHeight: 1.1 }}>
                   {s.value}
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '.07em' }}>
+                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 6 }}>
                   {s.label}
                 </div>
               </div>
@@ -276,16 +276,11 @@ export default function AdminDashboard() {
 
           {/* Active cohorts */}
           {activeCohorts.length > 0 && (
-            <div style={{ marginBottom: '28px' }}>
-              <div style={{
-                fontSize: '11px', fontWeight: 700, letterSpacing: '.1em',
-                textTransform: 'uppercase', color: 'var(--text-muted)',
-                marginBottom: '12px', paddingBottom: '8px',
-                borderBottom: '1px solid var(--line)',
-              }}>
+            <div style={{ marginBottom: 24 }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500, color: 'var(--ink)', letterSpacing: '-0.01em', margin: '0 0 12px' }}>
                 Active cohorts
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '12px' }}>
+              </h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 12 }}>
                 {activeCohorts.map(c => (
                   <Link
                     key={c.id}
@@ -293,8 +288,8 @@ export default function AdminDashboard() {
                     style={{ textDecoration: 'none' }}
                   >
                     <div style={{
-                      background: '#ffffff', border: '1px solid var(--line)',
-                      borderRadius: '14px', padding: '18px',
+                      background: '#fff', border: '1px solid var(--line)',
+                      borderRadius: 10, padding: '14px 16px 14px 18px',
                       borderLeft: `3px solid ${PHASE_COLORS[c.phase]}`,
                       cursor: 'pointer', transition: 'border-color .15s',
                     }}>
@@ -339,23 +334,18 @@ export default function AdminDashboard() {
 
           {/* Engagement alerts */}
           {alerts.length > 0 && (
-            <div>
-              <div style={{
-                fontSize: '11px', fontWeight: 700, letterSpacing: '.1em',
-                textTransform: 'uppercase', color: 'var(--text-muted)',
-                marginBottom: '12px', paddingBottom: '8px',
-                borderBottom: '1px solid var(--line)',
-              }}>
+            <div style={{ marginBottom: 24 }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500, color: 'var(--ink)', letterSpacing: '-0.01em', margin: '0 0 12px' }}>
                 Engagement alerts — action needed
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              </h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {alerts.slice(0, 10).map(alert => (
                   <div
                     key={alert.id}
                     style={{
-                      background: '#ffffff', border: '1px solid var(--line)',
-                      borderRadius: '12px', padding: '14px 16px',
-                      display: 'flex', alignItems: 'center', gap: '14px',
+                      background: '#fff', border: '1px solid var(--line)',
+                      borderRadius: 10, padding: '14px 16px 14px 18px',
+                      display: 'flex', alignItems: 'center', gap: 14,
                       flexWrap: 'wrap',
                     }}
                   >
@@ -434,8 +424,8 @@ export default function AdminDashboard() {
 
           {cohorts.length === 0 && (
             <div style={{
-              background: '#ffffff', border: '1px solid var(--line)',
-              borderRadius: '14px', padding: '48px', textAlign: 'center',
+              background: '#fff', border: '1px solid var(--line)',
+              borderRadius: 10, padding: '32px 24px', textAlign: 'center',
             }}>
               <div style={{ fontSize: '32px', marginBottom: '12px' }}>◎</div>
               <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)', marginBottom: '6px' }}>
@@ -461,14 +451,12 @@ export default function AdminDashboard() {
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{
-      fontSize: 11, fontWeight: 700, letterSpacing: '.1em',
-      textTransform: 'uppercase', color: 'var(--text-muted)',
-      marginBottom: 12, paddingBottom: 8,
-      borderBottom: '1px solid var(--line)',
+    <h2 style={{
+      fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500,
+      color: 'var(--ink)', letterSpacing: '-0.01em', margin: '0 0 12px',
     }}>
       {children}
-    </div>
+    </h2>
   )
 }
 
@@ -481,14 +469,14 @@ function BigStat({
   const inner = (
     <div style={{
       background: '#fff', border: '1px solid var(--line)',
-      borderRadius: 12, padding: 16,
+      borderRadius: 10, padding: '14px 16px 12px',
       cursor: href ? 'pointer' : 'default',
       transition: 'transform .1s',
     }}>
-      <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.1, color: accent ?? 'var(--ink)' }}>
+      <div style={{ fontSize: 24, fontWeight: 300, lineHeight: 1.1, color: accent ?? 'var(--ink)' }}>
         {value}
       </div>
-      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '.07em' }}>
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 6 }}>
         {label}
       </div>
       {sub && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{sub}</div>}

@@ -445,16 +445,16 @@ export default function AdminMemberProfilePage() {
   // ── Styles ──────────────────────────────────────────────────────────────
   const S = {
     section: {
-      background: '#fff', border: '1px solid var(--line)', borderRadius: 12,
+      background: '#fff', border: '1px solid var(--line)', borderRadius: 10,
       overflow: 'hidden', marginBottom: 16,
     } as const,
     sectionHead: {
-      padding: '14px 20px', borderBottom: '1px solid var(--line)', background: 'var(--paper)',
+      padding: '12px 18px', borderBottom: '1px solid var(--line)', background: 'var(--paper)',
       display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12,
     } as const,
     sectionTitle: {
-      fontSize: 11, fontWeight: 700, letterSpacing: '.1em',
-      textTransform: 'uppercase' as const, color: 'var(--text-muted)',
+      fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500,
+      color: 'var(--ink)', letterSpacing: '-0.01em',
     } as const,
     label: {
       fontSize: 10, fontWeight: 700, letterSpacing: '.09em',
@@ -575,8 +575,8 @@ export default function AdminMemberProfilePage() {
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <div style={{
         background: 'linear-gradient(135deg, var(--gold-pale) 0%, var(--paper2) 100%)',
-        border: '1px solid var(--line)', borderLeft: `4px solid ${archetypeColor}`,
-        borderRadius: 12, padding: '24px', marginBottom: 16,
+        border: '1px solid var(--line)', borderLeft: `3px solid ${archetypeColor}`,
+        borderRadius: 10, padding: '16px 20px', marginBottom: 24,
         display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap',
       }}>
         {editing && draft ? (
@@ -678,7 +678,10 @@ export default function AdminMemberProfilePage() {
             </div>
           ) : (
             <>
-              <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 300, color: 'var(--ink)', margin: 0, lineHeight: 1.2 }}>
+              <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 8px' }}>
+                Member profile
+              </div>
+              <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', letterSpacing: '-0.015em', margin: 0, lineHeight: 1.1 }}>
                 {displayName}
               </h1>
               <div style={{ display: 'flex', gap: 10, marginTop: 6, flexWrap: 'wrap', alignItems: 'center', fontSize: 12, color: 'var(--text-soft)', fontFamily: 'var(--font-body)' }}>
@@ -1177,10 +1180,10 @@ export default function AdminMemberProfilePage() {
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div style={{
-      background: '#fff', border: '1px solid var(--line)', borderRadius: 10, padding: 12,
+      background: '#fff', border: '1px solid var(--line)', borderRadius: 10, padding: '14px 16px 12px',
     }}>
-      <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--ink)', lineHeight: 1.1 }}>{value}</div>
-      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 4 }}>
+      <div style={{ fontSize: 24, fontWeight: 300, color: 'var(--ink)', lineHeight: 1.1 }}>{value}</div>
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 6 }}>
         {label}
       </div>
     </div>

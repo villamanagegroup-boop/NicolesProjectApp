@@ -145,9 +145,12 @@ export default function SitemapPage() {
 
   return (
     <div style={{ color: 'var(--ink)' }}>
-      <div style={{ marginBottom: 16 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink)', margin: '0 0 4px' }}>Site map</h1>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 12px' }}>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 8px' }}>
+          Reference
+        </div>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 300, color: 'var(--ink)', letterSpacing: '-0.015em', lineHeight: 1.1, margin: 0 }}>Site map</h1>
+        <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.55, margin: '8px 0 12px', maxWidth: 520 }}>
           Every user-facing page — portal, marketing, quiz funnel, welcome flows.
           {' '}{visibleRoutes} of {totalRoutes} shown. Admin tools live in the sidebar.
         </p>
@@ -215,14 +218,12 @@ export default function SitemapPage() {
       ) : (
         filteredSections.map(sec => (
           <div key={sec.key} style={{ marginBottom: 24 }}>
-            <div style={{
-              fontSize: 11, fontWeight: 700, letterSpacing: '.1em',
-              textTransform: 'uppercase', color: 'var(--text-muted)',
-              marginBottom: 6, paddingBottom: 6, borderBottom: '1px solid var(--line)',
-              display: 'flex', justifyContent: 'space-between',
+            <h2 style={{
+              fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500,
+              color: 'var(--ink)', letterSpacing: '-0.01em', margin: '0 0 6px',
             }}>
-              <span>{sec.title} ({sec.routes.length})</span>
-            </div>
+              {sec.title} ({sec.routes.length})
+            </h2>
             <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 10px' }}>{sec.desc}</p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 8 }}>
