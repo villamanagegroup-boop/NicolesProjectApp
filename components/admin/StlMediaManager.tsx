@@ -14,6 +14,7 @@ import {
   type MediaSlot, type MediaSlotType,
 } from '@/lib/admin/hooks'
 import { uploadCircleAttachmentResult } from '@/lib/circle'
+import FileDropZone from '@/components/ui/FileDropZone'
 
 // Day 1 defaults to video; the rest default to voice. Admins can flip either.
 function defaultTypeFor(day: number): MediaSlotType {
@@ -147,10 +148,16 @@ export default function StlMediaManager() {
           const currentType = chosenType[day] ?? slot?.media_type ?? fallback
           const isBusy = busy === day
           return (
-            <div key={day} style={{
-              background: '#fff', border: '1px solid var(--line)', borderRadius: 12,
-              padding: 14, display: 'flex', gap: 14, alignItems: 'flex-start', flexWrap: 'wrap',
-            }}>
+            <FileDropZone
+              key={day}
+              onFiles={(files) => { if (files[0]) handleUpload(day, files[0], currentType) }}
+              acceptPrefixes={currentType === 'video' ? ['video/'] : currentType === 'audio' ? ['audio/'] : ['image/']}
+              disabled={isBusy}
+              style={{
+                background: '#fff', border: '1px solid var(--line)', borderRadius: 12,
+                padding: 14, display: 'flex', gap: 14, alignItems: 'flex-start', flexWrap: 'wrap',
+              }}
+            >
               {/* Day badge + status */}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 64 }}>
                 <div style={{
@@ -280,7 +287,7 @@ export default function StlMediaManager() {
                   </div>
                 )}
               </div>
-            </div>
+            </FileDropZone>
           )
         })}
       </div>

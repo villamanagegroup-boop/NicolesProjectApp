@@ -21,6 +21,7 @@ import {
 } from '@/lib/admin/hooks'
 import { useRouter } from 'next/navigation'
 import { uploadCircleAttachment } from '@/lib/circle'
+import FileDropZone from '@/components/ui/FileDropZone'
 
 const ARCHETYPE_COLORS: Record<string, string> = {
   door: 'var(--green)', throne: '#1a1a2e', engine: 'var(--red)', push: '#3d2c0e',
@@ -571,7 +572,12 @@ export default function AdminMemberProfilePage() {
         display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap',
       }}>
         {editing && draft ? (
-          <div style={{ position: 'relative', flexShrink: 0 }}>
+          <FileDropZone
+            onFiles={(files) => { if (files[0]) handleAvatarUpload(files[0]) }}
+            acceptPrefixes={['image/']}
+            disabled={uploadingAvatar}
+            style={{ position: 'relative', flexShrink: 0 }}
+          >
             <div style={{
               width: 64, height: 64, borderRadius: '50%', overflow: 'hidden',
               background: archetypeColor, color: '#fff',
@@ -591,7 +597,7 @@ export default function AdminMemberProfilePage() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 11, cursor: uploadingAvatar ? 'wait' : 'pointer',
               border: '2px solid #fff', opacity: uploadingAvatar ? 0.6 : 1,
-            }} title="Upload photo">
+            }} title="Upload photo (or drag a file here)">
               {uploadingAvatar ? '…' : '📷'}
               <input
                 type="file" accept="image/*" style={{ display: 'none' }}
@@ -617,7 +623,7 @@ export default function AdminMemberProfilePage() {
                 }}
               >×</button>
             )}
-          </div>
+          </FileDropZone>
         ) : (
           <div style={{
             width: 64, height: 64, borderRadius: '50%', overflow: 'hidden',

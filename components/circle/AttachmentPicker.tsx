@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import FileDropZone from '@/components/ui/FileDropZone'
 
 export type AttachmentSlots = {
   audio: File | null
@@ -90,6 +91,14 @@ export default function AttachmentPicker({ slots, onChange, accent = '#C97D3A', 
     setRecSeconds(0)
   }
 
+  function routeFile(f: File, slotHint?: 'image' | 'doc') {
+    const m = f.type
+    if (slotHint === 'image' || m.startsWith('image/')) onChange('image', f)
+    else if (m.startsWith('audio/')) onChange('audio', f)
+    else if (m.startsWith('video/')) onChange('video', f)
+    else onChange('doc', f)
+  }
+
   function pickFile(slotHint: 'image' | 'doc') {
     const inp = document.createElement('input')
     inp.type = 'file'
@@ -97,14 +106,14 @@ export default function AttachmentPicker({ slots, onChange, accent = '#C97D3A', 
     inp.onchange = () => {
       const f = inp.files?.[0]
       if (!f) return
-      // Smart routing for the generic 📎 File button
-      const m = f.type
-      if (slotHint === 'image' || m.startsWith('image/')) onChange('image', f)
-      else if (m.startsWith('audio/')) onChange('audio', f)
-      else if (m.startsWith('video/')) onChange('video', f)
-      else onChange('doc', f)
+      routeFile(f, slotHint)
     }
     inp.click()
+  }
+
+  // Drop handler — same MIME routing as the 📎 File picker.
+  function handleDroppedFiles(files: File[]) {
+    for (const f of files) routeFile(f)
   }
 
   function fmtTime(s: number) {
@@ -137,9 +146,20 @@ export default function AttachmentPicker({ slots, onChange, accent = '#C97D3A', 
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <FileDropZone
+      onFiles={handleDroppedFiles}
+      multiple
+      disabled={!!recording}
+      style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+    >
       {/* Buttons */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+        <span style={{
+          fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+          color: 'var(--text-muted)', alignSelf: 'center',
+        }}>
+          Attach or drop:
+        </span>
         {recording !== 'audio' ? (
           <button type="button" onClick={() => startRecording('audio')} style={btnBase} disabled={!!recording}>
             🎙 {compact ? '' : 'Record voice'}
@@ -211,7 +231,7 @@ export default function AttachmentPicker({ slots, onChange, accent = '#C97D3A', 
           )}
         </div>
       )}
-    </div>
+    </FileDropZone>
   )
 }
 
