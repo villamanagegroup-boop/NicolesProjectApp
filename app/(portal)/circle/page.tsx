@@ -40,7 +40,7 @@ const COACH_DM_VISIBLE = false
 
 const ARCHETYPE_LABELS: Record<string, string> = {
   door:   'The Open Door',
-  throne: 'The Overthink Throne',
+  throne: "The Overthinker's Throne",
   engine: 'The Interrupted Engine',
   push:   'The Pushthrough',
 }
@@ -177,7 +177,7 @@ export default function CirclePage() {
     return (
       <EmptyState
         title="Finish your Circle profile"
-        body="A few quick questions about your Enneagram, attachment style, and 90-day focus."
+        body="A few quick questions about your Enneagram, attachment style, and 12-week focus."
         cta={{ href: '/circle/intake', label: 'Start intake →' }}
       />
     )
@@ -250,7 +250,7 @@ export default function CirclePage() {
 
       {/* PROGRESS — 12-week dot strip */}
       <Section
-        title="Your 90 days"
+        title="Your 12 weeks"
         right={<span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{completedWeeks} of 12 weeks complete</span>}
       >
         <div style={{ padding: '14px 4px 18px 16px', display: 'flex', gap: 6, flexWrap: 'wrap' }}>

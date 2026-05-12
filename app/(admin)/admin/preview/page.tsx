@@ -14,7 +14,7 @@ import { useEffect } from 'react'
 
 const ARCHETYPES: { id: ArchetypeRoute; name: string; color: string }[] = [
   { id: 'door',   name: 'The Open Door',          color: '#3D3080' },
-  { id: 'throne', name: 'The Overthink Throne',   color: '#9B2C2C' },
+  { id: 'throne', name: "The Overthinker's Throne", color: '#9B2C2C' },
   { id: 'engine', name: 'The Interrupted Engine', color: '#1F5C3A' },
   { id: 'push',   name: 'The Pushthrough',        color: '#B8922A' },
 ]
@@ -54,7 +54,7 @@ const PATHS: PathDescriptor[] = [
   {
     id: 'C',
     title: 'The Circle',
-    subtitle: '90-day cohort with weekly content + accountability partner.',
+    subtitle: '12-week cohort with weekly content + accountability partner.',
     home: '/circle',
     accent: '#C97D3A',
     accentBg: 'rgba(201,125,58,0.08)',

@@ -103,7 +103,7 @@ export default function QuizPathsPage() {
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 40px' }}>
             Not ready yet?{' '}
             <a
-              href="mailto:hello@clarity.com"
+              href="mailto:nicole@theenergyleader.com"
               aria-label="Join the waitlist"
               style={{ color: 'var(--text-soft)', textDecoration: 'underline' }}
             >

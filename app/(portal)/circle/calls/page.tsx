@@ -8,12 +8,12 @@ const ORANGE      = '#C97D3A'
 const ORANGE_PALE = '#fdf6f2'
 
 const CALL_DESCRIPTIONS: Record<number, string> = {
-  1: 'Welcome session. Meet your cohort, meet your partner, state your 90-day commitment out loud.',
+  1: 'Welcome session. Meet your cohort, meet your partner, state your 12-week commitment out loud.',
   2: 'Root — the cost conversation. Making your pattern\'s cost specific and witnessed.',
   3: 'Rebuild — the first interruption. What it felt like, what it proved, how to do it again.',
   4: 'Rebuild — identity shift moments. Catching the small ones and naming them publicly.',
   5: 'Rise — the new identity. Coaching the present-tense language shift from "I\'m trying to" to "I am."',
-  6: 'Graduation. Transformation shares, partner appreciation, what comes next beyond these 90 days.',
+  6: 'Graduation. Transformation shares, partner appreciation, what comes next beyond these 12 weeks.',
 }
 
 const MONTH_FOR_CALL: Record<number, { label: string }> = {
@@ -93,7 +93,7 @@ export default function CallsPage() {
           Live calls
         </h1>
         <p style={{ fontSize: 14, color: 'var(--text-soft)', margin: '8px 0 0', lineHeight: 1.6 }}>
-          6 calls across your 90-day journey · {past.length} complete, {upcoming.length} upcoming.
+          6 calls across your 12-week journey · {past.length} complete, {upcoming.length} upcoming.
         </p>
       </div>
 

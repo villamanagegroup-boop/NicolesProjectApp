@@ -209,7 +209,7 @@ function SignupForm() {
         }} />
 
         <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: '#ffffff', position: 'relative', zIndex: 1 }}>
-          <span style={{ color: 'var(--gold)' }}>✦</span> Seal Your Leak
+          <span style={{ color: 'var(--gold)' }}>✦</span> The Energy Leader
         </div>
 
         <div style={{ maxWidth: '360px', position: 'relative', zIndex: 1 }}>

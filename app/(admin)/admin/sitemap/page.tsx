@@ -67,7 +67,7 @@ const SECTIONS: Section[] = [
   {
     key: 'portal-pathC',
     title: 'User portal — Path C (The Circle)',
-    desc: '90-day cohort coaching experience.',
+    desc: '12-week cohort coaching experience.',
     routes: [
       { path: '/circle',           access: 'user', title: 'Circle home',     desc: 'Cohort dashboard — current week, archetype track.' },
       { path: '/circle/intake',    access: 'user', title: 'Intake',          desc: 'Onboarding assessment (required for Circle access).' },

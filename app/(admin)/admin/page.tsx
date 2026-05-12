@@ -38,7 +38,7 @@ const ARCHETYPE_COLORS: Record<string, string> = {
   door: 'var(--green)', throne: '#1a1a2e', engine: 'var(--red)', push: '#3d2c0e',
 }
 const ARCHETYPE_LABELS: Record<string, string> = {
-  door: 'Open Door', throne: 'Overthink Throne', engine: 'Interrupted Engine', push: 'Pushthrough',
+  door: 'Open Door', throne: "Overthinker's Throne", engine: 'Interrupted Engine', push: 'Pushthrough',
 }
 const PHASE_COLORS: Record<string, string> = {
   root: 'var(--green)', rebuild: 'var(--gold)', rise: '#3D3080',

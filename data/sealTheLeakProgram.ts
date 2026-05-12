@@ -216,7 +216,7 @@ export const programRoutes: Record<string, ProgramRoute> = {
 
   throne: {
     id: 'throne',
-    name: 'The Overthink Throne',
+    name: "The Overthinker's Throne",
     color: '#1A5230',
     badgeColor: '#E1F5EE',
     textColor: '#1A5230',

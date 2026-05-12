@@ -21,7 +21,7 @@ const ORANGE_PALE = '#fdf6f2'
 
 const ARCHETYPE_LABELS: Record<string, string> = {
   door:   'The Open Door',
-  throne: 'The Overthink Throne',
+  throne: "The Overthinker's Throne",
   engine: 'The Interrupted Engine',
   push:   'The Pushthrough',
 }
@@ -222,7 +222,7 @@ export default function PartnerPage() {
             letterSpacing: '0.12em', textTransform: 'uppercase',
             color: ORANGE, margin: '0 0 4px',
           }}>
-            Their 90-day focus
+            Their 12-week focus
           </p>
           <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.5, margin: 0, fontStyle: 'italic' }}>
             &ldquo;{partner.goal_90day}&rdquo;
@@ -293,7 +293,7 @@ export default function PartnerPage() {
                 fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6,
                 margin: 0,
               }}>
-                You&apos;re paired for these 90 days. Show up however you can — even a quick check-in counts.
+                You&apos;re paired for these 12 weeks. Show up however you can — even a quick check-in counts.
               </p>
             </div>
 

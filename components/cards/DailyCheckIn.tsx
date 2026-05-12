@@ -186,7 +186,7 @@ export default function DailyCheckIn({ onComplete, onDismiss, compact = false }:
             letterSpacing: '0.03em',
           }}
         >
-          ✦ Seal Your Leak
+          ✦ The Energy Leader
         </p>
 
         <div style={{ marginBottom: '16px' }}>

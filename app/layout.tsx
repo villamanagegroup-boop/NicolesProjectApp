@@ -19,7 +19,7 @@ const instrumentSans = Instrument_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'Seal Your Leak — Daily Clarity App & Program',
+  title: 'The Energy Leader — Daily Clarity App & Program',
   description: 'Stop the leak. Reclaim your energy. A daily clarity app and program built around your unique archetype.',
 }
 

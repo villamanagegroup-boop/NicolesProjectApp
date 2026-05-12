@@ -27,7 +27,7 @@ const ARCHETYPE_COLORS: Record<string, string> = {
   door: 'var(--green)', throne: '#1a1a2e', engine: 'var(--red)', push: '#3d2c0e',
 }
 const ARCHETYPE_LABELS: Record<string, string> = {
-  door: 'Open Door', throne: 'Overthink Throne', engine: 'Interrupted Engine', push: 'Pushthrough',
+  door: 'Open Door', throne: "Overthinker's Throne", engine: 'Interrupted Engine', push: 'Pushthrough',
 }
 const ALERT_COLORS = {
   amber:  { bg: 'rgba(184,146,42,.15)', text: 'var(--gold)' },
@@ -950,7 +950,7 @@ export default function AdminMemberProfilePage() {
                   style={editInputStyle}
                 >
                   <option value="door">Open Door</option>
-                  <option value="throne">Overthink Throne</option>
+                  <option value="throne">Overthinker&apos;s Throne</option>
                   <option value="engine">Interrupted Engine</option>
                   <option value="push">Pushthrough</option>
                 </select>
@@ -989,7 +989,7 @@ export default function AdminMemberProfilePage() {
                   <option value="example">example</option>
                 </select>
               </EditField>
-              <EditField label="90-day focus" full>
+              <EditField label="12-week focus" full>
                 <textarea
                   rows={3}
                   value={draft.goal_90day}
@@ -1006,7 +1006,7 @@ export default function AdminMemberProfilePage() {
               <Field label="Enneagram type"     value={member.enneagram_type ? `Type ${member.enneagram_type}` : '—'} />
               <Field label="Attachment style"   value={member.attachment_style ?? '—'} />
               <Field label="Feedback preference" value={member.feedback_pref ?? '—'} />
-              <Field label="90-day focus"       value={member.goal_90day ?? '—'} multiline />
+              <Field label="12-week focus"      value={member.goal_90day ?? '—'} multiline />
               <Field label="Quiz result"        value={user.quiz_result ?? '—'} />
             </>
           )}

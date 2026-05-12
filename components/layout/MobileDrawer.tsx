@@ -193,7 +193,7 @@ export default function MobileDrawer({ open, onClose }: Props) {
                 {isCircle ? 'The Circle' : isWork ? 'Seal the Leak' : '365 Days'}
               </div>
               <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', margin: '4px 0 0' }}>
-                {isCircle ? '90-Day Cohort' : isWork ? '7-Day Reset' : 'Daily Alignment'}
+                {isCircle ? '12-Week Cohort' : isWork ? '7-Day Reset' : 'Daily Alignment'}
               </p>
             </div>
             <button

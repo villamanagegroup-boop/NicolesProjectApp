@@ -9,7 +9,7 @@ export default function LandingPage() {
         {/* Fixed nav */}
         <nav className="landing-nav">
           <span className="landing-wordmark">
-            <span style={{ color: 'var(--gold)' }}>✦</span> Seal Your Leak
+            <span style={{ color: 'var(--gold)' }}>✦</span> The Energy Leader
           </span>
           <div className="landing-nav-buttons">
             <Link href="/login" className="landing-nav-signin">Sign In</Link>
@@ -24,7 +24,7 @@ export default function LandingPage() {
           <div className="landing-photo">
             <img
               src="/hero-alignment.jpg"
-              alt="Seal Your Leak"
+              alt="The Energy Leader"
               className="landing-photo-img"
             />
           </div>

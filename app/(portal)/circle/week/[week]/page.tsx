@@ -22,7 +22,7 @@ const MONTH_COLORS: Record<string, { label: string; tint: string }> = {
 
 const ARCHETYPE_LABELS: Record<string, string> = {
   door:   'The Open Door',
-  throne: 'The Overthink Throne',
+  throne: "The Overthinker's Throne",
   engine: 'The Interrupted Engine',
   push:   'The Pushthrough',
 }

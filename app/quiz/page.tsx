@@ -192,7 +192,7 @@ export default function QuizPage() {
               letterSpacing: '0.5px',
             }}
           >
-            ✦ Seal Your Leak
+            ✦ The Energy Leader
           </span>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>

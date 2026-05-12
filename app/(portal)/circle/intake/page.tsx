@@ -243,11 +243,11 @@ export default function CircleIntakePage() {
         </Card>
       )}
 
-      {/* Step 4 — 90-day goal */}
+      {/* Step 4 — 12-week goal */}
       {step === 4 && (
         <Card>
-          <SectionHead>90-day focus</SectionHead>
-          <H2>What is the one thing you most want to shift in the next 90 days?</H2>
+          <SectionHead>12-week focus</SectionHead>
+          <H2>What is the one thing you most want to shift in the next 12 weeks?</H2>
           <Sub>
             Be as specific as you can. <em>&ldquo;Stop overgiving&rdquo;</em> is good.{' '}
             <em>&ldquo;Stop saying yes to my sister&apos;s requests before I&apos;ve checked with myself&rdquo;</em> is better.
@@ -255,7 +255,7 @@ export default function CircleIntakePage() {
           <textarea
             value={goal}
             onChange={e => setGoal(e.target.value)}
-            placeholder="Write your 90-day focus here..."
+            placeholder="Write your 12-week focus here..."
             style={{
               width: '100%', padding: '12px 14px',
               border: `1px solid var(--line-md)`,

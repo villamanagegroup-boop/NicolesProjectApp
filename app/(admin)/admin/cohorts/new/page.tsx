@@ -52,7 +52,7 @@ export default function NewCohortPage() {
         </Link>
         <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--ink)', margin: '6px 0 4px' }}>New cohort</h1>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
-          Sets the 90-day window. Weekly content can be seeded later.
+          Sets the 12-week window. Weekly content can be seeded later.
         </p>
       </div>
 

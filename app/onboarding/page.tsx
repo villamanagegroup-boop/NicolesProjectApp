@@ -33,10 +33,10 @@ interface CohortMember {
 }
 
 const archetypeData: Record<Archetype, { name: string; sub: string; tags: string[]; color: string }> = {
-  door:   { name: 'The Open Door',         sub: 'You activate for others automatically. This 90 days is about learning to be as available to yourself as you\'ve been to everyone else.',      tags: ['Over-giver','Boundary builder','Self-first learner'],       color: '#1B4332' },
-  throne: { name: 'The Overthink Throne',  sub: 'Your mind rarely rests. This 90 days is about learning that clarity comes from movement — not more thinking.',                               tags: ['Mental processor','Action builder','Loop-breaker'],          color: '#1a1a2e' },
-  engine: { name: 'The Interrupted Engine',sub: 'You\'re unstoppable in motion. This 90 days is about building an engine that runs in any conditions — not just perfect ones.',               tags: ['Momentum builder','Self-trust rebuilder','Consistency keeper'],color: '#7B1D1D' },
-  push:   { name: 'The Pushthrough',       sub: 'You move first, check in later. This 90 days is about learning that pausing is a power move — not a retreat.',                              tags: ['Rest reclaimer','Body listener','Sustainable force'],         color: '#3d2c0e' },
+  door:   { name: 'The Open Door',         sub: 'You activate for others automatically. The 12 weeks ahead are about learning to be as available to yourself as you\'ve been to everyone else.',  tags: ['Over-giver','Boundary builder','Self-first learner'],       color: '#1B4332' },
+  throne: { name: "The Overthinker's Throne", sub: 'Your mind rarely rests. The 12 weeks ahead are about learning that clarity comes from movement — not more thinking.',                       tags: ['Mental processor','Action builder','Loop-breaker'],          color: '#1a1a2e' },
+  engine: { name: 'The Interrupted Engine',sub: 'You\'re unstoppable in motion. The 12 weeks ahead are about building an engine that runs in any conditions — not just perfect ones.',           tags: ['Momentum builder','Self-trust rebuilder','Consistency keeper'],color: '#7B1D1D' },
+  push:   { name: 'The Pushthrough',       sub: 'You move first, check in later. The 12 weeks ahead are about learning that pausing is a power move — not a retreat.',                          tags: ['Rest reclaimer','Body listener','Sustainable force'],         color: '#3d2c0e' },
 }
 
 const enneaData: Record<Ennea, { name: string; desc: string }> = {
@@ -362,7 +362,7 @@ export default function OnboardingPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {([
                   ['door',   'The Open Door',          'Your energy activates for others automatically. You give before you check in with yourself.',  '/archetypes/door.jpg'],
-                  ['throne', 'The Overthink Throne',   'Your mind stays on. Replaying, preparing, analyzing — it rarely gets to rest.',                  '/archetypes/throne.jpg'],
+                  ['throne', "The Overthinker's Throne", 'Your mind stays on. Replaying, preparing, analyzing — it rarely gets to rest.',                  '/archetypes/throne.jpg'],
                   ['engine', 'The Interrupted Engine', 'When you\'re moving you\'re unstoppable. Interruptions cost you more than just time.',            '/archetypes/engine.jpg'],
                   ['push',   'The Pushthrough',        'You move first, check in later. Your body has been speaking — you\'re learning to listen.',     '/archetypes/push.jpg'],
                 ] as [Archetype, string, string, string][]).map(([val, label, sub, img]) => (
@@ -484,14 +484,14 @@ export default function OnboardingPage() {
               </div>
 
               <div>
-                <div style={{ fontSize: '14px', fontWeight: 500, marginBottom: '4px' }}>What is the one thing you most want to shift in the next 90 days?</div>
+                <div style={{ fontSize: '14px', fontWeight: 500, marginBottom: '4px' }}>What is the one thing you most want to shift in the next 12 weeks?</div>
                 <div style={{ fontSize: '12px', color: '#888', marginBottom: '10px', fontStyle: 'italic' }}>
                   Be as specific as you can. "Stop overgiving" is good. "Stop saying yes to my sister's requests before I've checked with myself" is better.
                 </div>
                 <textarea
                   value={state.goal}
                   onChange={e => set('goal', e.target.value)}
-                  placeholder="Write your 90-day focus here..."
+                  placeholder="Write your 12-week focus here..."
                   style={{
                     width: '100%', padding: '10px 14px', border: `1px solid ${errors.goal ? '#c0392b' : '#e8e4dc'}`,
                     borderRadius: '10px', fontSize: '13px', fontFamily: 'inherit',
@@ -501,7 +501,7 @@ export default function OnboardingPage() {
                   onFocus={e => { e.currentTarget.style.borderColor = '#1B4332' }}
                   onBlur={e => { e.currentTarget.style.borderColor = errors.goal ? '#c0392b' : '#e8e4dc' }}
                 />
-                <ErrorMsg show={!!errors.goal} msg="Please share your 90-day focus." />
+                <ErrorMsg show={!!errors.goal} msg="Please share your 12-week focus." />
               </div>
             </Card>
             <BtnRow>
@@ -534,7 +534,7 @@ export default function OnboardingPage() {
                 { label: 'Enneagram type',     val: ed.name,      desc: ed.desc },
                 { label: 'Attachment style',   val: atd.name,     desc: atd.desc },
                 { label: 'Feedback preference',val: fd.name,      desc: fd.desc },
-                { label: '90-day focus',       val: state.goal,   desc: '' },
+                { label: '12-week focus',      val: state.goal,   desc: '' },
               ].map(({ label, val, desc }) => (
                 <div key={label} style={{ background: '#fff', border: '1px solid #e8e4dc', borderRadius: '12px', padding: '14px' }}>
                   <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: '#888', marginBottom: '4px' }}>{label}</div>
@@ -591,7 +591,7 @@ export default function OnboardingPage() {
                       {m.why.map((w, i) => <li key={i}>{w}</li>)}
                     </ul>
 
-                    <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: '#888', marginBottom: '4px' }}>Their 90-day focus</div>
+                    <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: '#888', marginBottom: '4px' }}>Their 12-week focus</div>
                     <div style={{ fontSize: '12px', color: '#444', fontStyle: 'italic', marginBottom: '14px' }}>&ldquo;{m.focus}&rdquo;</div>
 
                     <button
@@ -627,16 +627,16 @@ export default function OnboardingPage() {
               <div style={{ width: '56px', height: '56px', background: 'rgba(201,168,76,.25)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', fontSize: '24px' }}>✓</div>
               <h2 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 6px' }}>You&apos;re paired.</h2>
               <p style={{ fontSize: '13px', color: '#9fc9a8', lineHeight: 1.6, margin: 0 }}>
-                You and {confirmedMatch.name} are officially partnered for the next 90 days. You both share the same Circle cohort, and your profiles have been shared with each other.
+                You and {confirmedMatch.name} are officially partnered for the next 12 weeks. You both share the same Circle cohort, and your profiles have been shared with each other.
               </p>
             </div>
 
             <div style={{ background: '#fff', border: '1px solid #e8e4dc', borderRadius: '14px', padding: '20px' }}>
               <SectionHead>What happens next</SectionHead>
               {[
-                { n: '1', h: 'Your partner receives your profile today',      p: 'They\'ll see your archetype, your 90-day focus, and how you prefer to receive feedback — so they show up for you the right way from Day 1.' },
+                { n: '1', h: 'Your partner receives your profile today',      p: 'They\'ll see your archetype, your 12-week focus, and how you prefer to receive feedback — so they show up for you the right way from Day 1.' },
                 { n: '2', h: 'You\'ll get an intro message within 24 hours',  p: 'A brief prompt you can both use to kick off your first check-in. No awkward "so what do we do?" — we make the first move easy.' },
-                { n: '3', h: 'Your first live group call is coming up',       p: 'You\'ll meet everyone in The Circle — including your partner in real time. Come ready to share your 90-day focus in one sentence.' },
+                { n: '3', h: 'Your first live group call is coming up',       p: 'You\'ll meet everyone in The Circle — including your partner in real time. Come ready to share your 12-week focus in one sentence.' },
                 { n: '4', h: 'Re-pair option available at Day 30',            p: 'If the match doesn\'t feel right after a month, you can request a new pairing — no explanation needed. We want the partnership to actually work.' },
               ].map(({ n, h, p }) => (
                 <div key={n} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '14px' }}>

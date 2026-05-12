@@ -161,7 +161,7 @@ export default function CommsPage() {
             <select value={targetArchetype} onChange={e => setTargetArchetype(e.target.value)} style={S.select}>
               <option value="all">All members</option>
               <option value="door">Open Door only</option>
-              <option value="throne">Overthink Throne only</option>
+              <option value="throne">Overthinker&apos;s Throne only</option>
               <option value="engine">Interrupted Engine only</option>
               <option value="push">Pushthrough only</option>
             </select>

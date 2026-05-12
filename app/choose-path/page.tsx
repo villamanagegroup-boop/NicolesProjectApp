@@ -35,7 +35,7 @@ export default function ChoosePathPage() {
         marginBottom: '48px',
         letterSpacing: '-0.01em',
       }}>
-        <span style={{ color: 'var(--gold)' }}>✦</span> Seal Your Leak
+        <span style={{ color: 'var(--gold)' }}>✦</span> The Energy Leader
       </div>
 
       {/* Heading */}

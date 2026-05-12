@@ -192,7 +192,7 @@ export default function StandaloneQuizPage() {
             fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 400,
             color: 'var(--gold)', letterSpacing: '0.5px',
           }}>
-            ✦ Seal Your Leak
+            ✦ The Energy Leader
           </span>
           <div style={{ width: 160 }}>
             <QuizProgress current={questionNumber} total={TOTAL} />

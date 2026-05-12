@@ -42,7 +42,7 @@ interface Program {
 const PROGRAMS: Record<ProgramKey, Program> = {
   seal:   { key: 'seal',   title: 'Seal the Leak', subtitle: '7-day reset',      icon: '✦', home: '/program', palette: SEAL,   pathPrefix: '/program', upgradePath: 'A' },
   cards:  { key: 'cards',  title: '365 Cards',     subtitle: 'Daily alignment',  icon: '◇', home: '/cards',   palette: CARDS,  pathPrefix: '/cards',   upgradePath: 'B' },
-  circle: { key: 'circle', title: 'The Circle',    subtitle: '90-day cohort',    icon: '○', home: '/circle',  palette: CIRCLE, pathPrefix: '/circle',  upgradePath: 'C' },
+  circle: { key: 'circle', title: 'The Circle',    subtitle: '12-week cohort',   icon: '○', home: '/circle',  palette: CIRCLE, pathPrefix: '/circle',  upgradePath: 'C' },
 }
 
 const SEAL_ITEMS: NavItem[] = [
@@ -174,7 +174,7 @@ export default function Sidebar() {
           fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500,
           color: 'var(--ink)',
         }}>
-          <span style={{ color: 'var(--gold)' }}>✦</span> Seal Your Leak
+          <span style={{ color: 'var(--gold)' }}>✦</span> The Energy Leader
         </div>
       </div>
 

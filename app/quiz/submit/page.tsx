@@ -108,7 +108,7 @@ export default function QuizSubmitPage() {
             whiteSpace: 'nowrap',
           }}
         >
-          ✦ Seal Your Leak
+          ✦ The Energy Leader
         </span>
       </div>
 

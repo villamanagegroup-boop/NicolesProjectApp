@@ -20,7 +20,7 @@ const ARCHETYPE_COLORS: Record<string, string> = {
   door: 'var(--green)', throne: '#1a1a2e', engine: 'var(--red)', push: '#3d2c0e',
 }
 const ARCHETYPE_LABELS: Record<string, string> = {
-  door: 'Open Door', throne: 'Overthink Throne', engine: 'Interrupted Engine', push: 'Pushthrough',
+  door: 'Open Door', throne: "Overthinker's Throne", engine: 'Interrupted Engine', push: 'Pushthrough',
 }
 const ALERT_COLORS = {
   amber:  { bg: 'rgba(184,146,42,.15)', text: 'var(--gold)' },
@@ -258,7 +258,7 @@ function MembersInner() {
         <select value={filterArchetype} onChange={e => setFilterArchetype(e.target.value)} style={S.select}>
           <option value="all">All archetypes</option>
           <option value="door">Open Door</option>
-          <option value="throne">Overthink Throne</option>
+          <option value="throne">Overthinker&apos;s Throne</option>
           <option value="engine">Interrupted Engine</option>
           <option value="push">Pushthrough</option>
         </select>
@@ -440,7 +440,7 @@ function MembersInner() {
                     { label: 'Enneagram type', value: selectedMember.enneagram_type ? `Type ${selectedMember.enneagram_type}` : '—' },
                     { label: 'Attachment style', value: selectedMember.attachment_style ?? '—' },
                     { label: 'Feedback preference', value: selectedMember.feedback_preference ?? '—' },
-                    { label: '90-day focus', value: selectedMember.goal_90_day ?? '—' },
+                    { label: '12-week focus', value: selectedMember.goal_90_day ?? '—' },
                     { label: 'Accountability partner', value: selectedMember.partner_name ?? 'Not yet paired' },
                     { label: 'Overall completion', value: `${selectedMember.week_completion_pct}%` },
                   ].map(({ label, value }) => (

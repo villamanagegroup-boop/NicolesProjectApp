@@ -24,7 +24,7 @@ function defaultTypeFor(day: number): MediaSlotType {
 const DAYS = [1, 2, 3, 4, 5, 6, 7] as const
 const ARCHETYPES = [
   { id: 'door',   name: 'The Open Door',         color: '#3D3080' },
-  { id: 'throne', name: 'The Overthink Throne',  color: '#9B2C2C' },
+  { id: 'throne', name: "The Overthinker's Throne", color: '#9B2C2C' },
   { id: 'engine', name: 'The Interrupted Engine',color: '#1F5C3A' },
   { id: 'push',   name: 'The Pushthrough',       color: '#B8922A' },
 ] as const

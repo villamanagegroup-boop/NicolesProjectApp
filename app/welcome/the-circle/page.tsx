@@ -8,7 +8,7 @@ const INK_PALE = '#f8f8f7'
 const STEPS = [
   {
     title: 'Complete your intake.',
-    body: 'A short onboarding survey tells us your archetype, your 90-day focus, and your preferred coaching style. Takes 10 minutes. Shapes everything.',
+    body: 'A short onboarding survey tells us your archetype, your 12-week focus, and your preferred coaching style. Takes 10 minutes. Shapes everything.',
   },
   {
     title: 'Meet your accountability partner.',
@@ -20,7 +20,7 @@ const STEPS = [
   },
   {
     title: 'Live group calls every other week.',
-    body: 'Six calls across the 90 days. Direct access to Nicole, Q&A, and hot-seat coaching. Replays are posted within 24 hours.',
+    body: 'Six calls across the 12 weeks. Direct access to Nicole, Q&A, and hot-seat coaching. Replays are posted within 24 hours.',
   },
   {
     title: 'Community wins feed on Fridays.',
@@ -63,7 +63,7 @@ export default function WelcomeTheCirclePage() {
             textTransform: 'uppercase', color: INK, margin: '0 0 10px',
             opacity: 0.7,
           }}>
-            The Circle — 90-Day Intensive
+            The Circle — 12-Week Intensive
           </p>
           <h1 style={{
             fontFamily: 'var(--font-display)',
@@ -87,7 +87,7 @@ export default function WelcomeTheCirclePage() {
           border: '1px solid rgba(12,12,10,0.08)',
           borderRadius: 14, padding: '28px 28px',
         }}>
-          <Eyebrow>How the next 90 days work</Eyebrow>
+          <Eyebrow>How the next 12 weeks work</Eyebrow>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginTop: 16 }}>
             {STEPS.map(({ title, body }, i) => (
               <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
@@ -117,7 +117,7 @@ export default function WelcomeTheCirclePage() {
           <Eyebrow>Come ready with</Eyebrow>
           <ul style={{ margin: '14px 0 0', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[
-              'Your 90-day focus in one sentence',
+              'Your 12-week focus in one sentence',
               'One pattern you\'re ready to stop repeating',
               'Honesty — this work doesn\'t do well with performance',
             ].map((item, i) => (

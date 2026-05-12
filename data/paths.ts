@@ -90,7 +90,7 @@ export const PATHS: Record<PathId, PathDefinition> = {
     shortTitle: 'The Circle',
     tagline: 'Identity-level shift work, with Nicole.',
     price: '$497',
-    priceNote: 'One-time · or 3 × $197',
+    priceNote: 'Pay in full — or 3 × $197 ($94 more on the payment plan)',
     description:
       "12 weeks of guided work with Nicole leading live calls, a matched accountability partner, and a tight cohort community. For when you're ready to fully change the pattern.",
     includes: [
@@ -98,7 +98,7 @@ export const PATHS: Record<PathId, PathDefinition> = {
       'Live group calls with Nicole + replays',
       'Matched accountability partner',
       'Cohort community feed',
-      'Pay $497 in full — or 3 × $197',
+      'Pay $497 up front and save $94 — or split into 3 × $197',
     ],
     bestFor: 'Best if you want a coach in the room with you.',
     firstMove: 'Cohort onboarding starts within 48 hours.',

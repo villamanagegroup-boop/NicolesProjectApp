@@ -42,7 +42,7 @@ const PROGRAM_CONTENT: Record<string, {
     icon: '👑',
     accent: '#0c0c0a',
     heading: "Welcome to The Circle.",
-    body: "90 days of identity-level work with direct access to Nicole. Your cohort intake is the first step — it shapes your experience for the full program.",
+    body: "12 weeks of identity-level work with direct access to Nicole. Your cohort intake is the first step — it shapes your experience for the full program.",
     steps: [
       'Complete your cohort intake first',
       "You'll be matched with an accountability partner",

@@ -11,7 +11,7 @@ const ORANGE_PALE = '#fdf6f2'
 
 const ARCHETYPE_LABELS: Record<string, string> = {
   door:   'The Open Door',
-  throne: 'The Overthink Throne',
+  throne: "The Overthinker's Throne",
   engine: 'The Interrupted Engine',
   push:   'The Pushthrough',
 }
@@ -82,7 +82,7 @@ export default function CircleWelcomePage() {
         {member && (
           <p style={{ fontSize: 15, color: 'var(--text-soft)', lineHeight: 1.65, margin: '14px 0 0', maxWidth: 720 }}>
             You joined the cohort as <strong>{ARCHETYPE_LABELS[member.archetype]}</strong>.
-            {' '}Over the next 90 days you&apos;ll go deeper on your archetype, meet your accountability partner,
+            {' '}Over the next 12 weeks you&apos;ll go deeper on your archetype, meet your accountability partner,
             and build the practices that make this work stick.
           </p>
         )}
@@ -101,7 +101,7 @@ export default function CircleWelcomePage() {
             { t: 'Weekly teaching + archetype track',   d: 'Every Monday a new teaching drops, plus a journal prompt and weekly action tailored to your archetype.' },
             { t: 'Wednesday partner check-ins',         d: 'A prompted message exchange with your accountability partner — keeps things moving without scheduling.' },
             { t: 'Friday wins in the community feed',   d: 'Everyone posts one win. Small is fine. The practice is noticing.' },
-            { t: 'Live group calls every other week',   d: 'Six calls across the 90 days. Replays are posted if you can’t make it live.' },
+            { t: 'Live group calls every other week',   d: 'Six calls across the 12 weeks. Replays are posted if you can’t make it live.' },
             { t: 'Re-pair option at Day 30',            d: 'If the match isn’t working, request a new pairing — no explanation needed.' },
           ].map(({ t, d }, i) => (
             <ExpectRow key={i} num={i + 1} title={t} body={d} />
@@ -134,7 +134,7 @@ export default function CircleWelcomePage() {
                 {new Date(nextCall.scheduled_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
               </p>
               <p style={{ fontSize: 12, color: 'var(--text-soft)', lineHeight: 1.55, margin: '8px 0 0' }}>
-                Come ready to share your 90-day focus in one sentence.
+                Come ready to share your 12-week focus in one sentence.
               </p>
             </div>
           </Section>
