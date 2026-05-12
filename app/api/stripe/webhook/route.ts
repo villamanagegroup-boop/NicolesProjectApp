@@ -15,6 +15,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { addSubscriber, removeSubscriber } from '@/lib/email/emailit'
 
 // Lazy-init: avoid throwing during `next build` page-data collection if
 // env vars aren't yet wired up. The handler returns a clean 500 instead.
@@ -128,6 +129,22 @@ export async function POST(request: NextRequest) {
             price_id: lineItems.data[0]?.price?.id ?? null,
           }, { onConflict: 'stripe_session_id' })
           console.log(`checkout: stored pending purchase for ${email} (Path ${path})`)
+        }
+
+        // Path A = Seal the Leak. Move the buyer out of the quiz-takers
+        // lead audience and into the buyers audience. Fire-and-forget —
+        // we never want an Emailit hiccup to fail the webhook (Stripe will
+        // retry and we'd double-grant access).
+        if (path === 'A') {
+          const firstName = session.customer_details?.name?.split(' ')[0]
+          const buyersAudience = process.env.EMAILIT_BUYERS_AUDIENCE_ID
+          const quizAudience   = process.env.EMAILIT_QUIZ_AUDIENCE_ID
+          if (buyersAudience) {
+            void addSubscriber({ audienceId: buyersAudience, email, firstName })
+          }
+          if (quizAudience) {
+            void removeSubscriber({ audienceId: quizAudience, email })
+          }
         }
         break
       }
