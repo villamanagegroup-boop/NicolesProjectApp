@@ -9,10 +9,16 @@ import {
   getMyPartner,
   getPartnerThread,
   sendPartnerMessage,
+  markPartnerCheckinSent,
   getCurrentWeekNumber,
   getWeekContent,
   uploadCircleAttachment,
+  getCohortPostsByAuthor,
+  getPastPartnerThreads,
+  ARCHETYPE_COLOR,
   type PartnerMessage,
+  type CohortFeedPost,
+  type PastThreadSummary,
 } from '@/lib/circle'
 import AttachmentPicker, { type AttachmentSlots, type AttachmentSlot } from '@/components/circle/AttachmentPicker'
 
@@ -35,6 +41,7 @@ export default function PartnerPage() {
   const [myUserId, setMyUserId]   = useState<string>('')
   const [partnerUserId, setPartnerUserId] = useState<string>('')
   const [cohortId, setCohortId]   = useState<string>('')
+  const [memberId, setMemberId]   = useState<string>('')
   const [weekPrompt, setWeekPrompt] = useState<string>('')
   const [weekNumber, setWeekNumber] = useState<number | null>(null)
   const [body, setBody]           = useState('')
@@ -43,6 +50,19 @@ export default function PartnerPage() {
   const [attachments, setAttachments] = useState<AttachmentSlots>({ audio: null, video: null, image: null, doc: null })
   const [showPicker, setShowPicker]   = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  // Tabs — Chat is the default. The other tabs lazy-load their data on
+  // first switch so the page stays snappy even with a heavy posts feed.
+  type Tab = 'chat' | 'wins' | 'posts' | 'past'
+  const [tab, setTab] = useState<Tab>('chat')
+  const [winsPosts, setWinsPosts]   = useState<CohortFeedPost[] | null>(null)
+  const [allPosts,  setAllPosts]    = useState<CohortFeedPost[] | null>(null)
+  const [pastThreads, setPastThreads] = useState<PastThreadSummary[] | null>(null)
+  // When the user opens a past thread we load it into here and show it
+  // read-only inside the same panel; null returns them to the list.
+  const [pastViewUserId,  setPastViewUserId]  = useState<string | null>(null)
+  const [pastViewName,    setPastViewName]    = useState<string | null>(null)
+  const [pastViewMessages, setPastViewMessages] = useState<PartnerMessage[]>([])
 
   function setSlot(slot: AttachmentSlot, file: File | null) {
     setAttachments(prev => ({ ...prev, [slot]: file }))
@@ -60,6 +80,7 @@ export default function PartnerPage() {
       const member = await getMyCircleMember()
       if (!member || !member.partner_id) { setHydrating(false); return }
       setCohortId(member.cohort_id)
+      setMemberId(member.id)
 
       const { data: { user: authUser } } = await supabaseClient.auth.getUser()
       if (authUser) setMyUserId(authUser.id)
@@ -97,6 +118,32 @@ export default function PartnerPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Lazy-load per-tab data on first view.
+  useEffect(() => {
+    if (!cohortId || !partnerUserId) return
+    if (tab === 'wins' && winsPosts === null) {
+      void getCohortPostsByAuthor(cohortId, partnerUserId, 'wins', 30).then(setWinsPosts)
+    }
+    if (tab === 'posts' && allPosts === null) {
+      void getCohortPostsByAuthor(cohortId, partnerUserId, null, 30).then(setAllPosts)
+    }
+    if (tab === 'past' && pastThreads === null) {
+      void getPastPartnerThreads(partnerUserId).then(setPastThreads)
+    }
+  }, [tab, cohortId, partnerUserId, winsPosts, allPosts, pastThreads])
+
+  async function openPastThread(userId: string, name: string | null) {
+    setPastViewUserId(userId)
+    setPastViewName(name)
+    const msgs = await getPartnerThread(userId)
+    setPastViewMessages(msgs)
+  }
+  function closePastThread() {
+    setPastViewUserId(null)
+    setPastViewName(null)
+    setPastViewMessages([])
+  }
+
   async function handleSend() {
     if (!body.trim() && !hasAttachment) return
     if (!partnerUserId || !cohortId) return
@@ -115,6 +162,11 @@ export default function PartnerPage() {
       setShowPicker(false)
       const msgs = await getPartnerThread(partnerUserId)
       setMessages(msgs)
+      // Sending any message this week counts as the weekly partner check-in.
+      // Stamp the progress row so the Circle home card shows "Check-in done".
+      if (memberId && weekNumber) {
+        void markPartnerCheckinSent(memberId, weekNumber)
+      }
     }
     setSending(false)
   }
@@ -230,8 +282,44 @@ export default function PartnerPage() {
         </div>
       )}
 
-      {/* Wednesday prompt */}
-      {weekPrompt && weekNumber && (
+      {/* Tabs */}
+      <div style={{
+        display: 'flex', gap: 4, marginTop: 14,
+        borderBottom: '1px solid var(--line)',
+        flexShrink: 0,
+        overflowX: 'auto',
+      }}>
+        {([
+          { id: 'chat',  label: 'Chat' },
+          { id: 'wins',  label: 'Their wins' },
+          { id: 'posts', label: 'Their posts' },
+          { id: 'past',  label: 'Past chats' },
+        ] as { id: Tab; label: string }[]).map(t => {
+          const active = tab === t.id
+          return (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                padding: '10px 14px',
+                marginBottom: -1,
+                fontSize: 12.5, fontWeight: active ? 600 : 500,
+                fontFamily: 'var(--font-body)',
+                color: active ? ORANGE : 'var(--text-muted)',
+                borderBottom: `2px solid ${active ? ORANGE : 'transparent'}`,
+                whiteSpace: 'nowrap',
+                transition: 'color 0.15s, border-color 0.15s',
+              }}
+            >
+              {t.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Wednesday prompt — only visible under the Chat tab. */}
+      {tab === 'chat' && weekPrompt && weekNumber && (
         <div style={{
           background: 'var(--card)', border: '1px solid var(--line)',
           borderRadius: 12, padding: 14,
@@ -264,6 +352,7 @@ export default function PartnerPage() {
       )}
 
       {/* Messages */}
+      {tab === 'chat' && (
       <div style={{
         flex: 1, overflowY: 'auto',
         padding: '6px 2px',
@@ -419,8 +508,10 @@ export default function PartnerPage() {
         ))}
         <div ref={bottomRef} />
       </div>
+      )}
 
       {/* Compose */}
+      {tab === 'chat' && (
       <div style={{
         padding: '12px 0 4px',
         borderTop: '1px solid var(--line)',
@@ -487,6 +578,293 @@ export default function PartnerPage() {
             {sending ? '…' : 'Send'}
           </button>
         </div>
+      </div>
+      )}
+
+      {/* Their wins */}
+      {tab === 'wins' && (
+        <ActivityList
+          loading={winsPosts === null}
+          posts={winsPosts ?? []}
+          emptyLabel={`${partnerName.split(/\s+/)[0]} hasn’t posted any wins yet this cohort.`}
+        />
+      )}
+
+      {/* Their posts */}
+      {tab === 'posts' && (
+        <ActivityList
+          loading={allPosts === null}
+          posts={allPosts ?? []}
+          emptyLabel={`Nothing from ${partnerName.split(/\s+/)[0]} in the cohort feed yet.`}
+        />
+      )}
+
+      {/* Past chats */}
+      {tab === 'past' && (
+        pastViewUserId ? (
+          <PastThreadView
+            name={pastViewName}
+            messages={pastViewMessages}
+            myUserId={myUserId}
+            onBack={closePastThread}
+          />
+        ) : (
+          <PastThreadList
+            loading={pastThreads === null}
+            threads={pastThreads ?? []}
+            onOpen={openPastThread}
+          />
+        )
+      )}
+    </div>
+  )
+}
+
+// ── Activity list (Their wins / Their posts) ─────────────────────────────
+
+function ActivityList({
+  loading, posts, emptyLabel,
+}: {
+  loading: boolean
+  posts: CohortFeedPost[]
+  emptyLabel: string
+}) {
+  if (loading) {
+    return <p style={{ padding: '24px 4px', fontSize: 13, color: 'var(--text-muted)' }}>Loading…</p>
+  }
+  if (posts.length === 0) {
+    return (
+      <div style={{
+        padding: '32px 20px', textAlign: 'center',
+        background: 'var(--card)', border: '1px solid var(--line)',
+        borderRadius: 12, marginTop: 14,
+      }}>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, lineHeight: 1.6 }}>
+          {emptyLabel}
+        </p>
+      </div>
+    )
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14, paddingBottom: 24 }}>
+      {posts.map(p => <ActivityCard key={p.id} post={p} />)}
+    </div>
+  )
+}
+
+function ActivityCard({ post }: { post: CohortFeedPost }) {
+  const typeLabel = TYPE_LABELS[post.post_type] ?? post.post_type
+  const archColor = post.author_archetype ? ARCHETYPE_COLOR[post.author_archetype] : '#3a3a3a'
+  return (
+    <article style={{
+      background: 'var(--card)',
+      border: '1px solid var(--line)',
+      borderLeft: `3px solid ${archColor}`,
+      borderRadius: 12, padding: '14px 16px',
+    }}>
+      <header style={{
+        display: 'flex', alignItems: 'baseline', gap: 10,
+        marginBottom: 6, flexWrap: 'wrap',
+      }}>
+        <span style={{
+          fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
+          textTransform: 'uppercase', color: ORANGE,
+          fontFamily: 'var(--font-body)',
+        }}>
+          {typeLabel}
+        </span>
+        {post.week_number != null && (
+          <span style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.06em' }}>
+            Week {post.week_number}
+          </span>
+        )}
+        <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-muted)' }}>
+          {new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+        </span>
+      </header>
+      {post.body && (
+        <p style={{ fontSize: 13, color: 'var(--ink)', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+          {post.body}
+        </p>
+      )}
+      {(post.reactions?.length ?? 0) > 0 && (
+        <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+          {post.reactions!.map(r => (
+            <span key={r.emoji} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              padding: '2px 8px', borderRadius: 999,
+              background: 'var(--paper)', border: '1px solid var(--line)',
+              fontSize: 11, color: 'var(--text-soft)',
+            }}>
+              <span>{r.emoji}</span><span>{r.count}</span>
+            </span>
+          ))}
+        </div>
+      )}
+    </article>
+  )
+}
+
+const TYPE_LABELS: Record<string, string> = {
+  wins:           'Win',
+  monday_prompt:  'Prompt response',
+  partner_checkin: 'Partner check-in',
+  general:        'Post',
+  coach_note:     'Coach note',
+}
+
+// ── Past chats ───────────────────────────────────────────────────────────
+
+function PastThreadList({
+  loading, threads, onOpen,
+}: {
+  loading: boolean
+  threads: PastThreadSummary[]
+  onOpen: (userId: string, name: string | null) => void
+}) {
+  if (loading) {
+    return <p style={{ padding: '24px 4px', fontSize: 13, color: 'var(--text-muted)' }}>Loading past chats…</p>
+  }
+  if (threads.length === 0) {
+    return (
+      <div style={{
+        padding: '32px 20px', textAlign: 'center',
+        background: 'var(--card)', border: '1px solid var(--line)',
+        borderRadius: 12, marginTop: 14,
+      }}>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, lineHeight: 1.6 }}>
+          No past chats yet. If you&apos;re ever re-paired, the previous conversations will live here.
+        </p>
+      </div>
+    )
+  }
+  return (
+    <ul style={{
+      listStyle: 'none', padding: 0, margin: '14px 0 24px',
+      border: '1px solid var(--line)', borderRadius: 12,
+      overflow: 'hidden', background: 'var(--card)',
+    }}>
+      {threads.map((t, i) => {
+        const name = t.name ?? 'Member'
+        const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map(s => s.charAt(0).toUpperCase()).join('') || '·'
+        const archColor = t.archetype ? ARCHETYPE_COLOR[t.archetype] : '#3a3a3a'
+        return (
+          <li key={t.user_id} style={{ borderBottom: i < threads.length - 1 ? '1px solid var(--line)' : 'none' }}>
+            <button
+              onClick={() => onOpen(t.user_id, t.name)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                width: '100%', padding: '12px 14px',
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                textAlign: 'left', fontFamily: 'inherit',
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = ORANGE_PALE }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+            >
+              <div style={{
+                width: 36, height: 36, borderRadius: '50%',
+                background: archColor, color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 12, fontWeight: 600, flexShrink: 0,
+              }}>
+                {initials}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{name}</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text-muted)', flexShrink: 0 }}>
+                    {new Date(t.last_message_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+                <p style={{
+                  fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {t.last_message_preview}
+                </p>
+              </div>
+              {t.unread_count > 0 && (
+                <span style={{
+                  flexShrink: 0,
+                  background: ORANGE, color: '#fff',
+                  fontSize: 10, fontWeight: 700,
+                  padding: '2px 7px', borderRadius: 999,
+                  fontFamily: 'var(--font-body)',
+                }}>
+                  {t.unread_count}
+                </span>
+              )}
+            </button>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
+function PastThreadView({
+  name, messages, myUserId, onBack,
+}: {
+  name: string | null
+  messages: PartnerMessage[]
+  myUserId: string
+  onBack: () => void
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', marginTop: 14, marginBottom: 24 }}>
+      <button
+        onClick={onBack}
+        style={{
+          alignSelf: 'flex-start',
+          background: 'transparent', border: 'none', cursor: 'pointer',
+          color: 'var(--text-muted)', fontSize: 12,
+          padding: '0 0 8px', fontFamily: 'inherit',
+        }}
+      >
+        ← Back to past chats
+      </button>
+      <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 8px' }}>
+        Read-only thread with {name ?? 'a past partner'}.
+      </p>
+      <div style={{
+        background: 'var(--card)', border: '1px solid var(--line)',
+        borderRadius: 12, padding: '12px 14px',
+        display: 'flex', flexDirection: 'column', gap: 6,
+        maxHeight: '60vh', overflowY: 'auto',
+      }}>
+        {messages.length === 0 ? (
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>No messages.</p>
+        ) : messages.map(msg => {
+          const isMe = msg.sender_id === myUserId
+          return (
+            <div key={msg.id} style={{
+              display: 'flex',
+              justifyContent: isMe ? 'flex-end' : 'flex-start',
+            }}>
+              <div style={{
+                maxWidth: '75%',
+                padding: '8px 12px',
+                borderRadius: 14,
+                fontSize: 13, lineHeight: 1.5,
+                background: isMe ? ORANGE : 'var(--paper2)',
+                color: isMe ? '#fff' : 'var(--ink)',
+                whiteSpace: 'pre-wrap',
+              }}>
+                {msg.body}
+                <div style={{
+                  fontSize: 9, marginTop: 3,
+                  color: isMe ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)',
+                }}>
+                  {new Date(msg.created_at).toLocaleString('en-US', {
+                    month: 'short', day: 'numeric',
+                    hour: 'numeric', minute: '2-digit',
+                  })}
+                </div>
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

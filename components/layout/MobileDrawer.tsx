@@ -93,11 +93,12 @@ function CommunityIcon() {
   return <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="11" cy="6" r="2"/><path d="M2 14c0-2 1.5-3 3-3s3 1 3 3"/><path d="M8 14c0-2 1.5-3 3-3s3 1 3 3"/></svg>
 }
 
+// Community is intentionally NOT in the sidebar — it surfaces via the
+// /circle home page's "Also in The Circle" links.
 const circleNavItems: NavItem[] = [
-  { href: '/circle',           icon: CircleIcon,     label: 'Your Circle',   subtitle: 'Week + progress',       exact: true },
-  { href: '/circle/community', icon: CommunityIcon,  label: 'Community',     subtitle: 'Wins + conversations',  exact: true },
-  { href: '/circle/partner',   icon: PartnerMsgIcon, label: 'Partner',       subtitle: 'Accountability thread', exact: true },
-  { href: '/circle/calls',     icon: CallsIcon,      label: 'Live Streams',  subtitle: 'Schedule + recordings', exact: true },
+  { href: '/circle',         icon: CircleIcon,     label: 'Your Circle', subtitle: 'Week + progress',       exact: true },
+  { href: '/circle/partner', icon: PartnerMsgIcon, label: 'Partner',     subtitle: 'Accountability thread', exact: true },
+  { href: '/circle/calls',   icon: CallsIcon,      label: 'Live calls',  subtitle: 'Schedule + recordings', exact: true },
 ]
 
 function isActive(href: string, pathname: string, exact?: boolean) {

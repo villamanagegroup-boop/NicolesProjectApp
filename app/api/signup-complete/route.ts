@@ -76,8 +76,29 @@ export async function POST(request: NextRequest) {
   const firstName = userName.split(/\s+/)[0] || 'there'
 
   const pathDef = PATHS[path]
-  const archetypeId = (row.quiz_result as string | null) ?? 'seeker'
-  const archetype = quizResults.find(q => q.id === archetypeId) ?? quizResults[0]
+
+  // Backfill quiz_result from the quiz_leads table when the user row is
+  // missing it. This is the recovery path for users who completed the quiz
+  // (so a quiz_leads row exists) but lost their sessionStorage on the way
+  // back from Stripe — common when the success URL opens in a fresh tab,
+  // or when the client-side .update silently failed for any reason.
+  // quiz_leads is service-role only, so the lookup has to live here.
+  let archetypeId = (row.quiz_result as string | null) ?? null
+  if (!archetypeId && userEmail) {
+    const { data: lead } = await admin
+      .from('quiz_leads')
+      .select('quiz_result')
+      .eq('email', userEmail)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    const backfilled = lead?.quiz_result as string | null | undefined
+    if (backfilled) {
+      archetypeId = backfilled
+      await admin.from('users').update({ quiz_result: backfilled }).eq('id', row.id)
+    }
+  }
+  const archetype = quizResults.find(q => q.id === (archetypeId ?? 'seeker')) ?? quizResults[0]
   const archetypeBlurb = archetype.description.split(/(?<=[.!?])\s+/).slice(0, 2).join(' ')
 
   const appBaseUrl =

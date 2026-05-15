@@ -6,6 +6,16 @@ import { supabaseClient as supabase } from '@/lib/supabase/client'
 // ─── TYPES ──────────────────────────────────────────────────
 
 export type Archetype = 'door' | 'throne' | 'engine' | 'push'
+
+/** Canonical color per archetype. Used by avatars and badges so the
+ *  cohort feed reads consistently across the home preview, wins feed,
+ *  and action-complete celebration. */
+export const ARCHETYPE_COLOR: Record<Archetype, string> = {
+  door:   '#1B4332',
+  throne: '#1a1a2e',
+  engine: '#7B1D1D',
+  push:   '#3d2c0e',
+}
 export type AttachmentStyle = 'secure' | 'anxious' | 'avoidant' | 'disorganized'
 export type FeedbackPref = 'straight' | 'context' | 'written' | 'example'
 export type PostType = 'wins' | 'monday_prompt' | 'partner_checkin' | 'general' | 'coach_note'
@@ -21,6 +31,7 @@ export interface CircleMember {
   goal_90day: string | null
   partner_id: string | null
   joined_at: string
+  onboarded_at: string | null
 }
 
 export interface WeeklyContent {
@@ -35,8 +46,24 @@ export interface WeeklyContent {
   monday_prompt: string | null
   wednesday_prompt: string | null
   friday_prompt: string | null
+  partner_prompt: string | null
+  monday_voice_note_url: string | null
+  /** Pre-populated copy used as the starter text in the weekly wins composer. */
+  wins_prompt: string | null
   video_url: string | null
   live_call_week: boolean
+}
+
+export interface MemberProgress {
+  member_id: string
+  week_number: number
+  teaching_completed: boolean
+  journal_completed: boolean
+  action_completed: boolean
+  voice_note_played: boolean
+  partner_checkin_sent_at: string | null
+  journal_entry: string | null
+  completed_at: string | null
 }
 
 export interface CirclePost {
@@ -209,14 +236,21 @@ export async function getMyProgress(memberId: string) {
 }
 
 /**
- * Mark journal or action as complete for a given week.
+ * Mark a step of a week as complete for a given member.
  * Uses upsert so calling it twice is safe.
+ *
+ * The 4-step model: teaching → journal → action → partner check-in.
+ * A week is "complete" when all four step flags are true.
  */
 export async function markWeekComplete(
   memberId: string,
   weekNumber: number,
-  field: 'journal_completed' | 'action_completed',
-  journalEntry?: string
+  field:
+    | 'teaching_completed'
+    | 'journal_completed'
+    | 'action_completed'
+    | 'voice_note_played',
+  journalEntry?: string,
 ) {
   const { error } = await supabase
     .from('circle_member_progress')
@@ -231,7 +265,287 @@ export async function markWeekComplete(
   return !error
 }
 
+/**
+ * Record that the member sent a partner check-in for this week. Stamps
+ * partner_checkin_sent_at on the progress row — used to drive "Check-in
+ * done" state in the partner card. Safe to call once per sent message;
+ * the timestamp updates each time.
+ */
+export async function markPartnerCheckinSent(memberId: string, weekNumber: number) {
+  const { error } = await supabase
+    .from('circle_member_progress')
+    .upsert({
+      member_id: memberId,
+      week_number: weekNumber,
+      partner_checkin_sent_at: new Date().toISOString(),
+    }, { onConflict: 'member_id,week_number' })
+  return !error
+}
+
+/**
+ * Stamp `onboarded_at` on the caller's circle_members row so they don't
+ * see the 3-screen welcome tour again.
+ */
+export async function markCircleOnboarded(memberId: string) {
+  const { error } = await supabase
+    .from('circle_members')
+    .update({ onboarded_at: new Date().toISOString() })
+    .eq('id', memberId)
+  return !error
+}
+
 // ─── COMMUNITY POSTS ────────────────────────────────────────
+
+export interface CohortFeedPost extends CirclePost {
+  /** The author's archetype (joined from circle_members) so the UI can
+   *  color the avatar/name without a second per-card lookup. Null when the
+   *  author isn't a circle_members row (admins, etc). */
+  author_archetype: Archetype | null
+}
+
+/**
+ * Fetch posts for a single week of a cohort, optionally filtered by type,
+ * with the author's archetype joined in so the feed UI can color avatars
+ * and badges in one pass.
+ *
+ * Pass `postType = null` for the "All" tab — no type filter.
+ */
+export async function getCohortPostsForWeek(
+  cohortId: string,
+  weekNumber: number,
+  postType: PostType | null,
+  limit: number,
+): Promise<CohortFeedPost[]> {
+  let query = supabase
+    .from('circle_posts')
+    .select(`
+      *,
+      author:author_id (name, avatar_url),
+      circle_reactions (emoji, user_id),
+      circle_post_comments ( id )
+    `)
+    .eq('cohort_id', cohortId)
+    .eq('week_number', weekNumber)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (postType) query = query.eq('post_type', postType)
+
+  const { data, error } = await query
+  if (error || !data) return []
+
+  const { data: { user } } = await supabase.auth.getUser()
+  const userId = user?.id ?? ''
+
+  // Batch-load archetypes for every author in the page in one query so we
+  // don't N+1 per post card.
+  const authorIds = Array.from(new Set(data.map(p => p.author_id as string)))
+  let archetypeByUserId: Record<string, Archetype> = {}
+  if (authorIds.length > 0) {
+    const { data: members } = await supabase
+      .from('circle_members')
+      .select('user_id, archetype')
+      .eq('cohort_id', cohortId)
+      .in('user_id', authorIds)
+    if (members) {
+      archetypeByUserId = Object.fromEntries(
+        (members as Array<{ user_id: string; archetype: Archetype }>).map(m => [m.user_id, m.archetype])
+      )
+    }
+  }
+
+  return data.map(post => ({
+    ...post,
+    author_archetype: archetypeByUserId[post.author_id as string] ?? null,
+    reactions: buildReactionSummary(post.circle_reactions ?? [], userId),
+    comment_count: Array.isArray(post.circle_post_comments)
+      ? post.circle_post_comments.length
+      : 0,
+  })) as CohortFeedPost[]
+}
+
+/**
+ * Get all of a single author's posts across the cohort — used by the
+ * partner page's "Their wins" and "Their posts" tabs. Joins the author's
+ * archetype so the cards can color avatars and badges in one pass.
+ */
+export async function getCohortPostsByAuthor(
+  cohortId: string,
+  authorUserId: string,
+  postType: PostType | null,
+  limit: number,
+): Promise<CohortFeedPost[]> {
+  let query = supabase
+    .from('circle_posts')
+    .select(`
+      *,
+      author:author_id (name, avatar_url),
+      circle_reactions (emoji, user_id),
+      circle_post_comments ( id )
+    `)
+    .eq('cohort_id', cohortId)
+    .eq('author_id', authorUserId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (postType) query = query.eq('post_type', postType)
+
+  const { data, error } = await query
+  if (error || !data) return []
+
+  const { data: { user } } = await supabase.auth.getUser()
+  const userId = user?.id ?? ''
+
+  const { data: member } = await supabase
+    .from('circle_members')
+    .select('archetype')
+    .eq('cohort_id', cohortId)
+    .eq('user_id', authorUserId)
+    .maybeSingle()
+  const archetype = (member?.archetype as Archetype | undefined) ?? null
+
+  return data.map(post => ({
+    ...post,
+    author_archetype: archetype,
+    reactions: buildReactionSummary(post.circle_reactions ?? [], userId),
+    comment_count: Array.isArray(post.circle_post_comments)
+      ? post.circle_post_comments.length
+      : 0,
+  })) as CohortFeedPost[]
+}
+
+export interface PastThreadSummary {
+  user_id: string
+  name: string | null
+  archetype: Archetype | null
+  last_message_at: string
+  last_message_preview: string
+  unread_count: number
+}
+
+/**
+ * List the caller's past direct-message threads, excluding their current
+ * partner. Useful for the Partner page's "Past chats" tab: members who
+ * were re-paired keep access to old conversations rather than losing
+ * them when matched with someone new.
+ *
+ * Returns one row per distinct other-user, with the most recent message's
+ * preview + timestamp + unread count.
+ */
+export async function getPastPartnerThreads(
+  currentPartnerUserId: string | null,
+): Promise<PastThreadSummary[]> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const { data: msgs } = await supabase
+    .from('circle_partner_messages')
+    .select('sender_id, receiver_id, body, audio_url, image_url, video_url, file_name, created_at, read_at')
+    .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+    .order('created_at', { ascending: false })
+  if (!msgs) return []
+
+  type Row = { sender_id: string; receiver_id: string; body: string | null; audio_url: string | null; image_url: string | null; video_url: string | null; file_name: string | null; created_at: string; read_at: string | null }
+  // Aggregate by the OTHER user.
+  const byUser = new Map<string, { last: Row; unread: number }>()
+  for (const m of msgs as Row[]) {
+    const otherId = m.sender_id === user.id ? m.receiver_id : m.sender_id
+    if (currentPartnerUserId && otherId === currentPartnerUserId) continue
+    const existing = byUser.get(otherId)
+    const isUnreadForMe = m.receiver_id === user.id && !m.read_at
+    if (!existing) {
+      byUser.set(otherId, { last: m, unread: isUnreadForMe ? 1 : 0 })
+    } else {
+      // First message we see for this user is already the most recent due
+      // to the sorted query — just bump unread count.
+      if (isUnreadForMe) existing.unread += 1
+    }
+  }
+
+  const otherIds = Array.from(byUser.keys())
+  if (otherIds.length === 0) return []
+
+  // One round-trip each for names and archetypes.
+  const [{ data: users }, { data: members }] = await Promise.all([
+    supabase.from('users').select('id, name').in('id', otherIds),
+    supabase.from('circle_members').select('user_id, archetype').in('user_id', otherIds),
+  ])
+  const nameById = Object.fromEntries((users ?? []).map(u => [u.id as string, u.name as string | null]))
+  const archetypeById = Object.fromEntries(
+    (members ?? []).map(m => [m.user_id as string, m.archetype as Archetype])
+  )
+
+  return otherIds.map(id => {
+    const { last, unread } = byUser.get(id)!
+    return {
+      user_id: id,
+      name: nameById[id] ?? null,
+      archetype: archetypeById[id] ?? null,
+      last_message_at: last.created_at,
+      last_message_preview: previewFor(last),
+      unread_count: unread,
+    }
+  }).sort((a, b) => +new Date(b.last_message_at) - +new Date(a.last_message_at))
+}
+
+function previewFor(m: { body: string | null; audio_url: string | null; image_url: string | null; video_url: string | null; file_name: string | null }): string {
+  if (m.body && m.body.trim()) return m.body.trim()
+  if (m.audio_url) return '🎙 Voice note'
+  if (m.video_url) return '🎬 Video'
+  if (m.image_url) return '📷 Image'
+  if (m.file_name) return `📎 ${m.file_name}`
+  return '…'
+}
+
+/**
+ * Get the caller's own win post for a given week, if any. Used to decide
+ * whether the WeeklyWinsFeed shows the "post a win" composer or just
+ * highlights the win the member already shared.
+ *
+ * Author scope (auth.uid()) is enforced by RLS — no extra filter needed.
+ */
+export async function getMyWinForWeek(weekNumber: number): Promise<CirclePost | null> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+  const { data, error } = await supabase
+    .from('circle_posts')
+    .select('*, author:author_id (name, avatar_url)')
+    .eq('author_id', user.id)
+    .eq('post_type', 'wins')
+    .eq('week_number', weekNumber)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error || !data) return null
+  return data as CirclePost
+}
+
+/**
+ * Fetch admin replies (Nicole) for a batch of posts. Returns a map keyed
+ * by post_id → first admin comment body (we only need one for the inline
+ * "Nicole's reply" treatment under each win).
+ */
+export async function getAdminRepliesForPosts(postIds: string[]): Promise<Record<string, { body: string; author_name: string | null; created_at: string }>> {
+  if (postIds.length === 0) return {}
+  const { data } = await supabase
+    .from('circle_post_comments')
+    .select('post_id, body, created_at, author:author_id ( name, is_admin )')
+    .in('post_id', postIds)
+    .order('created_at', { ascending: true })
+  if (!data) return {}
+  const out: Record<string, { body: string; author_name: string | null; created_at: string }> = {}
+  type Row = { post_id: string; body: string; created_at: string; author: { name: string | null; is_admin: boolean | null } | { name: string | null; is_admin: boolean | null }[] | null }
+  for (const row of data as unknown as Row[]) {
+    // Supabase joins sometimes shape author as a 1-element array; normalize.
+    const author = Array.isArray(row.author) ? row.author[0] : row.author
+    if (!author?.is_admin) continue
+    if (out[row.post_id]) continue   // keep earliest only
+    out[row.post_id] = {
+      body: row.body,
+      author_name: author.name,
+      created_at: row.created_at,
+    }
+  }
+  return out
+}
 
 /**
  * Get all community posts for the current cohort.

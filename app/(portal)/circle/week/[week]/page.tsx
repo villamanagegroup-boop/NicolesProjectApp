@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { supabaseClient } from '@/lib/supabase/client'
 import { useApp } from '@/context/AppContext'
 import {
   getMyCircleMember,
@@ -8,7 +9,10 @@ import {
   getMyProgress,
   markWeekComplete,
   type WeeklyContent,
+  type MemberProgress,
 } from '@/lib/circle'
+import WeeklyWinsFeed from '@/components/circle/WeeklyWinsFeed'
+import ActionCompleteScreen from '@/components/circle/ActionCompleteScreen'
 
 const ORANGE      = '#B8862E'
 const ORANGE_DEEP = '#a66128'
@@ -36,12 +40,20 @@ export default function WeekPage() {
   const [universal, setUniversal]         = useState<WeeklyContent | null>(null)
   const [personal, setPersonal]           = useState<WeeklyContent | null>(null)
   const [memberId, setMemberId]           = useState<string>('')
+  const [authUserId, setAuthUserId]       = useState<string>('')
+  const [cohortId, setCohortId]           = useState<string>('')
+  const [cohortMemberCount, setCohortMemberCount] = useState<number>(0)
   const [archetype, setArchetype]         = useState<string>('')
-  const [progress, setProgress]           = useState<any>(null)
+  const [progress, setProgress]           = useState<Partial<MemberProgress> | null>(null)
   const [journalText, setJournalText]     = useState('')
   const [saving, setSaving]               = useState(false)
   const [activeTab, setActiveTab]         = useState<'teaching' | 'journal' | 'action' | 'partner'>('teaching')
   const [loading, setLoading]             = useState(true)
+  // ActionCompleteScreen lifts up after a successful "I did this" click.
+  // We only show it on the transition, not for already-completed weeks,
+  // so a member returning to a finished week doesn't get the celebration
+  // popping back open.
+  const [actionCelebrate, setActionCelebrate] = useState(false)
 
   useEffect(() => {
     if (appLoading) return
@@ -57,16 +69,25 @@ export default function WeekPage() {
 
       setMemberId(member.id)
       setArchetype(member.archetype)
+      setCohortId(member.cohort_id)
 
-      const [content, prog] = await Promise.all([
+      const { data: { user: authed } } = await supabaseClient.auth.getUser()
+      if (authed) setAuthUserId(authed.id)
+
+      const [content, prog, countRes] = await Promise.all([
         getWeekContent(weekNum, member.archetype, member.cohort_id),
         getMyProgress(member.id),
+        supabaseClient
+          .from('circle_members')
+          .select('id', { count: 'exact', head: true })
+          .eq('cohort_id', member.cohort_id),
       ])
 
       setUniversal(content.universal)
       setPersonal(content.personal)
+      setCohortMemberCount(countRes.count ?? 0)
 
-      const weekProg = prog.find((p: any) => p.week_number === weekNum)
+      const weekProg = (prog as MemberProgress[]).find(p => p.week_number === weekNum)
       setProgress(weekProg ?? null)
       if (weekProg?.journal_entry) setJournalText(weekProg.journal_entry)
 
@@ -74,8 +95,11 @@ export default function WeekPage() {
     })()
   }, [appLoading, weekNum, router, isAuthed])
 
-  async function handleMarkComplete(field: 'journal_completed' | 'action_completed') {
+  async function handleMarkComplete(
+    field: 'teaching_completed' | 'journal_completed' | 'action_completed',
+  ) {
     if (!memberId) return
+    const wasComplete = !!progress?.[field]
     setSaving(true)
     const ok = await markWeekComplete(
       memberId,
@@ -84,9 +108,24 @@ export default function WeekPage() {
       field === 'journal_completed' ? journalText : undefined,
     )
     if (ok) {
-      setProgress((prev: any) => ({ ...(prev ?? {}), [field]: true, week_number: weekNum }))
+      setProgress(prev => ({ ...(prev ?? {}), [field]: true, week_number: weekNum }))
+      // Fire the celebration only on the *transition* from incomplete →
+      // complete for the action step. Returning to a finished week
+      // doesn't re-open the screen.
+      if (field === 'action_completed' && !wasComplete) {
+        setActionCelebrate(true)
+      }
     }
     setSaving(false)
+  }
+
+  function handleShareWin() {
+    setActionCelebrate(false)
+    // Scroll the wins composer into view. WeeklyWinsFeed anchors itself
+    // with id="wins-composer" so this works from any tab.
+    requestAnimationFrame(() => {
+      document.getElementById('wins-composer')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
   }
 
   const month = MONTH_COLORS[universal?.month_name ?? 'root']
@@ -138,10 +177,12 @@ export default function WeekPage() {
         )}
       </div>
 
-      {/* Progress pills */}
-      <div style={{ display: 'flex', gap: 8 }}>
-        <Pill done={!!progress?.journal_completed} label={progress?.journal_completed ? '✓ Journal done' : 'Journal pending'} />
-        <Pill done={!!progress?.action_completed}  label={progress?.action_completed  ? '✓ Action done'  : 'Action pending'}  />
+      {/* Progress pills — one per step in the 4-step model */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <Pill done={!!progress?.teaching_completed} label={progress?.teaching_completed ? '✓ Teaching' : 'Teaching'} />
+        <Pill done={!!progress?.journal_completed}  label={progress?.journal_completed  ? '✓ Journal'  : 'Journal'}  />
+        <Pill done={!!progress?.action_completed}   label={progress?.action_completed   ? '✓ Action'   : 'Action'}   />
+        <Pill done={!!progress?.partner_checkin_sent_at} label={progress?.partner_checkin_sent_at ? '✓ Partner' : 'Partner'} />
       </div>
 
       {/* Tabs */}
@@ -195,6 +236,18 @@ export default function WeekPage() {
           {universal.friday_prompt && (
             <AccentPanel accent="var(--green)" label="Friday wins prompt" body={universal.friday_prompt} />
           )}
+          <button
+            onClick={() => handleMarkComplete('teaching_completed')}
+            disabled={saving || progress?.teaching_completed}
+            style={{
+              ...bigBtn,
+              background: progress?.teaching_completed ? 'var(--paper3)' : month.tint,
+              color: progress?.teaching_completed ? 'var(--text-soft)' : '#fff',
+              cursor: (saving || progress?.teaching_completed) ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {progress?.teaching_completed ? '✓ Teaching complete' : saving ? 'Saving…' : "I've read this →"}
+          </button>
         </div>
       )}
 
@@ -257,7 +310,7 @@ export default function WeekPage() {
               cursor: (saving || progress?.action_completed) ? 'not-allowed' : 'pointer',
             }}
           >
-            {progress?.action_completed ? '✓ Action complete' : saving ? 'Saving…' : 'Mark action complete'}
+            {progress?.action_completed ? '✓ Action complete' : saving ? 'Saving…' : 'I did this →'}
           </button>
         </div>
       )}
@@ -278,6 +331,30 @@ export default function WeekPage() {
           </a>
         </div>
       )}
+
+      {/* Weekly wins feed — always visible at the bottom, regardless of
+          which tab is active, so members can read wins even before
+          completing their own steps. */}
+      {cohortId && universal && (
+        <div style={{ marginTop: 24, paddingTop: 24, borderTop: '1px solid var(--line)' }}>
+          <WeeklyWinsFeed
+            cohortId={cohortId}
+            weekNumber={weekNum}
+            winsPrompt={personal?.wins_prompt ?? universal.wins_prompt ?? null}
+            cohortMemberCount={cohortMemberCount}
+          />
+        </div>
+      )}
+
+      {/* Action-complete celebration overlay */}
+      <ActionCompleteScreen
+        open={actionCelebrate}
+        weekNumber={weekNum}
+        cohortId={cohortId}
+        excludeUserId={authUserId}
+        onShareWin={handleShareWin}
+        onBackHome={() => { setActionCelebrate(false); router.push('/circle') }}
+      />
     </div>
   )
 }

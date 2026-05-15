@@ -53,11 +53,13 @@ const SEAL_ITEMS: NavItem[] = [
   { href: '/program/progress',    label: 'My progress',      exact: true },
 ]
 
+// Community is intentionally NOT in the sidebar — it's surfaced from the
+// /circle home page's "Also in The Circle" links instead, to keep the
+// week-focused nav uncluttered.
 const CIRCLE_ITEMS: NavItem[] = [
-  { href: '/circle',           label: 'Your Circle',  exact: true },
-  { href: '/circle/community', label: 'Community',    exact: true },
-  { href: '/circle/partner',   label: 'Partner',      exact: true },
-  { href: '/circle/calls',     label: 'Live streams', exact: true },
+  { href: '/circle',         label: 'Your Circle', exact: true },
+  { href: '/circle/partner', label: 'Partner',     exact: true },
+  { href: '/circle/calls',   label: 'Live calls',  exact: true },
 ]
 
 interface JourneyItem extends NavItem {
@@ -65,9 +67,9 @@ interface JourneyItem extends NavItem {
 }
 
 const JOURNEY_ITEMS: JourneyItem[] = [
-  { href: '/inbox',   label: 'Inbox',    icon: <InboxIcon /> },
   { href: '/journal', label: 'Journal',  icon: <JournalIcon /> },
   { href: '/wins',    label: 'My wins',  icon: <WinsIcon />,    exact: true },
+  { href: '/inbox',   label: 'Inbox',    icon: <InboxIcon /> },
   { href: '/profile', label: 'Profile',  icon: <ProfileIcon />, exact: true },
 ]
 
@@ -329,8 +331,22 @@ export default function Sidebar() {
           )
         })()}
 
-        {/* Subtle divider before the selected program's items */}
+        {/* Subtle divider before the selected program's items. Home above
+            is universal; the program-specific block lives below. */}
         <div style={{ height: 1, background: 'var(--line)', margin: '8px 12px' }} />
+
+        {/* Group label for Circle's program items. Other programs leave
+            this unlabeled so we don't impose vocabulary on Seal/Cards. */}
+        {selected === 'circle' && (
+          <div style={{
+            padding: '2px 12px 4px',
+            fontSize: 9, fontWeight: 700, letterSpacing: '0.1em',
+            textTransform: 'uppercase', color: 'var(--text-muted)',
+            fontFamily: 'var(--font-body)',
+          }}>
+            This week
+          </div>
+        )}
 
         {items.map(item => {
           const active = isActive(item.href, pathname, item.exact)
@@ -397,7 +413,7 @@ export default function Sidebar() {
             textTransform: 'uppercase', color: 'var(--text-muted)',
             fontFamily: 'var(--font-body)',
           }}>
-            Always with you
+            Your space
           </div>
         </div>
         {JOURNEY_ITEMS.map(item => {

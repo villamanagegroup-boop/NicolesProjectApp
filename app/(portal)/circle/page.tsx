@@ -3,16 +3,19 @@
 // app/(portal)/circle/page.tsx
 // Your Circle — home page for Path C members.
 //
-// Design direction: matches the universal /dashboard. Row-based sections
-// with hairline dividers and a thin orange accent strip on each row, not
-// stacked panels with hard borders. Adds:
-//   - A daily affirmation pulled from a small rotating set, anchored to
-//     the cohort's current week + the day-of-year so it feels consistent
-//     across the cohort but varies day-to-day
-//   - "Everything in The Circle" overview — a directory of every Circle
-//     surface, even if there's nothing happening on it today
+// Single-column layout, top to bottom:
+//   1. Welcome header (name, archetype, affirmation)
+//   2. 12-week progress tracker (past green, current gold, future gray)
+//   3. Voice note from Nicole (hidden if not uploaded)
+//   4. This week — 4-step card (teaching → journal → action → partner)
+//   5. Partner card with this week's prompt
+//   6. Live call card (only if a call is scheduled this week)
+//   7. Community links (smallest, bottom)
+//
+// First-time visitors (no member.onboarded_at) are redirected to
+// /circle/welcome — the 3-screen onboarding tour.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabaseClient } from '@/lib/supabase/client'
@@ -24,19 +27,22 @@ import {
   getMyProgress,
   getLiveCalls,
   getCurrentWeekNumber,
+  getWeekContent,
+  markWeekComplete,
   type CircleMember,
   type WeeklyContent,
   type LiveCall,
+  type MemberProgress,
 } from '@/lib/circle'
+import CommunityPreviewCard from '@/components/circle/CommunityPreviewCard'
 
 const ORANGE      = '#B8862E'
+const ORANGE_DEEP = '#8c6520'
 const ORANGE_PALE = '#fdf6f2'
-
-// The 1:1 private coach thread (Chat with Nicole) is being moved into a
-// separate, paid-on-top program. We keep the underlying /circle/coach page
-// + DB tables in place but hide every entry point from the user UI behind
-// this flag. Flip to true to bring it back without re-adding the JSX.
-const COACH_DM_VISIBLE = false
+const GREEN       = '#1F5C3A'
+const GREEN_PALE  = '#eaf2ec'
+const GRAY        = '#d9d6cf'
+const GRAY_TEXT   = '#9a978f'
 
 const ARCHETYPE_LABELS: Record<string, string> = {
   door:   'The Open Door',
@@ -45,8 +51,8 @@ const ARCHETYPE_LABELS: Record<string, string> = {
   push:   'The Pushthrough',
 }
 
-// A small rotating affirmation library indexed by archetype + day-of-year.
-// Same affirmation for the whole cohort on a given day; rotates daily.
+// Small rotating affirmation library by archetype, indexed by day-of-year so
+// the whole cohort sees the same affirmation on any given day.
 const AFFIRMATIONS: Record<string, string[]> = {
   door: [
     'I let in what is meant for me without abandoning myself.',
@@ -81,11 +87,20 @@ const AFFIRMATIONS: Record<string, string[]> = {
 
 function affirmationFor(archetype: string | null | undefined): string {
   const list = AFFIRMATIONS[archetype ?? 'universal'] ?? AFFIRMATIONS.universal
-  // Day-of-year so it rotates ~daily; stable for everyone on the same day.
   const start = new Date(new Date().getFullYear(), 0, 0)
   const diff = Date.now() - start.getTime()
   const dayOfYear = Math.floor(diff / 86400000)
   return list[dayOfYear % list.length]
+}
+
+function isWeekComplete(p: Partial<MemberProgress> | undefined): boolean {
+  return !!(p?.teaching_completed && p?.journal_completed && p?.action_completed && p?.partner_checkin_sent_at)
+}
+
+function truncate(s: string | null | undefined, max = 90): string {
+  if (!s) return ''
+  const t = s.trim()
+  return t.length <= max ? t : t.slice(0, max - 1).trim() + '…'
 }
 
 type LoadState =
@@ -98,12 +113,23 @@ export default function CirclePage() {
   const router = useRouter()
   const { authUser, loading, isAuthed, user } = useApp()
 
+  // Snapshot "now" on mount so render-time time math stays pure across
+  // re-renders. The countdown can be slightly stale until a refresh —
+  // acceptable trade-off for a card that drives navigation, not timing.
+  const [nowMs] = useState(() => Date.now())
+  // Friday + Saturday surface the cohort wins higher on the page. Snapshot
+  // the day-of-week the same way so hydration matches and lint stays happy.
+  const [dayOfWeek] = useState(() => new Date().getDay())
+  const isWinsDay = dayOfWeek === 5 || dayOfWeek === 6
+
   const [state, setState]                 = useState<LoadState>({ kind: 'loading' })
-  const [partner, setPartner]             = useState<{ archetype: string; users: { name: string | null } | null } | null>(null)
+  const [partner, setPartner]             = useState<{ id: string; archetype: string; users: { name: string | null } | null } | null>(null)
   const [weeks, setWeeks]                 = useState<WeeklyContent[]>([])
-  const [progress, setProgress]           = useState<Array<{ week_number: number; journal_completed: boolean; action_completed: boolean }>>([])
+  const [progress, setProgress]           = useState<MemberProgress[]>([])
   const [calls, setCalls]                 = useState<LiveCall[]>([])
   const [currentWeek, setCurrentWeek]     = useState<number | null>(null)
+  const [universal, setUniversal]         = useState<WeeklyContent | null>(null)
+  const [personal,  setPersonal]          = useState<WeeklyContent | null>(null)
 
   useEffect(() => {
     if (loading) return
@@ -150,6 +176,13 @@ export default function CirclePage() {
         return
       }
 
+      // First-time landing → run the 3-screen tour, set onboarded_at, return.
+      // Admins skip so they can preview /circle directly.
+      if (!member.onboarded_at && !user.isAdmin) {
+        router.replace('/circle/welcome')
+        return
+      }
+
       setState({ kind: 'ready', member })
 
       const [partnerData, weeksData, progressData, callsData, cohortRow] = await Promise.all([
@@ -161,9 +194,20 @@ export default function CirclePage() {
       ])
       setPartner(partnerData as typeof partner)
       setWeeks(weeksData)
-      setProgress(progressData as typeof progress)
+      setProgress(progressData as MemberProgress[])
       setCalls(callsData)
-      if (cohortRow.data) setCurrentWeek(getCurrentWeekNumber(cohortRow.data.starts_at as string))
+
+      let wn: number | null = null
+      if (cohortRow.data) wn = getCurrentWeekNumber(cohortRow.data.starts_at as string)
+      setCurrentWeek(wn)
+
+      // Load the current week's universal + archetype content for the
+      // 4-step card, partner prompt, and voice note source URL.
+      if (wn) {
+        const c = await getWeekContent(wn, member.archetype, member.cohort_id)
+        setUniversal(c.universal)
+        setPersonal(c.personal)
+      }
     })()
   }, [loading, isAuthed, authUser, user.selectedPath, user.isAdmin, router])
 
@@ -184,18 +228,35 @@ export default function CirclePage() {
   }
 
   const member = state.member
-  const completedWeeks = progress.filter(p => p.journal_completed && p.action_completed).length
-  const nextCall = calls.find(c => new Date(c.scheduled_at) > new Date())
   const firstName = user.name?.split(' ')[0] ?? ''
   const affirmation = affirmationFor(member.archetype)
-  const thisWeekTitle = currentWeek ? weeks.find(w => w.week_number === currentWeek)?.week_title : null
-  const phase = currentWeek == null ? null : currentWeek <= 4 ? 'Root' : currentWeek <= 8 ? 'Rebuild' : 'Rise'
+
+  const completedCount = progress.filter(isWeekComplete).length
+  const weeksAhead = currentWeek != null ? Math.max(0, 12 - currentWeek) : 0
+
+  const thisWeekProgress = currentWeek
+    ? progress.find(p => p.week_number === currentWeek)
+    : undefined
+  const thisWeekTitle = currentWeek
+    ? weeks.find(w => w.week_number === currentWeek)?.week_title
+    : null
+
+  const callThisWeek = calls.find(c => {
+    if (!currentWeek) return false
+    const ms = new Date(c.scheduled_at).getTime() - nowMs
+    return ms > 0 && ms < 7 * 86400000
+  })
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+    <div style={{ maxWidth: 760, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 22 }}>
 
-      {/* Hero */}
-      <div style={{ marginBottom: 24 }}>
+      {/* The top menu is mounted by app/(portal)/circle/layout.tsx so it
+          stays consistent across every Circle page. */}
+
+      {/* ────────────────────────────────────────────────────────────
+          1. Welcome header — name, archetype, affirmation
+          ──────────────────────────────────────────────────────────── */}
+      <header>
         {firstName && (
           <p style={{
             fontSize: 11, fontWeight: 500, letterSpacing: '0.14em',
@@ -212,303 +273,670 @@ export default function CirclePage() {
         }}>
           {ARCHETYPE_LABELS[member.archetype]}
         </h1>
-        {member.goal_90day && (
-          <p style={{
-            fontSize: 13, color: 'var(--text-soft)', fontStyle: 'italic',
-            lineHeight: 1.55, margin: '8px 0 0',
-            maxWidth: 520,
-          }}>
-            {member.goal_90day}
-          </p>
-        )}
-      </div>
-
-      {/* Today's affirmation — a wide block, not a card. The affirmation is
-          the visual centerpiece of the page; everything else supports it. */}
-      <div style={{
-        background: `linear-gradient(135deg, ${ORANGE_PALE} 0%, #fff 70%)`,
-        borderTop: `2px solid ${ORANGE}`,
-        borderBottom: '1px solid var(--line)',
-        padding: '22px 4px 22px 20px',
-        marginBottom: 22,
-      }}>
         <p style={{
-          fontSize: 10, fontWeight: 700, letterSpacing: '0.14em',
-          textTransform: 'uppercase', color: ORANGE,
-          margin: '0 0 12px', fontFamily: 'var(--font-body)',
-        }}>
-          Today&apos;s affirmation
-        </p>
-        <p style={{
-          fontFamily: 'var(--font-display)', fontSize: 26, fontStyle: 'italic',
-          fontWeight: 300, color: 'var(--ink)',
-          margin: 0, lineHeight: 1.35, maxWidth: 720,
+          fontFamily: 'var(--font-display)',
+          fontSize: 18, fontStyle: 'italic', fontWeight: 300,
+          color: 'var(--text-soft)',
+          margin: '14px 0 0', lineHeight: 1.45, maxWidth: 600,
         }}>
           &ldquo;{affirmation}&rdquo;
         </p>
-      </div>
+      </header>
 
-      {/* PROGRESS — 12-week dot strip */}
-      <Section
-        title="Your 12 weeks"
-        right={<span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{completedWeeks} of 12 weeks complete</span>}
-      >
-        <div style={{ padding: '20px', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {Array.from({ length: 12 }, (_, i) => {
-            const wn = i + 1
-            const done = progress.find(p => p.week_number === wn && p.journal_completed && p.action_completed)
-            const current = wn === currentWeek
-            const past = currentWeek != null && wn < currentWeek
-            return (
-              <Link key={wn} href={`/circle/week/${wn}`} style={{ textDecoration: 'none' }}>
-                <div style={{
-                  width: 36, height: 36, borderRadius: '50%',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 12, fontWeight: 600,
-                  background: done ? ORANGE : current ? '#fff' : 'var(--paper2)',
-                  color: done ? '#fff' : current ? ORANGE : past ? 'var(--text-soft)' : 'var(--text-muted)',
-                  border: current && !done ? `2px solid ${ORANGE}` : '1px solid var(--line)',
-                  cursor: 'pointer', transition: 'all 0.15s',
-                }}>
-                  {wn}
-                </div>
-              </Link>
-            )
-          })}
-        </div>
-      </Section>
+      {/* ────────────────────────────────────────────────────────────
+          2. 12-week progress tracker
+          ──────────────────────────────────────────────────────────── */}
+      <WeekProgress
+        currentWeek={currentWeek}
+        completedCount={completedCount}
+        weeksAhead={weeksAhead}
+        progress={progress}
+      />
 
-      {/* Below the wide blocks, split TODAY (left) from "Everything in
-          The Circle" (right) on desktop. Stacks back to single column
-          under 900px (see <style> at the bottom of the file). */}
-      <div className="circle-cols" style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)',
-        gap: 28,
-        alignItems: 'start',
-      }}>
-      <div>
-      {/* TODAY — current week + partner + next call as rows */}
-      <Section title="Today">
-        {currentWeek && (
-          <CircleRow
-            eyebrow={`This week · ${phase}`}
-            badge={`Week ${currentWeek} of 12`}
-            title={thisWeekTitle ?? 'Loading…'}
-            caption="Teaching, journal prompts, and your weekly action."
-            href={`/circle/week/${currentWeek}`}
-          />
-        )}
-
-        {partner ? (
-          <CircleRow
-            eyebrow="Accountability partner"
-            badge={ARCHETYPE_LABELS[partner.archetype] ?? partner.archetype}
-            title={partner.users?.name ?? 'Your partner'}
-            caption="Open the thread to check in or reply."
-            href="/circle/partner"
-          />
-        ) : (
-          <CircleRow
-            eyebrow="Accountability partner"
-            badge="Pending"
-            title="Pairing happens once the cohort fills"
-            caption="You'll be notified when your match is ready."
-          />
-        )}
-
-        {nextCall ? (
-          <CircleRow
-            eyebrow={`Next live call · #${nextCall.call_number ?? ''}`}
-            badge={liveCallBadge(nextCall.scheduled_at)}
-            title={nextCall.title}
-            caption={new Date(nextCall.scheduled_at).toLocaleString('en-US', {
-              weekday: 'long', month: 'long', day: 'numeric',
-              hour: 'numeric', minute: '2-digit',
-            })}
-            href="/circle/calls"
-            externalCta={nextCall.zoom_url ? { label: 'Join call', href: nextCall.zoom_url } : undefined}
-          />
-        ) : (
-          <CircleRow
-            eyebrow="Live calls"
-            badge="No upcoming call"
-            title="Replays available for past calls"
-            caption="Catch up on anything you missed."
-            href="/circle/calls"
-          />
-        )}
-      </Section>
-
-      </div>
-
-      <div style={{ position: 'sticky', top: 24 }}>
-      {/* EVERYTHING IN THE CIRCLE — directory of every surface */}
-      <Section title="Everything in The Circle">
-        {/* Chat with Nicole — feature-gated. Lives in a separate program now. */}
-        {COACH_DM_VISIBLE && (
-          <CircleRow
-            eyebrow="Coach"
-            badge="Direct line"
-            title="Chat with Nicole"
-            caption="Private thread with your coach. Voice notes welcome."
-            href="/circle/coach"
-          />
-        )}
-        <CircleRow
-          eyebrow="Community"
-          badge="Cohort feed"
-          title="Wins, prompts, and conversations"
-          caption="See what the rest of the cohort is sharing this week."
-          href="/circle/community"
+      {/* ────────────────────────────────────────────────────────────
+          3. Voice note from Nicole — hidden if no audio uploaded
+          ──────────────────────────────────────────────────────────── */}
+      {universal?.monday_voice_note_url && currentWeek && (
+        <VoiceNoteCard
+          src={universal.monday_voice_note_url}
+          played={!!thisWeekProgress?.voice_note_played}
+          memberId={member.id}
+          weekNumber={currentWeek}
+          onPlayed={() => {
+            setProgress(prev => {
+              const i = prev.findIndex(p => p.week_number === currentWeek)
+              const next = i >= 0
+                ? prev.map(p => p.week_number === currentWeek ? { ...p, voice_note_played: true } : p)
+                : [...prev, { member_id: member.id, week_number: currentWeek, teaching_completed: false, journal_completed: false, action_completed: false, voice_note_played: true, partner_checkin_sent_at: null, journal_entry: null, completed_at: null }]
+              return next
+            })
+          }}
         />
-        <CircleRow
-          eyebrow="All weeks"
-          badge="Curriculum"
-          title="Every week of the program"
-          caption="Browse upcoming, current, and past weeks."
-          href={`/circle/week/${currentWeek ?? 1}`}
-        />
-      </Section>
-      </div>
-      </div>
+      )}
 
-      <style>{`
-        @media (max-width: 900px) {
-          .circle-cols {
-            grid-template-columns: 1fr !important;
-          }
-          .circle-cols > div { position: static !important; }
-        }
-        .circle-row:last-child { border-bottom: none !important; }
-        .circle-row:hover { background: rgba(200,148,31,0.04) !important; }
-        .circle-row:hover .circle-row-chev { color: var(--gold) !important; transform: translateX(3px); }
-      `}</style>
+      {/* ────────────────────────────────────────────────────────────
+          Friday/Saturday: cohort wins surface high — below voice note,
+          above This Week — to remind members to share.
+          ──────────────────────────────────────────────────────────── */}
+      {isWinsDay && currentWeek && (
+        <CommunityPreviewCard
+          cohortId={member.cohort_id}
+          weekNumber={currentWeek}
+          friday
+        />
+      )}
+
+      {/* ────────────────────────────────────────────────────────────
+          4. This Week — 4-step card
+          ──────────────────────────────────────────────────────────── */}
+      {currentWeek && (
+        <ThisWeekCard
+          weekNumber={currentWeek}
+          weekTitle={thisWeekTitle ?? 'This week'}
+          teachingSummary={truncate(universal?.teaching, 80)}
+          journalPrompt={truncate(personal?.journal_prompt, 90)}
+          actionText={truncate(personal?.weekly_action, 90)}
+          partnerName={partner?.users?.name ?? null}
+          progress={thisWeekProgress}
+        />
+      )}
+
+      {/* ────────────────────────────────────────────────────────────
+          5. Partner card with this week's prompt
+          ──────────────────────────────────────────────────────────── */}
+      <PartnerCard
+        partner={partner}
+        prompt={personal?.partner_prompt ?? universal?.wednesday_prompt ?? null}
+        checkInSentAt={thisWeekProgress?.partner_checkin_sent_at ?? null}
+      />
+
+      {/* ────────────────────────────────────────────────────────────
+          6. Live call card — only when a call is scheduled this week
+          ──────────────────────────────────────────────────────────── */}
+      {callThisWeek && <LiveCallCard call={callThisWeek} nowMs={nowMs} />}
+
+      {/* ────────────────────────────────────────────────────────────
+          7. Cohort activity — Wins/Prompts/All preview.
+          On Friday/Saturday this card moves up (see the conditional
+          render above the voice-note slot); we suppress this slot then
+          to avoid showing it twice.
+          ──────────────────────────────────────────────────────────── */}
+      {!isWinsDay && currentWeek && (
+        <CommunityPreviewCard
+          cohortId={member.cohort_id}
+          weekNumber={currentWeek}
+        />
+      )}
     </div>
   )
 }
 
-// ── Sub-components ───────────────────────────────────────────────────────────
+// ── Week progress strip ──────────────────────────────────────────────────────
 
-function Section({ title, right, children }: { title: string; right?: React.ReactNode; children: React.ReactNode }) {
+function WeekProgress({
+  currentWeek, completedCount, weeksAhead, progress,
+}: {
+  currentWeek: number | null
+  completedCount: number
+  weeksAhead: number
+  progress: MemberProgress[]
+}) {
   return (
-    <section style={{ marginBottom: 24 }}>
-      <header style={{
+    <section>
+      <div style={{
         display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-        marginBottom: 10,
+        marginBottom: 10, flexWrap: 'wrap', gap: 6,
       }}>
         <h2 style={{
-          fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500,
+          fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 500,
           color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
         }}>
-          {title}
+          Your 12 weeks
         </h2>
-        {right}
-      </header>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
+          <strong style={{ color: GREEN }}>{completedCount}</strong> {completedCount === 1 ? 'week' : 'weeks'} complete
+          {currentWeek != null && <> · <strong style={{ color: ORANGE }}>Week {currentWeek}</strong> in progress</>}
+          {weeksAhead > 0 && <> · {weeksAhead} {weeksAhead === 1 ? 'week' : 'weeks'} ahead</>}
+        </p>
+      </div>
       <div style={{
         background: 'var(--card)', border: '1px solid var(--line)',
-        borderRadius: 10, overflow: 'hidden',
-      }}>{children}</div>
+        borderRadius: 10, padding: 16,
+        display: 'flex', gap: 8, flexWrap: 'wrap',
+      }}>
+        {Array.from({ length: 12 }, (_, i) => {
+          const wn = i + 1
+          const p = progress.find(x => x.week_number === wn)
+          const done = isWeekComplete(p)
+          const isCurrent = wn === currentWeek
+          const isPast = currentWeek != null && wn < currentWeek
+          const isFuture = currentWeek != null && wn > currentWeek
+
+          // Past weeks: green check (even if not all 4 steps done — show as
+          // "elapsed" with a softer green if incomplete).
+          const past = isPast && !done
+
+          return (
+            <Link key={wn} href={`/circle/week/${wn}`} style={{ textDecoration: 'none' }}>
+              <div style={{
+                width: 38, height: 38, borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 12, fontWeight: 700,
+                background: done ? GREEN
+                           : isCurrent ? '#fff'
+                           : past ? GREEN_PALE
+                           : isFuture ? '#f6f4f0'
+                           : 'var(--paper2)',
+                color: done ? '#fff'
+                      : isCurrent ? ORANGE
+                      : past ? GREEN
+                      : isFuture ? GRAY_TEXT
+                      : 'var(--text-muted)',
+                border: isCurrent && !done ? `2px solid ${ORANGE}` : `1px solid ${isFuture ? GRAY : 'var(--line)'}`,
+                cursor: 'pointer', transition: 'all 0.15s',
+                boxShadow: isCurrent && !done ? `0 0 0 4px ${ORANGE}1a` : 'none',
+                fontFamily: 'var(--font-body)',
+              }}>
+                {done ? '✓' : isFuture ? <LockGlyph /> : wn}
+              </div>
+            </Link>
+          )
+        })}
+      </div>
     </section>
   )
 }
 
-function CircleRow({
-  eyebrow, badge, title, caption, href, externalCta,
-}: {
-  eyebrow: string
-  badge: string
-  title: string
-  caption?: string
-  href?: string
-  externalCta?: { label: string; href: string }
-}) {
-  const Inner = (
-    <div className="circle-row" style={{
-      display: 'flex', alignItems: 'center', gap: 16,
-      padding: '14px 16px 14px 18px',
-      borderBottom: '1px solid var(--line)',
-      position: 'relative', flexWrap: 'wrap',
-      transition: 'background 0.15s',
-    }}>
-      <span style={{
-        position: 'absolute', left: 0, top: 14, bottom: 14,
-        width: 3, background: ORANGE, borderRadius: 2,
-      }} />
+function LockGlyph() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="7" width="10" height="7" rx="1.5" />
+      <path d="M5 7V5a3 3 0 016 0v2" />
+    </svg>
+  )
+}
 
-      <div style={{ flex: 1, minWidth: 200 }}>
-        <div style={{
-          fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
-          textTransform: 'uppercase', color: ORANGE,
-          fontFamily: 'var(--font-body)', marginBottom: 6,
+// ── Voice note card ──────────────────────────────────────────────────────────
+
+function VoiceNoteCard({
+  src, played, memberId, weekNumber, onPlayed,
+}: {
+  src: string
+  played: boolean
+  memberId: string
+  weekNumber: number
+  onPlayed: () => void
+}) {
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [progress, setProgress]   = useState(0)
+  const [duration, setDuration]   = useState(0)
+  const stampedRef = useRef(false)
+
+  function togglePlay() {
+    const el = audioRef.current
+    if (!el) return
+    if (el.paused) { void el.play() } else { el.pause() }
+  }
+
+  function handleTimeUpdate(e: React.SyntheticEvent<HTMLAudioElement>) {
+    const el = e.currentTarget
+    setProgress(el.currentTime)
+    // Mark as played when the user hits 80% of the audio length.
+    // Stamp once per session — the parent reload of progress isn't needed.
+    if (!stampedRef.current && el.duration > 0 && el.currentTime / el.duration >= 0.8) {
+      stampedRef.current = true
+      void markWeekComplete(memberId, weekNumber, 'voice_note_played')
+      onPlayed()
+    }
+  }
+
+  function handleSeek(e: React.ChangeEvent<HTMLInputElement>) {
+    const el = audioRef.current
+    if (!el) return
+    el.currentTime = Number(e.target.value)
+    setProgress(el.currentTime)
+  }
+
+  function fmt(secs: number): string {
+    if (!Number.isFinite(secs) || secs < 0) return '0:00'
+    const m = Math.floor(secs / 60)
+    const s = Math.floor(secs % 60)
+    return `${m}:${s.toString().padStart(2, '0')}`
+  }
+
+  return (
+    <section style={{
+      background: `linear-gradient(135deg, ${ORANGE_PALE} 0%, #fff 75%)`,
+      border: '1px solid var(--line)',
+      borderLeft: `3px solid ${ORANGE}`,
+      borderRadius: 10,
+      padding: '16px 18px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <p style={{
+          fontSize: 10, fontWeight: 700, letterSpacing: '0.14em',
+          textTransform: 'uppercase', color: ORANGE, margin: 0,
+          fontFamily: 'var(--font-body)',
         }}>
-          {eyebrow}
+          From Nicole this week
+        </p>
+        {!played && (
           <span style={{
-            marginLeft: 10, fontWeight: 600, fontSize: 9,
-            padding: '3px 8px', borderRadius: 6,
-            background: `${ORANGE}14`, color: ORANGE,
-            letterSpacing: '0.08em',
+            background: ORANGE, color: '#fff',
+            fontSize: 9, fontWeight: 700, letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            padding: '3px 8px', borderRadius: 999,
           }}>
-            {badge}
+            New
           </span>
-        </div>
-        <div style={{
-          fontSize: 16, fontWeight: 600, color: 'var(--ink)',
-          fontFamily: 'var(--font-body)', lineHeight: 1.4,
-        }}>
-          {title}
-        </div>
-        {caption && (
-          <div style={{
-            fontSize: 12, color: 'var(--text-muted)',
-            fontFamily: 'var(--font-body)', marginTop: 4, lineHeight: 1.5,
-          }}>
-            {caption}
-          </div>
         )}
       </div>
 
-      {externalCta && (
-        <a
-          href={externalCta.href} target="_blank" rel="noopener noreferrer"
-          onClick={e => e.stopPropagation()}
-          style={{
-            padding: '8px 14px', borderRadius: 8,
-            background: ORANGE, color: '#fff',
-            fontSize: 13, fontWeight: 600,
-            textDecoration: 'none', fontFamily: 'var(--font-body)',
-            whiteSpace: 'nowrap', flexShrink: 0,
-          }}
-        >
-          {externalCta.label} ↗
-        </a>
-      )}
+      <audio
+        ref={audioRef}
+        src={src}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onEnded={() => setIsPlaying(false)}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
+        preload="metadata"
+      />
 
-      {href && (
-        <span className="circle-row-chev" style={{
-          color: 'var(--text-muted)', fontSize: 18,
-          flexShrink: 0, paddingRight: 4,
-          transition: 'color 0.15s, transform 0.15s',
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button
+          onClick={togglePlay}
+          aria-label={isPlaying ? 'Pause voice note' : 'Play voice note'}
+          style={{
+            width: 40, height: 40, borderRadius: '50%',
+            background: ORANGE, color: '#fff',
+            border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+            transition: 'background 0.15s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = ORANGE_DEEP)}
+          onMouseLeave={e => (e.currentTarget.style.background = ORANGE)}
+        >
+          {isPlaying ? (
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="4" y="3" width="3" height="10" rx="0.5" /><rect x="9" y="3" width="3" height="10" rx="0.5" /></svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M4.5 3.5v9l8-4.5-8-4.5z" /></svg>
+          )}
+        </button>
+
+        <input
+          type="range"
+          min={0}
+          max={Number.isFinite(duration) ? duration : 0}
+          step={0.1}
+          value={progress}
+          onChange={handleSeek}
+          style={{
+            flex: 1, accentColor: ORANGE,
+            height: 4, cursor: 'pointer',
+          }}
+        />
+
+        <span style={{
+          fontSize: 11, color: 'var(--text-muted)',
+          fontVariantNumeric: 'tabular-nums', minWidth: 70, textAlign: 'right',
+          fontFamily: 'var(--font-body)',
         }}>
-          ›
+          {fmt(progress)} / {fmt(duration)}
         </span>
-      )}
+      </div>
+    </section>
+  )
+}
+
+// ── This week — 4-step card ──────────────────────────────────────────────────
+
+function ThisWeekCard({
+  weekNumber, weekTitle, teachingSummary, journalPrompt, actionText, partnerName, progress,
+}: {
+  weekNumber: number
+  weekTitle: string
+  teachingSummary: string
+  journalPrompt: string
+  actionText: string
+  partnerName: string | null
+  progress: Partial<MemberProgress> | undefined
+}) {
+  const teachingDone = !!progress?.teaching_completed
+  const journalDone  = !!progress?.journal_completed
+  const actionDone   = !!progress?.action_completed
+  const partnerDone  = !!progress?.partner_checkin_sent_at
+
+  // Primary CTA cycles through the funnel.
+  const cta: { label: string; href: string; success?: boolean } =
+    !teachingDone ? { label: 'Start teaching →', href: `/circle/week/${weekNumber}` }
+    : !journalDone ? { label: 'Open journal →',   href: `/circle/week/${weekNumber}` }
+    : !actionDone  ? { label: 'Log my action →',  href: `/circle/week/${weekNumber}` }
+    : !partnerDone ? { label: 'Send partner check-in →', href: '/circle/partner' }
+    : { label: "You're done this week ✓", href: `/circle/week/${weekNumber}`, success: true }
+
+  return (
+    <section>
+      <div style={{
+        display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+        marginBottom: 10,
+      }}>
+        <h2 style={{
+          fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 500,
+          color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
+        }}>
+          This week · Week {weekNumber}
+        </h2>
+        <span style={{
+          fontSize: 11, color: 'var(--text-muted)',
+        }}>
+          {weekTitle}
+        </span>
+      </div>
+      <div style={{
+        background: 'var(--card)', border: '1px solid var(--line)',
+        borderLeft: `3px solid ${ORANGE}`,
+        borderRadius: 10, overflow: 'hidden',
+      }}>
+        <Step
+          n={1}
+          status={teachingDone ? 'done' : 'active'}
+          title="Teaching"
+          subtitle={teachingSummary || 'This week\'s teaching from Nicole.'}
+        />
+        <Step
+          n={2}
+          status={journalDone ? 'done' : teachingDone ? 'active' : 'locked'}
+          title="Journal"
+          subtitle={journalPrompt || 'Reflect on this week\'s prompt.'}
+        />
+        <Step
+          n={3}
+          status={actionDone ? 'done' : journalDone ? 'active' : 'locked'}
+          title="Action"
+          subtitle={actionText || 'This week\'s one action.'}
+        />
+        <Step
+          n={4}
+          status={partnerDone ? 'done' : 'active'}  // never gated
+          title="Partner check-in"
+          subtitle={partnerName ? `Send this week's check-in to ${partnerName}` : 'Send this week\'s check-in to your partner'}
+          last
+        />
+
+        <Link href={cta.href} style={{ textDecoration: 'none', display: 'block', padding: '12px 16px 16px' }}>
+          <button style={{
+            width: '100%', padding: '13px 18px',
+            borderRadius: 10, border: 'none',
+            background: cta.success ? GREEN : ORANGE,
+            color: '#fff',
+            fontSize: 14, fontWeight: 600,
+            cursor: 'pointer', fontFamily: 'inherit',
+            transition: 'opacity 0.15s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
+          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+          >
+            {cta.label}
+          </button>
+        </Link>
+      </div>
+    </section>
+  )
+}
+
+function Step({
+  n, status, title, subtitle, last,
+}: {
+  n: number
+  status: 'done' | 'active' | 'locked'
+  title: string
+  subtitle: string
+  last?: boolean
+}) {
+  const bg = status === 'done' ? GREEN
+           : status === 'active' ? '#fff'
+           : '#f6f4f0'
+  const fg = status === 'done' ? '#fff'
+           : status === 'active' ? ORANGE
+           : GRAY_TEXT
+  const border = status === 'active' ? `2px solid ${ORANGE}`
+               : status === 'done'   ? `1px solid ${GREEN}`
+               : `1px solid ${GRAY}`
+  const titleColor = status === 'locked' ? GRAY_TEXT : 'var(--ink)'
+  const subColor   = status === 'locked' ? GRAY_TEXT : 'var(--text-muted)'
+
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'flex-start', gap: 14,
+      padding: '14px 16px 14px 18px',
+      borderBottom: last ? 'none' : '1px solid var(--line)',
+    }}>
+      <div style={{
+        width: 28, height: 28, borderRadius: '50%',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 12, fontWeight: 700,
+        background: bg, color: fg, border,
+        flexShrink: 0, marginTop: 2,
+      }}>
+        {status === 'done' ? '✓' : status === 'locked' ? <LockGlyph /> : n}
+      </div>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <p style={{ fontSize: 14, fontWeight: 600, color: titleColor, margin: '0 0 4px', lineHeight: 1.35 }}>
+          {title}
+        </p>
+        <p style={{ fontSize: 12, color: subColor, margin: 0, lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' }}>
+          {subtitle}
+        </p>
+      </div>
     </div>
   )
-
-  return href
-    ? <Link href={href} style={{ textDecoration: 'none', display: 'block' }}>{Inner}</Link>
-    : Inner
 }
 
-function liveCallBadge(scheduledAt: string): string {
-  const ms = new Date(scheduledAt).getTime() - Date.now()
+// ── Partner card ─────────────────────────────────────────────────────────────
+
+function PartnerCard({
+  partner, prompt, checkInSentAt,
+}: {
+  partner: { archetype: string; users: { name: string | null } | null } | null
+  prompt: string | null
+  checkInSentAt: string | null
+}) {
+  if (!partner) {
+    return (
+      <section>
+        <h2 style={{
+          fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 500,
+          color: 'var(--ink)', margin: '0 0 10px', letterSpacing: '-0.01em',
+        }}>
+          Your partner
+        </h2>
+        <div style={{
+          background: 'var(--card)', border: '1px solid var(--line)',
+          borderLeft: `3px solid ${ORANGE}`,
+          borderRadius: 10, padding: '16px 18px',
+        }}>
+          <p style={{ fontSize: 13, color: 'var(--text-soft)', margin: '0 0 4px', lineHeight: 1.5 }}>
+            Pairing happens once the cohort fills.
+          </p>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+            You&apos;ll be notified the moment your match is ready.
+          </p>
+        </div>
+      </section>
+    )
+  }
+
+  const partnerName = partner.users?.name ?? 'Your partner'
+  const archLabel   = ARCHETYPE_LABELS[partner.archetype] ?? partner.archetype
+  const done = !!checkInSentAt
+
+  return (
+    <section>
+      <div style={{
+        display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+        marginBottom: 10,
+      }}>
+        <h2 style={{
+          fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 500,
+          color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
+        }}>
+          Your partner
+        </h2>
+        {done ? (
+          <span style={{
+            background: GREEN_PALE, color: GREEN,
+            fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            padding: '3px 8px', borderRadius: 999,
+          }}>
+            Check-in done ✓
+          </span>
+        ) : (
+          <span style={{
+            background: ORANGE, color: '#fff',
+            fontSize: 9, fontWeight: 700, letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            padding: '3px 8px', borderRadius: 999,
+          }}>
+            New
+          </span>
+        )}
+      </div>
+
+      <div style={{
+        background: 'var(--card)', border: '1px solid var(--line)',
+        borderLeft: `3px solid ${ORANGE}`,
+        borderRadius: 10, padding: '16px 18px',
+      }}>
+        <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)', margin: '0 0 2px', lineHeight: 1.4 }}>
+          {partnerName}
+        </p>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0, letterSpacing: '0.04em' }}>
+          {archLabel}
+        </p>
+
+        {prompt && (
+          <blockquote style={{
+            margin: '14px 0 0',
+            padding: '12px 14px',
+            background: ORANGE_PALE,
+            borderLeft: `2px solid ${ORANGE}`,
+            borderRadius: 6,
+            fontFamily: 'var(--font-display)',
+            fontSize: 14, fontStyle: 'italic', fontWeight: 300,
+            color: 'var(--ink)', lineHeight: 1.55,
+          }}>
+            &ldquo;{prompt}&rdquo;
+          </blockquote>
+        )}
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 14, flexWrap: 'wrap' }}>
+          <Link href="/circle/partner" style={{ textDecoration: 'none', flex: '1 1 200px' }}>
+            <button style={{
+              width: '100%', padding: '11px 16px',
+              borderRadius: 8, border: 'none',
+              background: ORANGE, color: '#fff',
+              fontSize: 13, fontWeight: 600,
+              cursor: 'pointer', fontFamily: 'inherit',
+              transition: 'opacity 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+            >
+              Reply to {partnerName.split(/\s+/)[0]}
+            </button>
+          </Link>
+          <Link href="/circle/partner" style={{ textDecoration: 'none', flex: '1 1 140px' }}>
+            <button style={{
+              width: '100%', padding: '11px 16px',
+              borderRadius: 8,
+              background: 'transparent',
+              border: '1px solid var(--line-md)',
+              color: 'var(--text-soft)',
+              fontSize: 13, fontWeight: 500,
+              cursor: 'pointer', fontFamily: 'inherit',
+              transition: 'background 0.15s, color 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--paper)'; e.currentTarget.style.color = 'var(--ink)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-soft)' }}
+            >
+              View full thread
+            </button>
+          </Link>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── Live call card ───────────────────────────────────────────────────────────
+
+function LiveCallCard({ call, nowMs }: { call: LiveCall; nowMs: number }) {
+  const when = new Date(call.scheduled_at)
+  const dateLabel = when.toLocaleString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric',
+    hour: 'numeric', minute: '2-digit',
+  })
+  const ms = when.getTime() - nowMs
   const days = Math.floor(ms / 86400000)
   const hours = Math.floor((ms % 86400000) / 3600000)
-  if (days >= 1) return `in ${days} ${days === 1 ? 'day' : 'days'}`
-  if (hours >= 1) return `in ${hours} ${hours === 1 ? 'hour' : 'hours'}`
-  return 'starting soon'
+  const countdown = days >= 1 ? `in ${days} ${days === 1 ? 'day' : 'days'}`
+                  : hours >= 1 ? `in ${hours} ${hours === 1 ? 'hour' : 'hours'}`
+                  : 'starting soon'
+
+  return (
+    <section>
+      <h2 style={{
+        fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 500,
+        color: 'var(--ink)', margin: '0 0 10px', letterSpacing: '-0.01em',
+      }}>
+        Live call this week
+      </h2>
+      <div style={{
+        background: 'var(--card)', border: '1px solid var(--line)',
+        borderLeft: `3px solid ${ORANGE}`,
+        borderRadius: 10, padding: '16px 18px',
+        display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+      }}>
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <p style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
+            textTransform: 'uppercase', color: ORANGE,
+            margin: '0 0 6px', fontFamily: 'var(--font-body)',
+          }}>
+            Call #{call.call_number} · {countdown}
+          </p>
+          <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)', margin: '0 0 4px', lineHeight: 1.4 }}>
+            {call.title}
+          </p>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+            {dateLabel}
+          </p>
+        </div>
+        {call.zoom_url && (
+          <a
+            href={call.zoom_url} target="_blank" rel="noopener noreferrer"
+            style={{
+              padding: '11px 18px', borderRadius: 8,
+              background: ORANGE, color: '#fff',
+              fontSize: 13, fontWeight: 600,
+              textDecoration: 'none', fontFamily: 'inherit',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Join call ↗
+          </a>
+        )}
+      </div>
+    </section>
+  )
 }
+
+
+// ── Empty state ──────────────────────────────────────────────────────────────
 
 function EmptyState({ title, body, cta }: { title: string; body: string; cta?: { href: string; label: string } }) {
   return (
