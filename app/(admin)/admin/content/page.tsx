@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react'
 import {
   fetchAdminCohorts, fetchContentSchedule, fetchLiveCalls, updateLiveCall, createLiveCall,
-  insertContent,
+  insertContent, updateContent,
   type ContentRow, type AdminLiveCall,
 } from '@/lib/admin/hooks'
 import StlMediaManager from '@/components/admin/StlMediaManager'
@@ -44,6 +44,12 @@ export default function ContentPage() {
     teaching: string
     journal_prompt: string
     weekly_action: string
+    monday_prompt: string
+    wednesday_prompt: string
+    friday_prompt: string
+    wins_prompt: string
+    video_url: string
+    monday_voice_note_url: string
     live_call_week: boolean
     cohort_scope: 'this_cohort' | 'global'
   }>({
@@ -53,9 +59,47 @@ export default function ContentPage() {
     teaching: '',
     journal_prompt: '',
     weekly_action: '',
+    monday_prompt: '',
+    wednesday_prompt: '',
+    friday_prompt: '',
+    wins_prompt: '',
+    video_url: '',
+    monday_voice_note_url: '',
     live_call_week: false,
     cohort_scope: 'this_cohort',
   })
+
+  // Per-row inline edit state for existing content rows
+  const [editingRowId, setEditingRowId] = useState<string | null>(null)
+  const [rowEdits, setRowEdits] = useState<Record<string, Partial<ContentRow>>>({})
+  const [savingRow, setSavingRow] = useState<string | null>(null)
+  const [rowError, setRowError] = useState<string | null>(null)
+
+  function startEditRow(row: ContentRow) {
+    setEditingRowId(row.id)
+    setRowEdits(prev => ({ ...prev, [row.id]: { ...row } }))
+    setRowError(null)
+  }
+  function patchRowEdit(id: string, patch: Partial<ContentRow>) {
+    setRowEdits(prev => ({ ...prev, [id]: { ...(prev[id] ?? {}), ...patch } }))
+  }
+  async function saveRow(id: string) {
+    const edits = rowEdits[id]
+    if (!edits) return
+    setSavingRow(id); setRowError(null)
+    const { id: _id, ...payload } = edits as any
+    // Normalize blank strings to null so the DB doesn't store empty text.
+    for (const k of ['teaching', 'journal_prompt', 'weekly_action', 'monday_prompt',
+                     'wednesday_prompt', 'friday_prompt', 'wins_prompt',
+                     'video_url', 'monday_voice_note_url'] as const) {
+      if (typeof payload[k] === 'string' && !payload[k].trim()) payload[k] = null
+    }
+    const result = await updateContent(id, payload)
+    setSavingRow(null)
+    if (result.error) { setRowError(result.error.message); return }
+    setEditingRowId(null)
+    fetchContentSchedule(cohortId).then(setContent)
+  }
 
   async function handleCreateContent() {
     if (!newContent.week_title.trim()) return
@@ -70,6 +114,12 @@ export default function ContentPage() {
       teaching: newContent.teaching || null,
       journal_prompt: newContent.journal_prompt || null,
       weekly_action: newContent.weekly_action || null,
+      monday_prompt: newContent.monday_prompt || null,
+      wednesday_prompt: newContent.wednesday_prompt || null,
+      friday_prompt: newContent.friday_prompt || null,
+      wins_prompt: newContent.wins_prompt || null,
+      video_url: newContent.video_url || null,
+      monday_voice_note_url: newContent.monday_voice_note_url || null,
       live_call_week: newContent.live_call_week,
     })
     setCreatingContent(false)
@@ -81,6 +131,8 @@ export default function ContentPage() {
     setNewContent({
       week_number: 1, archetype: 'universal', week_title: '',
       teaching: '', journal_prompt: '', weekly_action: '',
+      monday_prompt: '', wednesday_prompt: '', friday_prompt: '', wins_prompt: '',
+      video_url: '', monday_voice_note_url: '',
       live_call_week: false, cohort_scope: 'this_cohort',
     })
     fetchContentSchedule(cohortId).then(setContent)
@@ -269,6 +321,58 @@ export default function ContentPage() {
                 onChange={e => setNewContent({ ...newContent, weekly_action: e.target.value })}
                 style={S.input}
               />
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 4 }}>Monday journal prompt</div>
+              <textarea
+                rows={2}
+                placeholder="Daily journal prompt for Monday — different from the weekly journal prompt."
+                value={newContent.monday_prompt}
+                onChange={e => setNewContent({ ...newContent, monday_prompt: e.target.value })}
+                style={{ ...S.input, resize: 'vertical' }}
+              />
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 4 }}>Wednesday partner prompt</div>
+              <textarea
+                rows={2}
+                placeholder="What to share with their partner on Wednesday."
+                value={newContent.wednesday_prompt}
+                onChange={e => setNewContent({ ...newContent, wednesday_prompt: e.target.value })}
+                style={{ ...S.input, resize: 'vertical' }}
+              />
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 4 }}>Friday wins prompt</div>
+              <textarea
+                rows={2}
+                placeholder="Prompt for the Friday win they capture privately."
+                value={newContent.friday_prompt}
+                onChange={e => setNewContent({ ...newContent, friday_prompt: e.target.value })}
+                style={{ ...S.input, resize: 'vertical' }}
+              />
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 4 }}>Wins composer seed (optional)</div>
+              <textarea
+                rows={2}
+                placeholder="Copy that prefills the cohort wins composer on the week page."
+                value={newContent.wins_prompt}
+                onChange={e => setNewContent({ ...newContent, wins_prompt: e.target.value })}
+                style={{ ...S.input, resize: 'vertical' }}
+              />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 4 }}>Teaching video URL</div>
+                  <input
+                    placeholder="https://… (embeddable iframe URL)"
+                    value={newContent.video_url}
+                    onChange={e => setNewContent({ ...newContent, video_url: e.target.value })}
+                    style={S.input}
+                  />
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 4 }}>Monday voice note URL</div>
+                  <input
+                    placeholder="https://… (audio file)"
+                    value={newContent.monday_voice_note_url}
+                    onChange={e => setNewContent({ ...newContent, monday_voice_note_url: e.target.value })}
+                    style={S.input}
+                  />
+                </div>
+              </div>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text-soft)', marginBottom: 8, cursor: 'pointer' }}>
                 <input
                   type="checkbox"
@@ -315,12 +419,123 @@ export default function ContentPage() {
                 )}
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {weekContent.map(c => (
-                <span key={c.id} style={S.archTag()}>
-                  {c.archetype} {c.journal_prompt ? '✓' : '⚠'}{c.weekly_action ? '✓' : '⚠'}
-                </span>
-              ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {weekContent.map(c => {
+                const isEditing = editingRowId === c.id
+                const e = rowEdits[c.id] ?? {}
+                return (
+                  <div key={c.id} style={{ border: '1px solid var(--line)', borderRadius: 8, background: '#fafaf7' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', flexWrap: 'wrap' }}>
+                      <span style={S.archTag()}>{c.archetype}</span>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        <Indicator label="Teaching"  on={!!c.teaching}        />
+                        <Indicator label="Journal"   on={!!c.journal_prompt}  />
+                        <Indicator label="Action"    on={!!c.weekly_action}   />
+                        <Indicator label="Mon"       on={!!c.monday_prompt}   />
+                        <Indicator label="Wed"       on={!!c.wednesday_prompt}/>
+                        <Indicator label="Fri"       on={!!c.friday_prompt}   />
+                        <Indicator label="Video"     on={!!c.video_url}       />
+                        <Indicator label="Voice"     on={!!c.monday_voice_note_url} />
+                      </span>
+                      <button
+                        onClick={() => isEditing ? setEditingRowId(null) : startEditRow(c)}
+                        style={{ ...S.btn('ghost'), marginLeft: 'auto', padding: '4px 12px', fontSize: 11 }}
+                      >
+                        {isEditing ? 'Cancel' : 'Edit'}
+                      </button>
+                    </div>
+                    {isEditing && (
+                      <div style={{ padding: '6px 12px 12px', borderTop: '1px solid var(--line)' }}>
+                        <FieldLabel>Week title</FieldLabel>
+                        <input
+                          value={(e.week_title ?? c.week_title) ?? ''}
+                          onChange={ev => patchRowEdit(c.id, { week_title: ev.target.value })}
+                          style={S.input}
+                        />
+                        <FieldLabel>Teaching</FieldLabel>
+                        <textarea
+                          rows={3}
+                          value={(e.teaching ?? c.teaching) ?? ''}
+                          onChange={ev => patchRowEdit(c.id, { teaching: ev.target.value })}
+                          style={{ ...S.input, resize: 'vertical' }}
+                        />
+                        <FieldLabel>Journal prompt (weekly)</FieldLabel>
+                        <textarea
+                          rows={2}
+                          value={(e.journal_prompt ?? c.journal_prompt) ?? ''}
+                          onChange={ev => patchRowEdit(c.id, { journal_prompt: ev.target.value })}
+                          style={{ ...S.input, resize: 'vertical' }}
+                        />
+                        <FieldLabel>Weekly action</FieldLabel>
+                        <input
+                          value={(e.weekly_action ?? c.weekly_action) ?? ''}
+                          onChange={ev => patchRowEdit(c.id, { weekly_action: ev.target.value })}
+                          style={S.input}
+                        />
+                        <FieldLabel>Monday journal prompt</FieldLabel>
+                        <textarea
+                          rows={2}
+                          value={(e.monday_prompt ?? c.monday_prompt) ?? ''}
+                          onChange={ev => patchRowEdit(c.id, { monday_prompt: ev.target.value })}
+                          style={{ ...S.input, resize: 'vertical' }}
+                        />
+                        <FieldLabel>Wednesday partner prompt</FieldLabel>
+                        <textarea
+                          rows={2}
+                          value={(e.wednesday_prompt ?? c.wednesday_prompt) ?? ''}
+                          onChange={ev => patchRowEdit(c.id, { wednesday_prompt: ev.target.value })}
+                          style={{ ...S.input, resize: 'vertical' }}
+                        />
+                        <FieldLabel>Friday wins prompt</FieldLabel>
+                        <textarea
+                          rows={2}
+                          value={(e.friday_prompt ?? c.friday_prompt) ?? ''}
+                          onChange={ev => patchRowEdit(c.id, { friday_prompt: ev.target.value })}
+                          style={{ ...S.input, resize: 'vertical' }}
+                        />
+                        <FieldLabel>Wins composer seed</FieldLabel>
+                        <textarea
+                          rows={2}
+                          value={(e.wins_prompt ?? c.wins_prompt) ?? ''}
+                          onChange={ev => patchRowEdit(c.id, { wins_prompt: ev.target.value })}
+                          style={{ ...S.input, resize: 'vertical' }}
+                        />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                          <div>
+                            <FieldLabel>Teaching video URL</FieldLabel>
+                            <input
+                              value={(e.video_url ?? c.video_url) ?? ''}
+                              onChange={ev => patchRowEdit(c.id, { video_url: ev.target.value })}
+                              style={S.input}
+                            />
+                          </div>
+                          <div>
+                            <FieldLabel>Monday voice note URL</FieldLabel>
+                            <input
+                              value={(e.monday_voice_note_url ?? c.monday_voice_note_url) ?? ''}
+                              onChange={ev => patchRowEdit(c.id, { monday_voice_note_url: ev.target.value })}
+                              style={S.input}
+                            />
+                          </div>
+                        </div>
+                        {rowError && editingRowId === c.id && (
+                          <p style={{ fontSize: 12, color: 'var(--red)', margin: '6px 0' }}>{rowError}</p>
+                        )}
+                        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                          <button
+                            onClick={() => saveRow(c.id)}
+                            disabled={savingRow === c.id}
+                            style={{ ...S.btn('primary'), opacity: savingRow === c.id ? 0.6 : 1 }}
+                          >
+                            {savingRow === c.id ? 'Saving…' : 'Save changes'}
+                          </button>
+                          <button onClick={() => setEditingRowId(null)} style={S.btn('ghost')}>Cancel</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         )
@@ -465,5 +680,31 @@ export default function ContentPage() {
         </div>
       )}
     </div>
+  )
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      fontSize: 10, fontWeight: 700,
+      color: 'var(--text-muted)', letterSpacing: '.08em',
+      textTransform: 'uppercase', marginBottom: 4,
+    }}>
+      {children}
+    </div>
+  )
+}
+
+function Indicator({ label, on }: { label: string; on: boolean }) {
+  return (
+    <span style={{
+      fontSize: 10, fontWeight: 600,
+      padding: '2px 7px', borderRadius: 999,
+      background: on ? 'rgba(60,140,80,0.14)' : 'var(--line)',
+      color: on ? '#3c6f47' : 'var(--text-muted)',
+      whiteSpace: 'nowrap',
+    }}>
+      {on ? '✓' : '○'} {label}
+    </span>
   )
 }

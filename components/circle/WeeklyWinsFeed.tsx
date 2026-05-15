@@ -70,8 +70,20 @@ export default function WeeklyWinsFeed({
     setMyWin(mine)
     const replies = await getAdminRepliesForPosts(allWins.map(w => w.id))
     setNicoleReplies(replies)
-    if (!mine && winsPrompt && draft === '') {
-      setDraft(winsPrompt)
+    if (!mine && draft === '') {
+      // FridayWinsComposer (above on the page) hands off via sessionStorage
+      // when the member chose "Share publicly". That takes priority over the
+      // default winsPrompt seed copy.
+      let handoff: string | null = null
+      try {
+        handoff = sessionStorage.getItem(`circle:fridayDraft:${weekNumber}`)
+      } catch { /* sessionStorage unavailable */ }
+      if (handoff) {
+        setDraft(handoff)
+        try { sessionStorage.removeItem(`circle:fridayDraft:${weekNumber}`) } catch { /* ignore */ }
+      } else if (winsPrompt) {
+        setDraft(winsPrompt)
+      }
     }
     setLoading(false)
   }

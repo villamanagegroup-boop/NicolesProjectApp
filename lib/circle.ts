@@ -64,6 +64,60 @@ export interface MemberProgress {
   partner_checkin_sent_at: string | null
   journal_entry: string | null
   completed_at: string | null
+  // Daily prompts (added in migration 028)
+  monday_response: string | null
+  monday_completed_at: string | null
+  /** Private Friday win text (migration 027). The cohort-posted version is a circle_post. */
+  friday_win: string | null
+  friday_completed_at: string | null
+}
+
+export type DailyPromptDay = 'monday' | 'wednesday' | 'friday'
+
+/**
+ * Save & mark a daily prompt complete (Monday journal, Wednesday partner, Friday wins).
+ * - Monday: stores `monday_response` text + stamps `monday_completed_at`.
+ * - Wednesday: stamps `partner_checkin_sent_at` (Wednesday IS the partner check-in).
+ * - Friday: stores `friday_win` text + stamps `friday_completed_at`.
+ */
+export async function saveDailyPrompt(
+  memberId: string,
+  weekNumber: number,
+  day: DailyPromptDay,
+  text: string | null,
+): Promise<boolean> {
+  const now = new Date().toISOString()
+  const update: Record<string, unknown> = { member_id: memberId, week_number: weekNumber }
+  if (day === 'monday') {
+    if (text != null) update.monday_response = text
+    update.monday_completed_at = now
+  } else if (day === 'wednesday') {
+    update.partner_checkin_sent_at = now
+  } else {
+    if (text != null) update.friday_win = text
+    update.friday_completed_at = now
+  }
+  const { error } = await supabase
+    .from('circle_member_progress')
+    .upsert(update, { onConflict: 'member_id,week_number' })
+  return !error
+}
+
+/** Update the saved text for a daily prompt without changing its completion timestamp. */
+export async function saveDailyPromptDraft(
+  memberId: string,
+  weekNumber: number,
+  day: DailyPromptDay,
+  text: string,
+): Promise<boolean> {
+  const update: Record<string, unknown> = { member_id: memberId, week_number: weekNumber }
+  if (day === 'monday') update.monday_response = text
+  else if (day === 'friday') update.friday_win = text
+  else return true // Wednesday has no body to save
+  const { error } = await supabase
+    .from('circle_member_progress')
+    .upsert(update, { onConflict: 'member_id,week_number' })
+  return !error
 }
 
 export interface CirclePost {

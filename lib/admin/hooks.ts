@@ -150,7 +150,11 @@ export interface ContentRow {
   monday_prompt: string | null
   wednesday_prompt: string | null
   friday_prompt: string | null
+  /** Pre-populated copy for the weekly wins composer (migration 026). */
+  wins_prompt: string | null
   video_url: string | null
+  /** Audio for the Monday voice note card on /circle home (migration 025). */
+  monday_voice_note_url: string | null
   live_call_week: boolean
 }
 
@@ -555,23 +559,27 @@ export async function insertContent(input: {
   monday_prompt?: string | null
   wednesday_prompt?: string | null
   friday_prompt?: string | null
+  wins_prompt?: string | null
   video_url?: string | null
+  monday_voice_note_url?: string | null
   live_call_week?: boolean
 }) {
   return supabase.from('circle_weekly_content').insert({
-    cohort_id:        input.cohort_id,
-    week_number:      input.week_number,
-    archetype:        input.archetype,
-    month_name:       input.month_name,
-    week_title:       input.week_title,
-    teaching:         input.teaching        ?? null,
-    journal_prompt:   input.journal_prompt  ?? null,
-    weekly_action:    input.weekly_action   ?? null,
-    monday_prompt:    input.monday_prompt   ?? null,
-    wednesday_prompt: input.wednesday_prompt?? null,
-    friday_prompt:    input.friday_prompt   ?? null,
-    video_url:        input.video_url       ?? null,
-    live_call_week:   input.live_call_week  ?? false,
+    cohort_id:              input.cohort_id,
+    week_number:            input.week_number,
+    archetype:              input.archetype,
+    month_name:             input.month_name,
+    week_title:             input.week_title,
+    teaching:               input.teaching              ?? null,
+    journal_prompt:         input.journal_prompt        ?? null,
+    weekly_action:          input.weekly_action         ?? null,
+    monday_prompt:          input.monday_prompt         ?? null,
+    wednesday_prompt:       input.wednesday_prompt      ?? null,
+    friday_prompt:          input.friday_prompt         ?? null,
+    wins_prompt:            input.wins_prompt           ?? null,
+    video_url:              input.video_url             ?? null,
+    monday_voice_note_url:  input.monday_voice_note_url ?? null,
+    live_call_week:         input.live_call_week        ?? false,
   }).select().single()
 }
 

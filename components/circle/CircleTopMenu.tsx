@@ -65,7 +65,7 @@ export default function CircleTopMenu() {
     },
     {
       href: `/circle/week/${currentWeek ?? 1}`,
-      label: 'All weeks',
+      label: 'This week',
       icon: <BookIcon />,
       matches: p => p.startsWith('/circle/week'),
     },

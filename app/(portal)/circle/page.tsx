@@ -29,6 +29,7 @@ import {
   getCurrentWeekNumber,
   getWeekContent,
   markWeekComplete,
+  markPartnerCheckinSent,
   type CircleMember,
   type WeeklyContent,
   type LiveCall,
@@ -307,7 +308,14 @@ export default function CirclePage() {
               const i = prev.findIndex(p => p.week_number === currentWeek)
               const next = i >= 0
                 ? prev.map(p => p.week_number === currentWeek ? { ...p, voice_note_played: true } : p)
-                : [...prev, { member_id: member.id, week_number: currentWeek, teaching_completed: false, journal_completed: false, action_completed: false, voice_note_played: true, partner_checkin_sent_at: null, journal_entry: null, completed_at: null }]
+                : [...prev, {
+                    member_id: member.id, week_number: currentWeek,
+                    teaching_completed: false, journal_completed: false,
+                    action_completed: false, voice_note_played: true,
+                    partner_checkin_sent_at: null, journal_entry: null, completed_at: null,
+                    monday_response: null, monday_completed_at: null,
+                    friday_win: null, friday_completed_at: null,
+                  }]
               return next
             })
           }}
@@ -329,7 +337,7 @@ export default function CirclePage() {
       {/* ────────────────────────────────────────────────────────────
           4. This Week — 4-step card
           ──────────────────────────────────────────────────────────── */}
-      {currentWeek && (
+      {currentWeek && member && (
         <ThisWeekCard
           weekNumber={currentWeek}
           weekTitle={thisWeekTitle ?? 'This week'}
@@ -338,6 +346,24 @@ export default function CirclePage() {
           actionText={truncate(personal?.weekly_action, 90)}
           partnerName={partner?.users?.name ?? null}
           progress={thisWeekProgress}
+          onPartnerComplete={async () => {
+            const ok = await markPartnerCheckinSent(member.id, currentWeek)
+            if (!ok) return
+            const stamp = new Date().toISOString()
+            setProgress(prev => {
+              const i = prev.findIndex(p => p.week_number === currentWeek)
+              return i >= 0
+                ? prev.map(p => p.week_number === currentWeek ? { ...p, partner_checkin_sent_at: stamp } : p)
+                : [...prev, {
+                    member_id: member.id, week_number: currentWeek,
+                    teaching_completed: false, journal_completed: false,
+                    action_completed: false, voice_note_played: false,
+                    partner_checkin_sent_at: stamp, journal_entry: null, completed_at: null,
+                    monday_response: null, monday_completed_at: null,
+                    friday_win: null, friday_completed_at: null,
+                  }]
+            })
+          }}
         />
       )}
 
@@ -594,7 +620,7 @@ function VoiceNoteCard({
 // ── This week — 4-step card ──────────────────────────────────────────────────
 
 function ThisWeekCard({
-  weekNumber, weekTitle, teachingSummary, journalPrompt, actionText, partnerName, progress,
+  weekNumber, weekTitle, teachingSummary, journalPrompt, actionText, partnerName, progress, onPartnerComplete,
 }: {
   weekNumber: number
   weekTitle: string
@@ -603,6 +629,7 @@ function ThisWeekCard({
   actionText: string
   partnerName: string | null
   progress: Partial<MemberProgress> | undefined
+  onPartnerComplete?: () => void | Promise<void>
 }) {
   const teachingDone = !!progress?.teaching_completed
   const journalDone  = !!progress?.journal_completed
@@ -663,6 +690,7 @@ function ThisWeekCard({
           status={partnerDone ? 'done' : 'active'}  // never gated
           title="Partner check-in"
           subtitle={partnerName ? `Send this week's check-in to ${partnerName}` : 'Send this week\'s check-in to your partner'}
+          onMarkDone={partnerDone ? undefined : onPartnerComplete}
           last
         />
 
@@ -688,13 +716,14 @@ function ThisWeekCard({
 }
 
 function Step({
-  n, status, title, subtitle, last,
+  n, status, title, subtitle, last, onMarkDone,
 }: {
   n: number
   status: 'done' | 'active' | 'locked'
   title: string
   subtitle: string
   last?: boolean
+  onMarkDone?: () => void | Promise<void>
 }) {
   const bg = status === 'done' ? GREEN
            : status === 'active' ? '#fff'
@@ -731,6 +760,20 @@ function Step({
           {subtitle}
         </p>
       </div>
+      {onMarkDone && status !== 'done' && status !== 'locked' && (
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); void onMarkDone() }}
+          style={{
+            background: 'none', border: '1px solid var(--line-md)',
+            color: 'var(--text-soft)', fontFamily: 'inherit',
+            fontSize: 11, fontWeight: 600,
+            padding: '4px 10px', borderRadius: 999,
+            cursor: 'pointer', flexShrink: 0, alignSelf: 'center',
+          }}
+        >
+          Mark done
+        </button>
+      )}
     </div>
   )
 }

@@ -13,6 +13,7 @@ import {
 } from '@/lib/circle'
 import WeeklyWinsFeed from '@/components/circle/WeeklyWinsFeed'
 import ActionCompleteScreen from '@/components/circle/ActionCompleteScreen'
+import DailyPromptCard from '@/components/circle/DailyPromptCard'
 
 const ORANGE      = '#B8862E'
 const ORANGE_DEEP = '#a66128'
@@ -95,6 +96,14 @@ export default function WeekPage() {
     })()
   }, [appLoading, weekNum, router, isAuthed])
 
+  // Re-pull progress from the DB; used by DailyPromptStack after a card saves.
+  async function refreshProgress() {
+    if (!memberId) return
+    const prog = await getMyProgress(memberId)
+    const weekProg = (prog as MemberProgress[]).find(p => p.week_number === weekNum)
+    setProgress(weekProg ?? null)
+  }
+
   async function handleMarkComplete(
     field: 'teaching_completed' | 'journal_completed' | 'action_completed',
   ) {
@@ -162,7 +171,7 @@ export default function WeekPage() {
         <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.75)', margin: '0 0 4px' }}>
           {month.label} · Week {weekNum}
         </p>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 400, margin: 0 }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 400, margin: 0, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
           {universal.week_title}
         </h1>
         {universal.live_call_week && (
@@ -177,23 +186,22 @@ export default function WeekPage() {
         )}
       </div>
 
-      {/* Progress pills — one per step in the 4-step model */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <Pill done={!!progress?.teaching_completed} label={progress?.teaching_completed ? '✓ Teaching' : 'Teaching'} />
-        <Pill done={!!progress?.journal_completed}  label={progress?.journal_completed  ? '✓ Journal'  : 'Journal'}  />
-        <Pill done={!!progress?.action_completed}   label={progress?.action_completed   ? '✓ Action'   : 'Action'}   />
-        <Pill done={!!progress?.partner_checkin_sent_at} label={progress?.partner_checkin_sent_at ? '✓ Partner' : 'Partner'} />
-      </div>
-
-      {/* Tabs */}
+      {/* Tabs — each tab carries its own completion checkbox so we don't
+          need a separate progress-pill row above. */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', borderBottom: '1px solid var(--line)', paddingBottom: 10 }}>
         {(['teaching', 'journal', 'action', 'partner'] as const).map(tab => {
           const active = activeTab === tab
+          const done =
+            tab === 'teaching' ? !!progress?.teaching_completed
+            : tab === 'journal' ? !!progress?.journal_completed
+            : tab === 'action' ? !!progress?.action_completed
+            : !!progress?.partner_checkin_sent_at
           return (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
                 fontSize: 12, fontWeight: 600, padding: '8px 14px',
                 borderRadius: 8, border: 'none',
                 background: active ? ORANGE_PALE : 'transparent',
@@ -203,6 +211,7 @@ export default function WeekPage() {
                 transition: 'all .15s',
               }}
             >
+              <StepCheckbox done={done} active={active} />
               {tab === 'partner' ? 'Partner prompt' : tab}
             </button>
           )
@@ -230,11 +239,16 @@ export default function WeekPage() {
               </div>
             </Panel>
           )}
-          {universal.monday_prompt && (
-            <AccentPanel accent={ORANGE} label="Monday voice note theme" body={universal.monday_prompt} />
-          )}
-          {universal.friday_prompt && (
-            <AccentPanel accent="var(--green)" label="Friday wins prompt" body={universal.friday_prompt} />
+          {memberId && (
+            <DailyPromptStack
+              memberId={memberId}
+              weekNumber={weekNum}
+              mondayPrompt={universal.monday_prompt ?? null}
+              wednesdayPrompt={universal.wednesday_prompt ?? null}
+              fridayPrompt={universal.friday_prompt ?? null}
+              progress={progress}
+              onChange={() => refreshProgress()}
+            />
           )}
           <button
             onClick={() => handleMarkComplete('teaching_completed')}
@@ -399,17 +413,98 @@ function AccentPanel({ accent, label, body }: { accent: string; label: string; b
   )
 }
 
-function Pill({ done, label }: { done: boolean; label: string }) {
+function StepCheckbox({ done, active }: { done: boolean; active: boolean }) {
   return (
-    <span style={{
-      fontSize: 11, fontWeight: 600,
-      padding: '5px 12px', borderRadius: 999,
-      background: done ? ORANGE : 'transparent',
-      color: done ? '#fff' : 'var(--text-muted)',
-      border: `1px solid ${done ? ORANGE : 'var(--line-md)'}`,
-    }}>
-      {label}
+    <span
+      aria-hidden
+      style={{
+        width: 14, height: 14, borderRadius: 4,
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        background: done ? ORANGE : 'transparent',
+        border: `1.5px solid ${done ? ORANGE : (active ? ORANGE : 'var(--line-md)')}`,
+        flexShrink: 0,
+        transition: 'background .15s, border-color .15s',
+      }}
+    >
+      {done && (
+        <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+          <path d="M2 5l2 2 4-4" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
     </span>
+  )
+}
+
+// Day-aware stack of the three daily prompts. Once a successor day unlocks,
+// the prior prompt collapses to a single line above the active card. A
+// completed prompt also defaults to minimized but remains expandable.
+function DailyPromptStack({
+  memberId, weekNumber, mondayPrompt, wednesdayPrompt, fridayPrompt, progress, onChange,
+}: {
+  memberId: string
+  weekNumber: number
+  mondayPrompt: string | null
+  wednesdayPrompt: string | null
+  fridayPrompt: string | null
+  progress: Partial<MemberProgress> | null
+  onChange: () => void
+}) {
+  // 0=Sun, 1=Mon ... 6=Sat — used to drive what's "today's" prompt.
+  const today = new Date().getDay()
+
+  const monCompleted = !!progress?.monday_completed_at
+  const wedCompleted = !!progress?.partner_checkin_sent_at
+  const friCompleted = !!progress?.friday_completed_at
+
+  // We render all three slots so the stack feels consistent week to week.
+  // A slot with no prompt content shows a "not yet posted" placeholder.
+  // Day-aware visibility now only decides which slots are *expanded* vs minimized.
+  const hasMon = !!mondayPrompt
+  const hasWed = !!wednesdayPrompt
+  const hasFri = !!fridayPrompt
+  const wedUnlocked = today >= 3 || today === 0 || wedCompleted
+  const friUnlocked = today >= 5 || today === 0 || friCompleted
+
+  // Minimization: a slot is collapsed once a later slot is unlocked (and has
+  // content) OR if it's been completed. Slots without content are always
+  // minimized — there's nothing to expand into.
+  const monMinimized = !hasMon || (hasWed && wedUnlocked) || monCompleted
+  const wedMinimized = !hasWed || (hasFri && friUnlocked) || wedCompleted
+  const friMinimized = !hasFri || friCompleted
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <DailyPromptCard
+        day="monday"
+        memberId={memberId}
+        weekNumber={weekNumber}
+        prompt={mondayPrompt ?? ''}
+        initialText={progress?.monday_response ?? ''}
+        completed={monCompleted}
+        defaultMinimized={monMinimized}
+        onSaved={onChange}
+      />
+      <DailyPromptCard
+        day="wednesday"
+        memberId={memberId}
+        weekNumber={weekNumber}
+        prompt={wednesdayPrompt ?? ''}
+        initialText=""
+        completed={wedCompleted}
+        defaultMinimized={wedMinimized}
+        onSaved={onChange}
+      />
+      <DailyPromptCard
+        day="friday"
+        memberId={memberId}
+        weekNumber={weekNumber}
+        prompt={fridayPrompt ?? ''}
+        initialText={progress?.friday_win ?? ''}
+        completed={friCompleted}
+        defaultMinimized={friMinimized}
+        onSaved={onChange}
+      />
+    </div>
   )
 }
 
