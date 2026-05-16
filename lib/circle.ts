@@ -164,6 +164,8 @@ export interface PartnerMessage {
   file_name: string | null
   read_at: string | null
   created_at: string
+  /** Reactions aggregated by emoji, populated by getPartnerThread. */
+  reactions?: { emoji: string; count: number; user_reacted: boolean }[]
 }
 
 export interface Attachments {
@@ -469,6 +471,7 @@ export async function getCohortPostsByAuthor(
 export interface PastThreadSummary {
   user_id: string
   name: string | null
+  avatar_url: string | null
   archetype: Archetype | null
   last_message_at: string
   last_message_preview: string
@@ -517,12 +520,13 @@ export async function getPastPartnerThreads(
   const otherIds = Array.from(byUser.keys())
   if (otherIds.length === 0) return []
 
-  // One round-trip each for names and archetypes.
+  // One round-trip each for names+avatars and archetypes.
   const [{ data: users }, { data: members }] = await Promise.all([
-    supabase.from('users').select('id, name').in('id', otherIds),
+    supabase.from('users').select('id, name, avatar_url').in('id', otherIds),
     supabase.from('circle_members').select('user_id, archetype').in('user_id', otherIds),
   ])
-  const nameById = Object.fromEntries((users ?? []).map(u => [u.id as string, u.name as string | null]))
+  const nameById   = Object.fromEntries((users ?? []).map(u => [u.id as string, u.name as string | null]))
+  const avatarById = Object.fromEntries((users ?? []).map(u => [u.id as string, u.avatar_url as string | null]))
   const archetypeById = Object.fromEntries(
     (members ?? []).map(m => [m.user_id as string, m.archetype as Archetype])
   )
@@ -532,6 +536,7 @@ export async function getPastPartnerThreads(
     return {
       user_id: id,
       name: nameById[id] ?? null,
+      avatar_url: avatarById[id] ?? null,
       archetype: archetypeById[id] ?? null,
       last_message_at: last.created_at,
       last_message_preview: previewFor(last),
@@ -965,7 +970,7 @@ export async function getPartnerThread(partnerId: string): Promise<PartnerMessag
 
   const { data, error } = await supabase
     .from('circle_partner_messages')
-    .select('*')
+    .select('*, circle_partner_message_reactions ( emoji, user_id )')
     .or(
       `and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),` +
       `and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`
@@ -986,7 +991,38 @@ export async function getPartnerThread(partnerId: string): Promise<PartnerMessag
       .in('id', unreadIds)
   }
 
-  return data as PartnerMessage[]
+  return (data as Array<PartnerMessage & { circle_partner_message_reactions?: { emoji: string; user_id: string }[] }>).map(m => ({
+    ...m,
+    reactions: buildReactionSummary(m.circle_partner_message_reactions ?? [], user.id),
+  })) as PartnerMessage[]
+}
+
+/**
+ * Toggle a reaction on a partner message. Same shape as toggleReaction.
+ */
+export async function togglePartnerMessageReaction(messageId: string, emoji: string): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
+
+  const { data: existing } = await supabase
+    .from('circle_partner_message_reactions')
+    .select('id')
+    .eq('message_id', messageId)
+    .eq('user_id', user.id)
+    .eq('emoji', emoji)
+    .maybeSingle()
+
+  if (existing) {
+    const { error } = await supabase
+      .from('circle_partner_message_reactions')
+      .delete()
+      .eq('id', existing.id)
+    return !error
+  }
+  const { error } = await supabase
+    .from('circle_partner_message_reactions')
+    .insert({ message_id: messageId, user_id: user.id, emoji })
+  return !error
 }
 
 /**

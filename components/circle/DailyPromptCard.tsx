@@ -181,17 +181,15 @@ export default function DailyPromptCard({
           {meta.label}
           {completed && <span style={{ marginLeft: 8, color: 'var(--text-soft)' }}>· complete</span>}
         </p>
-        {defaultMinimized && (
-          <button
-            onClick={() => setExpanded(false)}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 11, color: 'var(--text-muted)', padding: 0, fontFamily: 'inherit',
-            }}
-          >
-            Collapse
-          </button>
-        )}
+        <button
+          onClick={() => setExpanded(false)}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: 11, color: 'var(--text-muted)', padding: 0, fontFamily: 'inherit',
+          }}
+        >
+          Collapse
+        </button>
       </div>
       <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.6, margin: 0 }}>
         {prompt}

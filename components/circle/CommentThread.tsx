@@ -234,15 +234,27 @@ function CommentRow({
 
   return (
     <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-      <div style={{
-        width: 28, height: 28, borderRadius: '50%',
-        background: avatarColorFor(authorName),
-        color: '#fff',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 11, fontWeight: 700, flexShrink: 0,
-      }}>
-        {authorName.charAt(0).toUpperCase()}
-      </div>
+      {comment.author?.avatar_url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={comment.author.avatar_url}
+          alt=""
+          style={{
+            width: 28, height: 28, borderRadius: '50%',
+            objectFit: 'cover', flexShrink: 0, display: 'block',
+          }}
+        />
+      ) : (
+        <div style={{
+          width: 28, height: 28, borderRadius: '50%',
+          background: avatarColorFor(authorName),
+          color: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 11, fontWeight: 700, flexShrink: 0,
+        }}>
+          {authorName.charAt(0).toUpperCase()}
+        </div>
+      )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)' }}>

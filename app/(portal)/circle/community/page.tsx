@@ -487,15 +487,27 @@ function PostCard({
     }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: '50%',
-          background: isCoach ? ORANGE : avatarColorFor(authorName),
-          color: '#fff',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 14, fontWeight: 700, flexShrink: 0,
-        }}>
-          {authorName.charAt(0).toUpperCase()}
-        </div>
+        {post.author?.avatar_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={post.author.avatar_url}
+            alt=""
+            style={{
+              width: 36, height: 36, borderRadius: '50%',
+              objectFit: 'cover', flexShrink: 0, display: 'block',
+            }}
+          />
+        ) : (
+          <div style={{
+            width: 36, height: 36, borderRadius: '50%',
+            background: isCoach ? ORANGE : avatarColorFor(authorName),
+            color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 14, fontWeight: 700, flexShrink: 0,
+          }}>
+            {authorName.charAt(0).toUpperCase()}
+          </div>
+        )}
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', margin: 0 }}>
             {authorName}

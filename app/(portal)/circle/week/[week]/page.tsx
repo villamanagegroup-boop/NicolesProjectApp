@@ -243,7 +243,7 @@ export default function WeekPage() {
             <DailyPromptStack
               memberId={memberId}
               weekNumber={weekNum}
-              mondayPrompt={universal.monday_prompt ?? null}
+              mondayPrompt={personal?.monday_prompt ?? universal.monday_prompt ?? null}
               wednesdayPrompt={universal.wednesday_prompt ?? null}
               fridayPrompt={universal.friday_prompt ?? null}
               progress={progress}

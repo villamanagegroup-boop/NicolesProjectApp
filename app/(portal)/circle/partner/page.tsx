@@ -9,7 +9,9 @@ import {
   getMyPartner,
   getPartnerThread,
   sendPartnerMessage,
+  togglePartnerMessageReaction,
   markPartnerCheckinSent,
+  getMyProgress,
   getCurrentWeekNumber,
   getWeekContent,
   uploadCircleAttachment,
@@ -19,8 +21,14 @@ import {
   type PartnerMessage,
   type CohortFeedPost,
   type PastThreadSummary,
+  type MemberProgress,
 } from '@/lib/circle'
 import AttachmentPicker, { type AttachmentSlots, type AttachmentSlot } from '@/components/circle/AttachmentPicker'
+import EmojiPickerPopover, { EXTENDED_EMOJIS } from '@/components/circle/EmojiPickerPopover'
+import GifPicker from '@/components/circle/GifPicker'
+
+// Quick-react row shown on message hover.
+const QUICK_REACTIONS = ['❤️', '🔥', '👏', '🙌', '😂']
 
 const ORANGE      = '#B8862E'
 const ORANGE_PALE = '#fdf6f2'
@@ -34,7 +42,7 @@ const ARCHETYPE_LABELS: Record<string, string> = {
 
 export default function PartnerPage() {
   const router = useRouter()
-  const { loading, isAuthed, user } = useApp()
+  const { loading, isAuthed, user, avatarUrl: myAvatarUrl } = useApp()
 
   const [messages, setMessages]   = useState<PartnerMessage[]>([])
   const [partner, setPartner]     = useState<any>(null)
@@ -44,11 +52,19 @@ export default function PartnerPage() {
   const [memberId, setMemberId]   = useState<string>('')
   const [weekPrompt, setWeekPrompt] = useState<string>('')
   const [weekNumber, setWeekNumber] = useState<number | null>(null)
+  /** Whether the user has already sent this week's Wednesday partner check-in. */
+  const [checkinDone, setCheckinDone] = useState(false)
   const [body, setBody]           = useState('')
   const [sending, setSending]     = useState(false)
   const [hydrating, setHydrating] = useState(true)
   const [attachments, setAttachments] = useState<AttachmentSlots>({ audio: null, video: null, image: null, doc: null })
   const [showPicker, setShowPicker]   = useState(false)
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  /** GIF URL staged in compose. Sent as image_url on next send. */
+  const [pendingGifUrl, setPendingGifUrl] = useState<string | null>(null)
+  /** Message currently being hovered — drives the hover action bar. */
+  const [hoveredMsgId, setHoveredMsgId] = useState<string | null>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   // Tabs — Chat is the default. The other tabs lazy-load their data on
@@ -70,7 +86,30 @@ export default function PartnerPage() {
   function clearAttachments() {
     setAttachments({ audio: null, video: null, image: null, doc: null })
   }
-  const hasAttachment = !!(attachments.audio || attachments.video || attachments.image || attachments.doc)
+  const hasAttachment = !!(attachments.audio || attachments.video || attachments.image || attachments.doc) || !!pendingGifUrl
+
+  function insertEmojiAtCursor(emoji: string) {
+    const ta = textareaRef.current
+    if (!ta) { setBody(b => b + emoji); return }
+    const start = ta.selectionStart ?? body.length
+    const end   = ta.selectionEnd   ?? body.length
+    const next  = body.slice(0, start) + emoji + body.slice(end)
+    setBody(next)
+    // Restore caret position after the inserted emoji on next tick.
+    requestAnimationFrame(() => {
+      ta.focus()
+      const caret = start + emoji.length
+      ta.setSelectionRange(caret, caret)
+    })
+  }
+
+  async function handleReact(messageId: string, emoji: string) {
+    await togglePartnerMessageReaction(messageId, emoji)
+    if (partnerUserId) {
+      const msgs = await getPartnerThread(partnerUserId)
+      setMessages(msgs)
+    }
+  }
 
   useEffect(() => {
     if (loading) return
@@ -106,8 +145,13 @@ export default function PartnerPage() {
         const wn = getCurrentWeekNumber(cohort.starts_at)
         if (wn) {
           setWeekNumber(wn)
-          const { universal } = await getWeekContent(wn, member.archetype, member.cohort_id)
+          const [{ universal }, progressRows] = await Promise.all([
+            getWeekContent(wn, member.archetype, member.cohort_id),
+            getMyProgress(member.id),
+          ])
           if (universal?.wednesday_prompt) setWeekPrompt(universal.wednesday_prompt)
+          const weekProg = (progressRows as MemberProgress[]).find(p => p.week_number === wn)
+          setCheckinDone(!!weekProg?.partner_checkin_sent_at)
         }
       }
       setHydrating(false)
@@ -154,18 +198,23 @@ export default function PartnerPage() {
     if (attachments.video) urls.video_url = await uploadCircleAttachment(attachments.video)
     if (attachments.image) urls.image_url = await uploadCircleAttachment(attachments.image)
     if (attachments.doc)  { urls.file_url = await uploadCircleAttachment(attachments.doc); urls.file_name = attachments.doc.name }
+    // A staged GIF wins over a same-message file upload — both at once is ambiguous.
+    if (pendingGifUrl && !urls.image_url) urls.image_url = pendingGifUrl
 
     const ok = await sendPartnerMessage(partnerUserId, cohortId, body.trim(), urls)
     if (ok) {
       setBody('')
       clearAttachments()
+      setPendingGifUrl(null)
       setShowPicker(false)
+      setShowEmojiPicker(false)
       const msgs = await getPartnerThread(partnerUserId)
       setMessages(msgs)
       // Sending any message this week counts as the weekly partner check-in.
       // Stamp the progress row so the Circle home card shows "Check-in done".
       if (memberId && weekNumber) {
         void markPartnerCheckinSent(memberId, weekNumber)
+        setCheckinDone(true)
       }
     }
     setSending(false)
@@ -224,9 +273,12 @@ export default function PartnerPage() {
     <div
       className="partner-shell"
       style={{
-        maxWidth: 720, margin: '0 auto',
+        maxWidth: 1200, margin: '0 auto',
         display: 'flex', flexDirection: 'column',
-        minHeight: 500,
+        // Fill the viewport minus the portal chrome (topbar + padding + Circle
+        // menu + page header) so the chat panel behaves like a real chat app.
+        height: 'calc(100vh - 180px)',
+        minHeight: 520,
       }}
     >
 
@@ -236,19 +288,47 @@ export default function PartnerPage() {
         padding: '14px 0', borderBottom: '1px solid var(--line)',
         flexShrink: 0,
       }}>
-        <div style={{
-          width: 44, height: 44, borderRadius: '50%',
-          background: ORANGE, color: '#fff',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 16, fontWeight: 700, flexShrink: 0,
-        }}>
-          {partnerName.charAt(0).toUpperCase()}
-        </div>
+        {partner.users?.avatar_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={partner.users.avatar_url}
+            alt=""
+            style={{
+              width: 44, height: 44, borderRadius: '50%',
+              objectFit: 'cover', flexShrink: 0, display: 'block',
+            }}
+          />
+        ) : (
+          <div style={{
+            width: 44, height: 44, borderRadius: '50%',
+            background: ORANGE, color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 16, fontWeight: 700, flexShrink: 0,
+          }}>
+            {partnerName.charAt(0).toUpperCase()}
+          </div>
+        )}
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', margin: 0 }}>{partnerName}</p>
           <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
             Accountability partner · {ARCHETYPE_LABELS[partner.archetype] ?? 'Partner'}
           </p>
+          {partner.goal_90day && (
+            <p
+              title={partner.goal_90day}
+              style={{
+                fontSize: 11, color: ORANGE, margin: '3px 0 0',
+                fontStyle: 'italic', lineHeight: 1.4,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                maxWidth: 520,
+              }}
+            >
+              <span style={{ fontWeight: 700, fontStyle: 'normal', marginRight: 6, letterSpacing: '0.04em' }}>
+                12-WEEK FOCUS ·
+              </span>
+              &ldquo;{partner.goal_90day}&rdquo;
+            </p>
+          )}
         </div>
         {daysSinceLast !== null && daysSinceLast > 5 && (
           <span style={{
@@ -261,33 +341,12 @@ export default function PartnerPage() {
         )}
       </div>
 
-      {/* Partner focus snapshot */}
-      {partner.goal_90day && (
-        <div style={{
-          background: ORANGE_PALE, border: `1px solid ${ORANGE}`,
-          borderRadius: 12, padding: 12,
-          margin: '14px 0 6px',
-          flexShrink: 0,
-        }}>
-          <p style={{
-            fontSize: 10, fontWeight: 700,
-            letterSpacing: '0.12em', textTransform: 'uppercase',
-            color: ORANGE, margin: '0 0 4px',
-          }}>
-            Their 12-week focus
-          </p>
-          <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.5, margin: 0, fontStyle: 'italic' }}>
-            &ldquo;{partner.goal_90day}&rdquo;
-          </p>
-        </div>
-      )}
-
       {/* Tabs */}
       <div style={{
         display: 'flex', gap: 4, marginTop: 14,
         borderBottom: '1px solid var(--line)',
         flexShrink: 0,
-        overflowX: 'auto',
+        flexWrap: 'wrap',
       }}>
         {([
           { id: 'chat',  label: 'Chat' },
@@ -318,8 +377,10 @@ export default function PartnerPage() {
         })}
       </div>
 
-      {/* Wednesday prompt — only visible under the Chat tab. */}
-      {tab === 'chat' && weekPrompt && weekNumber && (
+      {/* Wednesday prompt — only visible under the Chat tab AND only while
+          the user hasn't yet sent this week's partner check-in. Once they
+          message their partner, the prompt clears to give the chat more room. */}
+      {tab === 'chat' && !checkinDone && weekPrompt && weekNumber && (
         <div style={{
           background: 'var(--card)', border: '1px solid var(--line)',
           borderRadius: 12, padding: 14,
@@ -355,8 +416,12 @@ export default function PartnerPage() {
       {tab === 'chat' && (
       <div style={{
         flex: 1, overflowY: 'auto',
-        padding: '6px 2px',
+        padding: '10px 16px',
         display: 'flex', flexDirection: 'column', gap: 6,
+        background: '#fff',
+        border: '1px solid var(--line)',
+        borderRadius: 12,
+        marginTop: 8,
       }}>
         {messages.length === 0 && (
           <div style={{ padding: '24px 4px 16px' }}>
@@ -432,74 +497,208 @@ export default function PartnerPage() {
           </div>
         )}
         {grouped.map(g => (
-          <div key={g.date} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div key={g.date} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <div style={{
               alignSelf: 'center',
               fontSize: 10, fontWeight: 600,
               letterSpacing: '0.08em', textTransform: 'uppercase',
               color: 'var(--text-muted)',
-              padding: '6px 0',
+              padding: '10px 0 6px',
             }}>
               {dayLabel(g.date)}
             </div>
-            {g.items.map(msg => {
+            {g.items.map((msg, idx) => {
               const isMe = msg.sender_id === myUserId
+              const prev = g.items[idx - 1]
+              // Slack-style "burst": a follow-up message from the same sender
+              // within 5 minutes collapses the avatar/name/timestamp header.
+              const grouped = !!prev
+                && prev.sender_id === msg.sender_id
+                && (new Date(msg.created_at).getTime() - new Date(prev.created_at).getTime()) < 5 * 60_000
+              const hovered = hoveredMsgId === msg.id
+              const senderName = isMe ? myName : (partner.users?.name ?? 'Partner')
+              const senderAvatar = isMe ? myAvatarUrl : (partner.users?.avatar_url ?? null)
+              const initial = (senderName || '·').charAt(0).toUpperCase()
+              const userReacted = (msg.reactions ?? []).filter(r => r.user_reacted).map(r => r.emoji)
               return (
-                <div key={msg.id} style={{
-                  display: 'flex',
-                  justifyContent: isMe ? 'flex-end' : 'flex-start',
-                  padding: '0 2px',
-                }}>
+                <div
+                  key={msg.id}
+                  onMouseEnter={() => setHoveredMsgId(msg.id)}
+                  onMouseLeave={() => setHoveredMsgId(prev => prev === msg.id ? null : prev)}
+                  style={{
+                    display: 'flex',
+                    flexDirection: isMe ? 'row-reverse' : 'row',
+                    alignItems: 'flex-start',
+                    gap: 10,
+                    padding: grouped ? '2px 2px' : '8px 2px 2px',
+                    position: 'relative',
+                  }}
+                >
+                  {/* Avatar slot — visible only on first message of a burst */}
+                  <div style={{ width: 32, flexShrink: 0 }}>
+                    {!grouped && (
+                      senderAvatar ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={senderAvatar}
+                          alt=""
+                          style={{
+                            width: 32, height: 32, borderRadius: '50%',
+                            objectFit: 'cover', display: 'block',
+                          }}
+                        />
+                      ) : (
+                        <div style={{
+                          width: 32, height: 32, borderRadius: '50%',
+                          background: isMe ? ORANGE : 'var(--paper3)',
+                          color: isMe ? '#fff' : 'var(--text-soft)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 13, fontWeight: 700,
+                        }}>
+                          {initial}
+                        </div>
+                      )
+                    )}
+                  </div>
+
                   <div style={{
-                    maxWidth: '75%',
-                    padding: '10px 14px',
-                    borderRadius: 16,
-                    borderBottomRightRadius: isMe ? 4 : 16,
-                    borderBottomLeftRadius: isMe ? 16 : 4,
-                    fontSize: 14, lineHeight: 1.5,
-                    background: isMe ? ORANGE : 'var(--paper2)',
-                    color: isMe ? '#fff' : 'var(--ink)',
-                    whiteSpace: 'pre-wrap',
+                    flex: 1, minWidth: 0,
+                    display: 'flex', flexDirection: 'column',
+                    alignItems: isMe ? 'flex-end' : 'flex-start',
+                    gap: 4,
                   }}>
-                    {msg.body && <div>{msg.body}</div>}
-                    {(msg.video_url || msg.image_url || msg.audio_url || msg.file_url) && (
-                      <div style={{ marginTop: msg.body ? 8 : 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {msg.video_url && (
-                          <video controls src={msg.video_url} style={{ width: '100%', maxWidth: 320, borderRadius: 10, background: '#000' }} />
-                        )}
-                        {msg.image_url && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={msg.image_url} alt="" style={{ width: '100%', maxWidth: 320, borderRadius: 10, objectFit: 'cover' }} />
-                        )}
-                        {msg.audio_url && (
-                          <audio controls src={msg.audio_url} style={{ width: 260, height: 32 }} />
-                        )}
-                        {msg.file_url && (
-                          <a href={msg.file_url} target="_blank" rel="noreferrer" style={{
-                            display: 'flex', alignItems: 'center', gap: 6,
-                            padding: '6px 10px', borderRadius: 8,
-                            background: isMe ? 'rgba(255,255,255,0.15)' : '#fff',
-                            color: isMe ? '#fff' : 'var(--ink)',
-                            border: isMe ? '1px solid rgba(255,255,255,0.3)' : '1px solid var(--line-md)',
-                            textDecoration: 'none', fontSize: 12,
-                          }}>
-                            📎 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
-                              {msg.file_name ?? 'attachment'}
-                            </span>
-                          </a>
-                        )}
+                    {!grouped && (
+                      <div style={{
+                        display: 'flex', alignItems: 'baseline', gap: 8,
+                        flexDirection: isMe ? 'row-reverse' : 'row',
+                      }}>
+                        <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)' }}>
+                          {senderName}
+                        </span>
+                        <span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>
+                          {new Date(msg.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                        </span>
                       </div>
                     )}
-                    <div style={{
-                      fontSize: 10,
-                      marginTop: 4,
-                      color: isMe ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)',
-                    }}>
-                      {new Date(msg.created_at).toLocaleTimeString('en-US', {
-                        hour: 'numeric', minute: '2-digit',
-                      })}
-                      {isMe && msg.read_at && ' · Seen'}
+
+                    <div style={{ position: 'relative', maxWidth: '78%' }}>
+                      <div style={{
+                        padding: msg.body ? '8px 13px' : '4px',
+                        borderRadius: 14,
+                        borderTopLeftRadius:  !grouped && !isMe ? 4 : 14,
+                        borderTopRightRadius: !grouped && isMe  ? 4 : 14,
+                        fontSize: 14, lineHeight: 1.5,
+                        background: isMe ? ORANGE : 'var(--paper2)',
+                        color: isMe ? '#fff' : 'var(--ink)',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                      }}>
+                        {msg.body && <div>{msg.body}</div>}
+                        {(msg.video_url || msg.image_url || msg.audio_url || msg.file_url) && (
+                          <div style={{ marginTop: msg.body ? 8 : 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {msg.video_url && (
+                              <video controls src={msg.video_url} style={{ width: '100%', maxWidth: 320, borderRadius: 10, background: '#000' }} />
+                            )}
+                            {msg.image_url && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={msg.image_url} alt="" style={{ width: '100%', maxWidth: 320, borderRadius: 10, objectFit: 'cover', display: 'block' }} />
+                            )}
+                            {msg.audio_url && (
+                              <audio controls src={msg.audio_url} style={{ width: 260, height: 32 }} />
+                            )}
+                            {msg.file_url && (
+                              <a href={msg.file_url} target="_blank" rel="noreferrer" style={{
+                                display: 'flex', alignItems: 'center', gap: 6,
+                                padding: '6px 10px', borderRadius: 8,
+                                background: isMe ? 'rgba(255,255,255,0.15)' : '#fff',
+                                color: isMe ? '#fff' : 'var(--ink)',
+                                border: isMe ? '1px solid rgba(255,255,255,0.3)' : '1px solid var(--line-md)',
+                                textDecoration: 'none', fontSize: 12,
+                              }}>
+                                📎 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
+                                  {msg.file_name ?? 'attachment'}
+                                </span>
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Hover action bar — anchored to the bubble's top edge,
+                          on the same outer side as the bubble so it never
+                          drifts across the chat. */}
+                      {hovered && (
+                        <div style={{
+                          position: 'absolute',
+                          top: -16,
+                          [isMe ? 'right' : 'left']: 0,
+                          display: 'flex', alignItems: 'center', gap: 2,
+                          background: '#fff',
+                          border: '1px solid var(--line-md)',
+                          borderRadius: 999,
+                          padding: '2px 4px',
+                          boxShadow: '0 4px 14px rgba(12,12,10,0.10)',
+                          zIndex: 5,
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {QUICK_REACTIONS.map(emoji => {
+                            const active = userReacted.includes(emoji)
+                            return (
+                              <button
+                                key={emoji}
+                                onClick={() => handleReact(msg.id, emoji)}
+                                title={`React with ${emoji}`}
+                                style={{
+                                  background: active ? ORANGE_PALE : 'transparent',
+                                  border: 'none', borderRadius: 999,
+                                  width: 26, height: 26, fontSize: 14,
+                                  cursor: 'pointer', fontFamily: 'inherit',
+                                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                  transition: 'background .12s, transform .12s',
+                                }}
+                                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.18)' }}
+                                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)' }}
+                              >
+                                {emoji}
+                              </button>
+                            )
+                          })}
+                          <EmojiPickerPopover
+                            activeEmojis={userReacted}
+                            align={isMe ? 'right' : 'left'}
+                            onPick={emoji => handleReact(msg.id, emoji)}
+                          />
+                        </div>
+                      )}
                     </div>
+
+                    {/* Reactions row — pills below the bubble */}
+                    {(msg.reactions?.length ?? 0) > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                        {msg.reactions!.map(r => (
+                          <button
+                            key={r.emoji}
+                            onClick={() => handleReact(msg.id, r.emoji)}
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 4,
+                              padding: '2px 8px', borderRadius: 999,
+                              border: `1px solid ${r.user_reacted ? ORANGE : 'var(--line-md)'}`,
+                              background: r.user_reacted ? ORANGE_PALE : '#fff',
+                              color: r.user_reacted ? ORANGE : 'var(--text-soft)',
+                              fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+                              transition: 'all .15s',
+                            }}
+                          >
+                            <span>{r.emoji}</span>
+                            <span style={{ fontSize: 11, fontWeight: 600 }}>{r.count}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {isMe && idx === g.items.length - 1 && msg.read_at && (
+                      <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Seen</span>
+                    )}
                   </div>
                 </div>
               )
@@ -518,8 +717,32 @@ export default function PartnerPage() {
         flexShrink: 0,
         display: 'flex', flexDirection: 'column', gap: 8,
       }}>
-        {(showPicker || hasAttachment) && (
+        {(showPicker || attachments.audio || attachments.video || attachments.image || attachments.doc) && (
           <AttachmentPicker compact slots={attachments} onChange={setSlot} />
+        )}
+
+        {/* Staged GIF preview */}
+        {pendingGifUrl && (
+          <div style={{
+            display: 'inline-flex', alignItems: 'flex-start', gap: 8,
+            padding: 6, borderRadius: 10,
+            background: 'var(--paper2)', border: '1px solid var(--line)',
+            alignSelf: 'flex-start',
+          }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={pendingGifUrl} alt="GIF" style={{ width: 120, borderRadius: 6, display: 'block' }} />
+            <button
+              type="button"
+              onClick={() => setPendingGifUrl(null)}
+              aria-label="Remove GIF"
+              style={{
+                background: '#fff', border: '1px solid var(--line)',
+                color: 'var(--text-muted)', borderRadius: 999,
+                width: 22, height: 22, fontSize: 12, cursor: 'pointer',
+                fontFamily: 'inherit', lineHeight: 1,
+              }}
+            >×</button>
+          </div>
         )}
 
         <div style={{ display: 'flex', gap: 8 }}>
@@ -542,6 +765,7 @@ export default function PartnerPage() {
             +
           </button>
           <textarea
+            ref={textareaRef}
             value={body}
             onChange={e => setBody(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -577,6 +801,64 @@ export default function PartnerPage() {
           >
             {sending ? '…' : 'Send'}
           </button>
+        </div>
+
+        {/* Compose toolbar — emoji + GIF triggers */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingLeft: 4, position: 'relative' }}>
+          {/* Emoji popover — floats above the trigger so the chat doesn't shift. */}
+          {showEmojiPicker && (
+            <div style={{
+              position: 'absolute',
+              bottom: 'calc(100% + 8px)', left: 0,
+              zIndex: 50,
+              background: '#fff',
+              border: '1px solid var(--line-md)',
+              borderRadius: 12,
+              padding: 10,
+              boxShadow: '0 10px 30px rgba(12,12,10,0.18)',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(5, 36px)',
+              gap: 4,
+              width: 'fit-content',
+            }}>
+              {EXTENDED_EMOJIS.map(emoji => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => { insertEmojiAtCursor(emoji); setShowEmojiPicker(false) }}
+                  style={{
+                    fontSize: 18, padding: '4px 6px',
+                    border: 'none', borderRadius: 6,
+                    background: 'transparent', cursor: 'pointer',
+                    lineHeight: 1, fontFamily: 'inherit',
+                    transition: 'background .12s, transform .12s',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--paper2)'; (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.18)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)' }}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowEmojiPicker(s => !s)}
+            title="Insert emoji"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              fontSize: 12, padding: '5px 11px', borderRadius: 999,
+              border: `1px solid ${showEmojiPicker ? ORANGE : 'var(--line-md)'}`,
+              background: showEmojiPicker ? ORANGE_PALE : '#fff',
+              color: showEmojiPicker ? ORANGE : 'var(--text-soft)',
+              cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
+              transition: 'all .15s',
+            }}
+          >
+            <span style={{ fontSize: 14 }}>😊</span>
+            Emoji
+          </button>
+          <GifPicker onPick={url => { setPendingGifUrl(url) }} />
         </div>
       </div>
       )}
@@ -762,14 +1044,26 @@ function PastThreadList({
               onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = ORANGE_PALE }}
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
             >
-              <div style={{
-                width: 36, height: 36, borderRadius: '50%',
-                background: archColor, color: '#fff',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 12, fontWeight: 600, flexShrink: 0,
-              }}>
-                {initials}
-              </div>
+              {t.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={t.avatar_url}
+                  alt=""
+                  style={{
+                    width: 36, height: 36, borderRadius: '50%',
+                    objectFit: 'cover', flexShrink: 0, display: 'block',
+                  }}
+                />
+              ) : (
+                <div style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  background: archColor, color: '#fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 12, fontWeight: 600, flexShrink: 0,
+                }}>
+                  {initials}
+                </div>
+              )}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                   <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{name}</span>
