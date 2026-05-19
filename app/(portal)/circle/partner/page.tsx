@@ -40,6 +40,21 @@ const ARCHETYPE_LABELS: Record<string, string> = {
   push:   'The Pushthrough',
 }
 
+type SupportType = 'witness' | 'reflection' | 'honest_feedback' | 'question' | 'accountability'
+
+const SUPPORT_OPTIONS: { value: SupportType; emoji: string; label: string; sub: string }[] = [
+  { value: 'witness',         emoji: '🤝', label: 'Witness',          sub: 'Just hear me, no response needed.' },
+  { value: 'reflection',      emoji: '🔁', label: 'Reflection',       sub: 'Tell me what you hear me saying.' },
+  { value: 'honest_feedback', emoji: '💬', label: 'Honest feedback',  sub: 'Tell me what you actually think.' },
+  { value: 'question',        emoji: '❓', label: 'A question',        sub: 'Ask me something that helps me think.' },
+  { value: 'accountability',  emoji: '✓',  label: 'Accountability',   sub: 'Check if I did the thing.' },
+]
+
+function supportLabel(t: SupportType): string {
+  const o = SUPPORT_OPTIONS.find(x => x.value === t)
+  return o ? `${o.emoji} ${o.label}` : t
+}
+
 export default function PartnerPage() {
   const router = useRouter()
   const { loading, isAuthed, user, avatarUrl: myAvatarUrl } = useApp()
@@ -54,6 +69,20 @@ export default function PartnerPage() {
   const [weekNumber, setWeekNumber] = useState<number | null>(null)
   /** Whether the user has already sent this week's Wednesday partner check-in. */
   const [checkinDone, setCheckinDone] = useState(false)
+
+  // First-conversation overlay (Phase 2 — migration 031). Stays shown until
+  // the member clicks "Start the conversation →", which writes
+  // partner_thread_opened = true and seeds the composer.
+  const [partnerThreadOpened, setPartnerThreadOpened] = useState(true)
+
+  // Wednesday check-in selector (Phase 2 — partner_checkin_preferences).
+  // mySupport is the caller's selection for the current week; partnerSupport
+  // is whatever the partner has chosen (or null if they haven't yet).
+  const [mySupport, setMySupport] = useState<SupportType | null>(null)
+  const [partnerSupport, setPartnerSupport] = useState<SupportType | null>(null)
+  const [freeNote, setFreeNote] = useState('')
+  const [savingPref, setSavingPref] = useState(false)
+  const [partnerMemberId, setPartnerMemberId] = useState<string>('')
   const [body, setBody]           = useState('')
   const [sending, setSending]     = useState(false)
   const [hydrating, setHydrating] = useState(true)
@@ -111,6 +140,57 @@ export default function PartnerPage() {
     }
   }
 
+  // Dismiss the first-conversation overlay. Flip the DB flag, seed the
+  // composer with a starter line so the member doesn't stare at a blank
+  // textarea, focus it. If the DB update fails we still dismiss so a
+  // transient error doesn't trap them on the overlay forever.
+  async function dismissFirstConversation() {
+    setPartnerThreadOpened(true)
+    const firstName = (partner?.users?.name ?? '').split(' ')[0]
+    const seed = `Hey${firstName ? ' ' + firstName : ''} — I just read through our first conversation guide. Here is my answer to Question 1: `
+    setBody(seed)
+    setTab('chat')
+    requestAnimationFrame(() => {
+      const ta = textareaRef.current
+      if (ta) { ta.focus(); ta.setSelectionRange(seed.length, seed.length) }
+    })
+    if (memberId) {
+      await supabaseClient
+        .from('circle_members')
+        .update({ partner_thread_opened: true })
+        .eq('id', memberId)
+    }
+  }
+
+  // Upsert my Wednesday support-type preference for the current week.
+  // member_id + week_number is the unique key, so re-selecting overwrites.
+  async function chooseSupport(next: SupportType) {
+    if (!memberId || !weekNumber) return
+    setMySupport(next)
+    setSavingPref(true)
+    await supabaseClient
+      .from('partner_checkin_preferences')
+      .upsert(
+        { member_id: memberId, week_number: weekNumber, support_type: next, free_note: freeNote || null },
+        { onConflict: 'member_id,week_number' },
+      )
+    setSavingPref(false)
+  }
+
+  // Save the free-space note alongside the existing selection. No-op if
+  // they haven't picked a support type yet — the row needs support_type
+  // to satisfy NOT NULL.
+  async function saveFreeNote(text: string) {
+    setFreeNote(text)
+    if (!memberId || !weekNumber || !mySupport) return
+    await supabaseClient
+      .from('partner_checkin_preferences')
+      .upsert(
+        { member_id: memberId, week_number: weekNumber, support_type: mySupport, free_note: text || null },
+        { onConflict: 'member_id,week_number' },
+      )
+  }
+
   useEffect(() => {
     if (loading) return
     if (!isAuthed) { router.replace('/login'); return }
@@ -120,6 +200,19 @@ export default function PartnerPage() {
       if (!member || !member.partner_id) { setHydrating(false); return }
       setCohortId(member.cohort_id)
       setMemberId(member.id)
+      setPartnerMemberId(member.partner_id)
+
+      // partner_thread_opened lives on the same row but isn't returned by
+      // getMyCircleMember(); fetch it directly. Treats missing column /
+      // unmigrated DB as "already opened" so the overlay never blocks.
+      try {
+        const { data: openedRow } = await supabaseClient
+          .from('circle_members')
+          .select('partner_thread_opened')
+          .eq('id', member.id)
+          .maybeSingle()
+        setPartnerThreadOpened(openedRow?.partner_thread_opened !== false)
+      } catch { /* migration 031 not applied yet — overlay stays hidden */ }
 
       const { data: { user: authUser } } = await supabaseClient.auth.getUser()
       if (authUser) setMyUserId(authUser.id)
@@ -149,9 +242,29 @@ export default function PartnerPage() {
             getWeekContent(wn, member.archetype, member.cohort_id),
             getMyProgress(member.id),
           ])
-          if (universal?.wednesday_prompt) setWeekPrompt(universal.wednesday_prompt)
+          // Prefer the newer partner_prompt (migration 025) when set;
+          // fall back to wednesday_prompt for weeks that haven't been
+          // edited under the new field yet.
+          setWeekPrompt(universal?.partner_prompt ?? universal?.wednesday_prompt ?? '')
           const weekProg = (progressRows as MemberProgress[]).find(p => p.week_number === wn)
           setCheckinDone(!!weekProg?.partner_checkin_sent_at)
+
+          // Load this week's Wednesday support selections — both mine
+          // and my partner's. RLS in 031 lets each side read the other.
+          try {
+            const { data: prefs } = await supabaseClient
+              .from('partner_checkin_preferences')
+              .select('member_id, support_type, free_note')
+              .in('member_id', [member.id, member.partner_id])
+              .eq('week_number', wn)
+            const mine    = prefs?.find(r => r.member_id === member.id)
+            const theirs  = prefs?.find(r => r.member_id === member.partner_id)
+            if (mine) {
+              setMySupport(mine.support_type as SupportType)
+              setFreeNote(mine.free_note ?? '')
+            }
+            if (theirs) setPartnerSupport(theirs.support_type as SupportType)
+          } catch { /* migration 031 not applied yet */ }
         }
       }
       setHydrating(false)
@@ -270,6 +383,13 @@ export default function PartnerPage() {
   }
 
   return (
+    <>
+    {!partnerThreadOpened && (
+      <FirstConversationOverlay
+        partnerName={(partner.users?.name ?? 'your partner').split(' ')[0]}
+        onStart={dismissFirstConversation}
+      />
+    )}
     <div
       className="partner-shell"
       style={{
@@ -377,39 +497,24 @@ export default function PartnerPage() {
         })}
       </div>
 
-      {/* Wednesday prompt — only visible under the Chat tab AND only while
-          the user hasn't yet sent this week's partner check-in. Once they
-          message their partner, the prompt clears to give the chat more room. */}
-      {tab === 'chat' && !checkinDone && weekPrompt && weekNumber && (
-        <div style={{
-          background: 'var(--card)', border: '1px solid var(--line)',
-          borderRadius: 12, padding: 14,
-          margin: '6px 0 10px',
-          flexShrink: 0,
-        }}>
-          <p style={{
-            fontSize: 10, fontWeight: 700,
-            letterSpacing: '0.12em', textTransform: 'uppercase',
-            color: 'var(--text-muted)', margin: '0 0 6px',
-          }}>
-            Week {weekNumber} · Wednesday prompt
-          </p>
-          <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.6, margin: 0 }}>
-            {weekPrompt}
-          </p>
-          <Link href={`/circle/week/${weekNumber}`} style={{ textDecoration: 'none' }}>
-            <button style={{
-              marginTop: 10,
-              background: 'transparent', border: `1px solid ${ORANGE}`,
-              color: ORANGE,
-              padding: '5px 12px', borderRadius: 8,
-              fontSize: 11, fontWeight: 600,
-              cursor: 'pointer', fontFamily: 'inherit',
-            }}>
-              Open week →
-            </button>
-          </Link>
-        </div>
+      {/* Wednesday check-in card — pinned above the messages.
+          • On Wednesday: full card with prompt + support-type selector
+            + partner's selection + free space.
+          • Other days: collapsed prompt only.
+          Spec: Phase 2 Task 3. */}
+      {tab === 'chat' && weekPrompt && weekNumber && (
+        <WeekCheckinCard
+          weekNumber={weekNumber}
+          prompt={weekPrompt}
+          isWednesday={new Date().getDay() === 3}
+          mySupport={mySupport}
+          partnerSupport={partnerSupport}
+          partnerName={(partner?.users?.name ?? 'Your partner').split(' ')[0]}
+          freeNote={freeNote}
+          saving={savingPref}
+          onChoose={chooseSupport}
+          onFreeNote={saveFreeNote}
+        />
       )}
 
       {/* Messages */}
@@ -899,6 +1004,7 @@ export default function PartnerPage() {
         )
       )}
     </div>
+    </>
   )
 }
 
@@ -1173,4 +1279,337 @@ function dayLabel(dateStr: string): string {
   if (diff === 1) return 'Yesterday'
   if (diff < 7)   return d.toLocaleDateString('en-US', { weekday: 'long' })
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+// ── Wednesday check-in card ────────────────────────────────────────────────
+// Pinned above the message thread. Shows the full selector + free space on
+// Wednesdays; collapses to a small prompt card the rest of the week. The
+// row in partner_checkin_preferences is keyed by (member_id, week_number),
+// so each new week starts unselected automatically — no Sunday-reset job.
+
+function WeekCheckinCard({
+  weekNumber, prompt, isWednesday, mySupport, partnerSupport,
+  partnerName, freeNote, saving, onChoose, onFreeNote,
+}: {
+  weekNumber: number
+  prompt: string
+  isWednesday: boolean
+  mySupport: SupportType | null
+  partnerSupport: SupportType | null
+  partnerName: string
+  freeNote: string
+  saving: boolean
+  onChoose: (t: SupportType) => void
+  onFreeNote: (text: string) => void
+}) {
+  // Collapsed card on non-Wednesday days. Keeps the prompt visible all week
+  // but doesn't take the screen real estate of the full selector.
+  if (!isWednesday) {
+    return (
+      <div style={{
+        background: 'var(--card)', border: '1px solid var(--line)',
+        borderRadius: 12, padding: 12,
+        margin: '6px 0 10px',
+        flexShrink: 0,
+      }}>
+        <p style={{
+          fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
+          textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 4px',
+        }}>
+          This week&apos;s check-in prompt · Week {weekNumber}
+        </p>
+        <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.6, margin: 0 }}>
+          {prompt}
+        </p>
+      </div>
+    )
+  }
+
+  // Wednesday expanded card.
+  return (
+    <div style={{
+      background: 'var(--card)', border: '1px solid var(--line)',
+      borderLeft: `3px solid ${ORANGE}`,
+      borderRadius: 12, padding: '14px 16px',
+      margin: '6px 0 10px',
+      flexShrink: 0,
+    }}>
+      <div style={{
+        fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
+        textTransform: 'uppercase', color: ORANGE, marginBottom: 8,
+      }}>
+        Wednesday check-in · Week {weekNumber}
+      </div>
+
+      {/* Section 1 — this week's prompt */}
+      <blockquote style={{
+        margin: '0 0 14px', padding: '10px 14px',
+        background: ORANGE_PALE, borderRadius: 8,
+        fontSize: 14, lineHeight: 1.65, color: 'var(--ink)',
+        fontStyle: 'italic',
+      }}>
+        {prompt}
+      </blockquote>
+
+      {/* Section 2 — what I need this week */}
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>
+          What kind of support do you need from your partner this week?
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8 }}>
+          Your partner will see your selection.
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {SUPPORT_OPTIONS.map(o => {
+            const on = mySupport === o.value
+            return (
+              <button
+                key={o.value}
+                onClick={() => onChoose(o.value)}
+                disabled={saving}
+                style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 10,
+                  padding: '9px 12px', borderRadius: 9,
+                  border: `1px solid ${on ? ORANGE : 'var(--line-md)'}`,
+                  background: on ? ORANGE_PALE : '#fff',
+                  cursor: saving ? 'wait' : 'pointer', textAlign: 'left',
+                  fontFamily: 'inherit', transition: 'all .15s',
+                  opacity: saving ? 0.7 : 1,
+                }}
+              >
+                <span style={{ fontSize: 16, lineHeight: 1, flexShrink: 0 }}>{o.emoji}</span>
+                <span style={{ fontSize: 12, lineHeight: 1.5, color: 'var(--text-soft)' }}>
+                  <strong style={{ color: 'var(--ink)', display: 'block' }}>{o.label}</strong>
+                  {o.sub}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+
+        {partnerSupport && (
+          <div style={{
+            marginTop: 10, padding: '8px 12px',
+            background: 'var(--paper)', borderRadius: 8,
+            fontSize: 12, color: 'var(--text-soft)',
+            display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
+          }}>
+            <strong style={{ color: 'var(--ink)' }}>{partnerName}</strong> needs
+            <span style={{
+              padding: '2px 8px', borderRadius: 999,
+              background: `${ORANGE}20`, color: ORANGE, fontWeight: 600,
+            }}>
+              {supportLabel(partnerSupport)}
+            </span>
+            this week.
+          </div>
+        )}
+      </div>
+
+      {/* Section 3 — free space */}
+      <div>
+        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>
+          Anything else on your mind this week?
+        </div>
+        <textarea
+          value={freeNote}
+          onChange={e => onFreeNote(e.target.value)}
+          placeholder="A short note for your partner (optional)…"
+          rows={2}
+          style={{
+            width: '100%', boxSizing: 'border-box',
+            padding: '8px 12px', borderRadius: 8,
+            border: '1px solid var(--line-md)', background: '#fff',
+            fontSize: 13, fontFamily: 'inherit', color: 'var(--ink)',
+            resize: 'vertical', minHeight: 60, outline: 'none',
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
+// ── First-conversation overlay ─────────────────────────────────────────────
+// Full-screen scrollable cover shown on the member's first visit to the
+// partner thread. Three question cards + closing text + "Start the
+// conversation →" button that dismisses and seeds the composer.
+
+function FirstConversationOverlay({
+  partnerName, onStart,
+}: { partnerName: string; onStart: () => void }) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 900,
+      background: ORANGE_PALE,
+      overflowY: 'auto',
+      padding: '40px 20px 80px',
+    }}>
+      <div style={{ maxWidth: 720, margin: '0 auto' }}>
+        <div style={{
+          fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase',
+          color: 'var(--text-muted)', margin: '0 0 10px',
+        }}>
+          The Circle · First conversation
+        </div>
+        <h1 style={{
+          fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 300,
+          color: 'var(--ink)', letterSpacing: '-0.015em', lineHeight: 1.1,
+          margin: '0 0 16px',
+        }}>
+          Your first conversation.
+        </h1>
+        <p style={{ fontSize: 14, color: 'var(--text-soft)', lineHeight: 1.7, margin: '0 0 26px' }}>
+          This guide is for your first real conversation with your accountability partner.
+          You do not have to cover everything in one sitting — this can happen over a few
+          messages or one voice note exchange. What matters is that you actually have it.
+          <br /><br />
+          These three questions are not small talk. They are the foundation of the
+          partnership. The more honest you are here, the more useful this relationship
+          will be for both of you over the next 90 days.
+        </p>
+
+        <QuestionCard
+          label="Question 1 — The unsaid thing"
+          prompt={
+            <>
+              Tell your partner one thing you have never said out loud about your pattern.
+              Not your archetype description — you both already have that. Something
+              specific. A moment, a cost, a version of yourself you have been carrying
+              quietly.
+              <br /><br />
+              It does not have to be dramatic. It just has to be honest.
+            </>
+          }
+          guidance={
+            <>
+              When your partner shares — do not fix it, advise it, or relate it back to
+              yourself immediately. Just receive it. A simple &ldquo;thank you for telling
+              me that&rdquo; is enough. You will have 90 days to go deeper. Right now your
+              only job is to make this safe.
+            </>
+          }
+        />
+
+        <QuestionCard
+          label="Question 2 — What support actually looks like"
+          prompt={
+            <>
+              Tell your partner what support looks like for you — not what you think you
+              should need, what you actually need.
+              <br /><br />
+              When you are struggling, do you want someone to:
+              <ul style={{ margin: '8px 0 0 20px', padding: 0, lineHeight: 1.8 }}>
+                <li>Ask questions that help you think it through?</li>
+                <li>Reflect back what they hear without adding anything?</li>
+                <li>Remind you of your own strength?</li>
+                <li>Tell you the honest truth even if it is hard to hear?</li>
+                <li>Just be present — no words needed?</li>
+              </ul>
+              <br />
+              Or something else entirely? Be specific.
+            </>
+          }
+          guidance={
+            <>
+              Share your own answer too. This goes both directions. By the end of this
+              question you should both know exactly what to do when the other person
+              comes to you on a hard day.
+            </>
+          }
+        />
+
+        <QuestionCard
+          label="Question 3 — The fear underneath"
+          prompt={
+            <>
+              Tell your partner what you are most afraid of about this program. About
+              doing this work, about being seen, about what you might find — or about
+              what might not change even after 90 days of trying.
+              <br /><br />
+              The woman who says &ldquo;I am afraid this will not work because nothing
+              else has&rdquo; is more ready for this program than the one who performs
+              certainty.
+            </>
+          }
+          guidance={
+            <>
+              After you both share — tell each other: &ldquo;I will not let that fear be
+              the reason you stop. And I need you to do the same for me.&rdquo; Mean it.
+            </>
+          }
+        />
+
+        <div style={{
+          background: 'var(--card)', border: '1px solid var(--line)',
+          borderLeft: `3px solid ${ORANGE}`,
+          borderRadius: 12, padding: '20px 22px', margin: '6px 0 26px',
+          fontSize: 14, color: 'var(--text-soft)', lineHeight: 1.7,
+        }}>
+          You have just done something most people in programs never do. You showed up
+          honestly before you had to.
+          <br /><br />
+          That is the whole work of the next 90 days.
+          <br /><br />
+          Check in with each other every Wednesday. The prompt will be waiting for you.
+          But do not wait for the prompt — reach out when something happens, when
+          something shifts, when you almost quit, when you need someone to hold the
+          proof with you.
+          <br /><br />
+          That is what this partnership is for.
+          <div style={{
+            marginTop: 10, fontFamily: 'var(--font-display)', fontStyle: 'italic',
+            fontSize: 14, color: 'var(--ink)',
+          }}>
+            — Nicole
+          </div>
+        </div>
+
+        <button
+          onClick={onStart}
+          style={{
+            background: ORANGE, color: '#fff',
+            padding: '14px 28px', borderRadius: 10,
+            fontSize: 14, fontWeight: 600, border: 'none',
+            cursor: 'pointer', fontFamily: 'inherit',
+            display: 'block', width: '100%', maxWidth: 360, margin: '0 auto',
+          }}
+        >
+          Start the conversation →
+        </button>
+        <p style={{
+          fontSize: 11, color: 'var(--text-muted)', textAlign: 'center',
+          margin: '12px 0 0',
+        }}>
+          Opens your thread with {partnerName} and seeds your first message.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function QuestionCard({
+  label, prompt, guidance,
+}: { label: string; prompt: React.ReactNode; guidance: React.ReactNode }) {
+  return (
+    <div style={{
+      background: 'var(--card)', border: '1px solid var(--line)',
+      borderRadius: 12, padding: '20px 22px', marginBottom: 16,
+    }}>
+      <div style={{
+        fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
+        textTransform: 'uppercase', color: ORANGE, marginBottom: 10,
+      }}>
+        {label}
+      </div>
+      <div style={{ fontSize: 14, color: 'var(--ink)', lineHeight: 1.7, marginBottom: 14 }}>
+        {prompt}
+      </div>
+      <div style={{
+        fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.7,
+        fontStyle: 'italic', borderTop: '1px solid var(--line)', paddingTop: 12,
+      }}>
+        {guidance}
+      </div>
+    </div>
+  )
 }

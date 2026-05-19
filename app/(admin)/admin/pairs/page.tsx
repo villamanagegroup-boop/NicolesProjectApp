@@ -145,11 +145,20 @@ export default function PairsPage() {
     setPairing(true)
     setPairError(null)
     const result = await pairMembers(pickA, pickB)
-    setPairing(false)
     if (result.error) {
+      setPairing(false)
       setPairError(result.error.message)
       return
     }
+    // Fire the intro emails (fire-and-forget — pairing has already
+    // succeeded; a missed email can be resent later, but a hard error
+    // here shouldn't block the admin from seeing the new pair).
+    void fetch('/api/admin/send-pair-intro', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ memberAId: pickA, memberBId: pickB }),
+    }).catch(err => console.error('[pairs] pair intro email failed', err))
+    setPairing(false)
     setPickA(''); setPickB('')
     await refreshAll()
   }

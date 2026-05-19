@@ -62,6 +62,7 @@ interface MemberRow {
   life_changing_definition: string | null
   graduation_date: string | null
   letter_sent_at: string | null
+  graduation_seal_card_url: string | null
 }
 
 interface UserProfile {
@@ -194,6 +195,36 @@ export default function AdminMemberProfilePage() {
   const [savingGradDate, setSavingGradDate] = useState(false)
   const [gradDateError, setGradDateError] = useState<string | null>(null)
   const [showTeleprompter, setShowTeleprompter] = useState(false)
+  const [generatingSeal, setGeneratingSeal] = useState(false)
+  const [sealError, setSealError] = useState<string | null>(null)
+  const [copiedShare, setCopiedShare] = useState(false)
+
+  async function generateSealCard() {
+    if (!member) return
+    setGeneratingSeal(true); setSealError(null)
+    try {
+      const res = await fetch('/api/admin/generate-seal-card', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ member_id: member.id }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.url) throw new Error(json.error ?? 'Generation failed')
+      setMember({ ...member, graduation_seal_card_url: json.url })
+    } catch (err) {
+      setSealError(err instanceof Error ? err.message : 'Generation failed')
+    } finally {
+      setGeneratingSeal(false)
+    }
+  }
+
+  async function copySealShareLink() {
+    if (!member?.graduation_seal_card_url) return
+    // Strip the cache-bust ?v=… so the shared link doesn't expire when
+    // the next regeneration bumps the query string.
+    const clean = member.graduation_seal_card_url.split('?')[0]
+    try { await navigator.clipboard.writeText(clean); setCopiedShare(true); setTimeout(() => setCopiedShare(false), 1500) } catch {}
+  }
 
   async function saveGraduationDate(next: string | null) {
     if (!member) return
@@ -1005,6 +1036,79 @@ export default function AdminMemberProfilePage() {
               automatically 180 days from this date.
             </p>
             {gradDateError && <p style={{ fontSize: 11, color: 'var(--red)', margin: '6px 0 0' }}>{gradDateError}</p>}
+          </div>
+
+          {/* Seal card — generated PNG for graduation */}
+          <div>
+            <div style={S.label}>Seal card</div>
+            {member.graduation_seal_card_url ? (
+              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={member.graduation_seal_card_url}
+                  alt={`${user.name ?? 'Member'} graduation seal`}
+                  style={{
+                    width: 180, height: 180, borderRadius: 10,
+                    border: '1px solid var(--line)', background: '#1B4332',
+                    objectFit: 'cover', display: 'block',
+                  }}
+                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minWidth: 200 }}>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <a
+                      href={member.graduation_seal_card_url}
+                      download={`${(user.name ?? 'member').toLowerCase().replace(/\s+/g, '-')}-seal.png`}
+                      style={{ ...S.btnPrimary, textDecoration: 'none', display: 'inline-block' }}
+                    >
+                      Download
+                    </a>
+                    <button onClick={copySealShareLink} style={{
+                      fontSize: 12, fontWeight: 600, padding: '8px 14px', borderRadius: 8,
+                      cursor: 'pointer', border: '1px solid var(--line-md)',
+                      background: '#fff', color: 'var(--text-soft)', fontFamily: 'inherit',
+                    }}>
+                      {copiedShare ? 'Copied ✓' : 'Copy share link'}
+                    </button>
+                    <button
+                      onClick={generateSealCard}
+                      disabled={generatingSeal}
+                      style={{
+                        fontSize: 12, fontWeight: 600, padding: '8px 14px', borderRadius: 8,
+                        cursor: generatingSeal ? 'wait' : 'pointer',
+                        border: '1px solid var(--line-md)',
+                        background: '#fff', color: 'var(--text-muted)', fontFamily: 'inherit',
+                        opacity: generatingSeal ? 0.6 : 1,
+                      }}
+                    >
+                      {generatingSeal ? 'Regenerating…' : 'Regenerate'}
+                    </button>
+                  </div>
+                  <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+                    Pulls from name, archetype, and first 1–2 sentences of their transformation
+                    story. Regenerate after the story changes.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <button
+                  onClick={generateSealCard}
+                  disabled={generatingSeal}
+                  style={{
+                    ...S.btnPrimary,
+                    opacity: generatingSeal ? 0.6 : 1,
+                    cursor: generatingSeal ? 'wait' : 'pointer',
+                  }}
+                >
+                  {generatingSeal ? 'Generating…' : 'Generate seal card'}
+                </button>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '8px 0 0', lineHeight: 1.5 }}>
+                  Renders a 1080×1080 PNG using their archetype + transformation story.
+                  Best run at Week 12 once the story is in.
+                </p>
+              </div>
+            )}
+            {sealError && <p style={{ fontSize: 11, color: 'var(--red)', margin: '6px 0 0' }}>{sealError}</p>}
           </div>
         </div>
       </div>

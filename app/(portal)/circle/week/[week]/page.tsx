@@ -13,6 +13,7 @@ import {
 } from '@/lib/circle'
 import WeeklyWinsFeed from '@/components/circle/WeeklyWinsFeed'
 import ActionCompleteScreen from '@/components/circle/ActionCompleteScreen'
+import FirstInterruptionScreen from '@/components/circle/FirstInterruptionScreen'
 import DailyPromptCard from '@/components/circle/DailyPromptCard'
 
 const ORANGE      = '#B8862E'
@@ -55,6 +56,10 @@ export default function WeekPage() {
   // so a member returning to a finished week doesn't get the celebration
   // popping back open.
   const [actionCelebrate, setActionCelebrate] = useState(false)
+  // Drives the "Your first interruption" overlay. Set to true only when
+  // /api/circle/first-action returns { first: true } — i.e. when this is
+  // the member's very first action completion ever.
+  const [firstInterruption, setFirstInterruption] = useState(false)
 
   useEffect(() => {
     if (appLoading) return
@@ -122,7 +127,20 @@ export default function WeekPage() {
       // complete for the action step. Returning to a finished week
       // doesn't re-open the screen.
       if (field === 'action_completed' && !wasComplete) {
-        setActionCelebrate(true)
+        // Ask the server whether this is their FIRST action ever. If
+        // so, show the "first interruption" overlay instead of the
+        // standard celebration. The route also inserts an admin alert
+        // and stamps first_action_completed_at, both of which require
+        // service-role.
+        try {
+          const res = await fetch('/api/circle/first-action', { method: 'POST' })
+          const json = await res.json().catch(() => ({ first: false }))
+          if (json?.first) setFirstInterruption(true)
+          else setActionCelebrate(true)
+        } catch {
+          // Network/route failed — still show *some* celebration.
+          setActionCelebrate(true)
+        }
       }
     }
     setSaving(false)
@@ -377,6 +395,17 @@ export default function WeekPage() {
         excludeUserId={authUserId}
         onShareWin={handleShareWin}
         onBackHome={() => { setActionCelebrate(false); router.push('/circle') }}
+      />
+
+      {/* First-action celebration — shown only on the member's very first
+          completion (server confirms via first_action_completed_at = NULL). */}
+      <FirstInterruptionScreen
+        open={firstInterruption}
+        onTellNicole={() => {
+          setFirstInterruption(false)
+          router.push('/circle/coach?seed=' + encodeURIComponent('My first interruption: '))
+        }}
+        onClose={() => setFirstInterruption(false)}
       />
     </div>
   )

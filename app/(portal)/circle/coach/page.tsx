@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabaseClient } from '@/lib/supabase/client'
 import { useApp } from '@/context/AppContext'
 import { uploadCircleAttachment } from '@/lib/circle'
@@ -25,10 +25,14 @@ const ORANGE_PALE = '#fdf6f2'
 
 export default function CoachChatPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { loading, isAuthed, user } = useApp()
 
   const [messages, setMessages] = useState<CoachMessage[]>([])
-  const [body, setBody]         = useState('')
+  // Seed the composer from ?seed=… so deep-links (e.g. the "first
+  // interruption" celebration) can drop a member into a half-written
+  // message without making them retype the prefix.
+  const [body, setBody]         = useState(() => searchParams?.get('seed') ?? '')
   const [myUserId, setMyUserId] = useState<string>('')
   const [hydrating, setHydrating] = useState(true)
   const [sending, setSending]   = useState(false)

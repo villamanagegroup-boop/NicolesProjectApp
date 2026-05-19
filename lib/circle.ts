@@ -18,7 +18,14 @@ export const ARCHETYPE_COLOR: Record<Archetype, string> = {
 }
 export type AttachmentStyle = 'secure' | 'anxious' | 'avoidant' | 'disorganized'
 export type FeedbackPref = 'straight' | 'context' | 'written' | 'example'
-export type PostType = 'wins' | 'monday_prompt' | 'partner_checkin' | 'general' | 'coach_note'
+export type PostType =
+  | 'wins'
+  | 'monday_prompt'
+  | 'partner_checkin'
+  | 'general'
+  | 'coach_note'
+  | 'peer_share'    // Week 10/11 structured 3-field share — see migration 033
+  | 'alumni_share'  // Posted from /circle/community by alumni during the 30-day bridge
 
 export interface CircleMember {
   id: string
@@ -134,6 +141,11 @@ export interface CirclePost {
   file_name: string | null
   created_at: string
   edited_at: string | null
+  // Structured fields for post_type === 'peer_share' (migration 033).
+  // Null on every other post_type.
+  peer_share_what_i_came_in_with: string | null
+  peer_share_what_shifted:        string | null
+  peer_share_who_i_am_now:        string | null
   author?: { name: string; avatar_url: string | null }
   reactions?: { emoji: string; count: number; user_reacted: boolean }[]
   comment_count?: number
@@ -666,6 +678,43 @@ function buildReactionSummary(
     if (r.user_id === currentUserId) map[r.emoji].user_reacted = true
   })
   return Object.entries(map).map(([emoji, v]) => ({ emoji, ...v }))
+}
+
+/**
+ * Create a Week 10/11 peer-share post. Structured into 3 fields rather
+ * than one big body. `body` is set to a concatenation so any legacy
+ * reader (notifications, search, exports) still has a single readable
+ * string to fall back on.
+ */
+export async function createPeerSharePost(
+  cohortId: string,
+  weekNumber: number,
+  fields: {
+    cameInWith: string
+    shifted:    string
+    whoIAmNow:  string
+  },
+): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
+  const body = [
+    `What I came in with: ${fields.cameInWith.trim()}`,
+    `What shifted: ${fields.shifted.trim()}`,
+    `Who I am now: ${fields.whoIAmNow.trim()}`,
+  ].join('\n\n')
+  const { error } = await supabase
+    .from('circle_posts')
+    .insert({
+      cohort_id:                       cohortId,
+      author_id:                       user.id,
+      post_type:                       'peer_share',
+      body,
+      week_number:                     weekNumber,
+      peer_share_what_i_came_in_with:  fields.cameInWith.trim(),
+      peer_share_what_shifted:         fields.shifted.trim(),
+      peer_share_who_i_am_now:         fields.whoIAmNow.trim(),
+    })
+  return !error
 }
 
 /**

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 import { getMyCircleMember, getLiveCalls, type LiveCall } from '@/lib/circle'
+import CallRoundsPanel from '@/components/circle/CallRoundsPanel'
 
 const ORANGE      = '#B8862E'
 const ORANGE_PALE = '#fdf6f2'
@@ -31,6 +32,9 @@ export default function CallsPage() {
 
   const [calls, setCalls] = useState<LiveCall[]>([])
   const [hydrating, setHydrating] = useState(true)
+  const [memberId, setMemberId] = useState<string | null>(null)
+  const [memberArchetype, setMemberArchetype] = useState<string>('')
+  const [cohortId, setCohortId] = useState<string>('')
 
   useEffect(() => {
     if (loading) return
@@ -38,6 +42,9 @@ export default function CallsPage() {
     (async () => {
       const member = await getMyCircleMember()
       if (!member) { setHydrating(false); return }
+      setMemberId(member.id)
+      setMemberArchetype(member.archetype)
+      setCohortId(member.cohort_id)
       const data = await getLiveCalls(member.cohort_id)
       setCalls(data)
       setHydrating(false)
@@ -99,6 +106,28 @@ export default function CallsPage() {
 
       {/* Next-up centerpiece — full width, gradient bar like the affirmation */}
       {next && <NextUpHero call={next} />}
+
+      {/* Opening round + closing integration + zoom join button.
+          Anchored to the nearest call (next upcoming, or the most recently-
+          completed call when the closing window is still open). */}
+      {(() => {
+        const now = Date.now()
+        // Pick the call to attach the rounds panel to. Within 2 hours of any
+        // call's scheduled_at, that call wins so closing integration shows.
+        const closingAnchor = past.find(c =>
+          now < new Date(c.scheduled_at).getTime() + 1000 * 60 * 60 * 24
+        )
+        const anchorCall = next ?? closingAnchor ?? null
+        if (!anchorCall || !memberId || !cohortId) return null
+        return (
+          <CallRoundsPanel
+            call={anchorCall}
+            memberId={memberId}
+            cohortId={cohortId}
+            archetype={memberArchetype}
+          />
+        )
+      })()}
 
       {/* Below the hero: upcoming on left, past replays on right */}
       <div className="calls-cols" style={{
@@ -182,16 +211,8 @@ function NextUpHero({ call }: { call: LiveCall }) {
           </p>
 
           <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
-            {call.zoom_url && (
-              <a href={call.zoom_url} target="_blank" rel="noreferrer" style={{
-                padding: '8px 14px', borderRadius: 8,
-                background: ORANGE, color: '#fff',
-                fontSize: 13, fontWeight: 600,
-                textDecoration: 'none',
-              }}>
-                Join live stream →
-              </a>
-            )}
+            {/* Join button now lives inside CallRoundsPanel so the opening
+                round prompt can gate it. Calendar download stays here. */}
             <button
               onClick={() => downloadIcs(call)}
               style={{

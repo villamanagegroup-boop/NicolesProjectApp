@@ -7,6 +7,7 @@ import {
   getMyCircleMember,
   getCommunityPosts,
   createPost,
+  createPeerSharePost,
   updatePost,
   deletePost,
   toggleReaction,
@@ -29,13 +30,22 @@ const POST_TYPES: { id: PostType; label: string; dot: string }[] = [
   { id: 'partner_checkin', label: 'Partner', dot: '#7a5cc4'        },
   { id: 'general',         label: 'General', dot: 'var(--text-muted)' },
   { id: 'coach_note',      label: 'Coach',   dot: 'var(--ink)'     },
+  // Migration 033 post types — surfaced only via the structured composers,
+  // so they intentionally stay out of the regular post-type chooser row.
+  { id: 'peer_share',      label: 'Peer share',   dot: ORANGE       },
+  { id: 'alumni_share',    label: 'Alumni',       dot: '#3D3080'    },
 ]
 
 const POST_TYPE_LABEL: Record<PostType, string> = {
   wins: 'Win', monday_prompt: 'Monday', partner_checkin: 'Partner', general: 'General', coach_note: 'Coach',
+  peer_share: 'Peer share', alumni_share: 'Alumni',
 }
 
 const EMOJIS = ['❤️', '🔥', '✨', '👏', '💪']
+// Peer-share posts get an extra reaction that doesn't appear on regular
+// posts. 🌱 specifically surfaces the emotional weight of reading
+// someone else's transformation — "this gives me hope."
+const PEER_SHARE_EMOJI = '🌱'
 
 export default function CommunityPage() {
   const router = useRouter()
@@ -46,6 +56,17 @@ export default function CommunityPage() {
   const [weekNumber, setWeekNumber] = useState<number>(1)
   const [hydrating, setHydrating]   = useState(true)
   const [filter, setFilter]         = useState<PostType | 'all'>('all')
+
+  // Alumni bridge state (migration 033). Members get 30 days of community
+  // access after graduation_date; after that the compose UI is hidden.
+  const [isAlumni, setIsAlumni]           = useState(false)
+  const [alumniSince, setAlumniSince]     = useState<string | null>(null)
+  const alumniDaysSince = useMemo(() => {
+    if (!alumniSince) return null
+    return Math.floor((Date.now() - new Date(alumniSince).getTime()) / 86_400_000)
+  }, [alumniSince])
+  const alumniBridgeActive = isAlumni && alumniDaysSince !== null && alumniDaysSince <= 30
+  const alumniReadOnly     = isAlumni && alumniDaysSince !== null && alumniDaysSince > 30
 
   const [newBody, setNewBody]       = useState('')
   const [newType, setNewType]       = useState<PostType>('wins')
@@ -58,6 +79,15 @@ export default function CommunityPage() {
   const [gifUrl, setGifUrl]         = useState<string | null>(null)
   const [uploading, setUploading]     = useState(false)
   const [postError, setPostError]     = useState<string | null>(null)
+
+  // Peer-share composer state (Week 10/11). Lives in its own modal so the
+  // existing single-textarea composer stays unchanged for everything else.
+  const [showPeerCompose, setShowPeerCompose] = useState(false)
+  const [peerCameInWith, setPeerCameInWith]   = useState('')
+  const [peerShifted,     setPeerShifted]     = useState('')
+  const [peerWhoIAmNow,   setPeerWhoIAmNow]   = useState('')
+  const [postingPeer,     setPostingPeer]     = useState(false)
+  const [peerError,       setPeerError]       = useState<string | null>(null)
 
   function setSlot(slot: AttachmentSlot, file: File | null) {
     setAttachments(prev => ({ ...prev, [slot]: file }))
@@ -74,6 +104,20 @@ export default function CommunityPage() {
       const member = await getMyCircleMember()
       if (!member) { setHydrating(false); return }
       setCohortId(member.cohort_id)
+
+      // Pull alumni status separately so the bridge UI knows whether to
+      // show the alumni composer + how many days remain.
+      try {
+        const { data: alumniRow } = await supabaseClient
+          .from('circle_members')
+          .select('is_alumni, alumni_since')
+          .eq('id', member.id)
+          .maybeSingle()
+        if (alumniRow) {
+          setIsAlumni(!!alumniRow.is_alumni)
+          setAlumniSince(alumniRow.alumni_since ?? null)
+        }
+      } catch { /* migration 033 not yet applied — leave defaults */ }
 
       const { data: cohort } = await supabaseClient
         .from('circle_cohorts').select('starts_at').eq('id', member.cohort_id).maybeSingle()
@@ -161,6 +205,26 @@ export default function CommunityPage() {
     }
   }
 
+  async function handlePeerSubmit() {
+    if (!peerCameInWith.trim() || !peerShifted.trim() || !peerWhoIAmNow.trim()) {
+      setPeerError('Fill all three sections — that\'s the whole shape of this share.')
+      return
+    }
+    if (!cohortId) return
+    setPostingPeer(true); setPeerError(null)
+    const ok = await createPeerSharePost(cohortId, weekNumber, {
+      cameInWith: peerCameInWith,
+      shifted:    peerShifted,
+      whoIAmNow:  peerWhoIAmNow,
+    })
+    setPostingPeer(false)
+    if (!ok) { setPeerError('Could not save the peer share. Try again.'); return }
+    setShowPeerCompose(false)
+    setPeerCameInWith(''); setPeerShifted(''); setPeerWhoIAmNow('')
+    const data = await getCommunityPosts(cohortId, filter === 'all' ? undefined : filter)
+    setPosts(data)
+  }
+
   async function handleUpdatePost(postId: string, body: string): Promise<boolean> {
     const ok = await updatePost(postId, body)
     if (ok && cohortId) {
@@ -199,10 +263,116 @@ export default function CommunityPage() {
             Wins, prompts, and partner check-ins from your cohort.
           </p>
         </div>
-        {!showCompose && (
+        {!showCompose && !alumniReadOnly && (
           <button onClick={() => setShowCompose(true)} style={primaryBtn}>+ Post</button>
         )}
+        {alumniReadOnly && (
+          <span style={{
+            fontSize: 11, fontWeight: 600, color: 'var(--text-muted)',
+            background: 'var(--paper)', border: '1px solid var(--line)',
+            padding: '6px 10px', borderRadius: 999,
+          }}>
+            Read-only · {alumniDaysSince} days post-graduation
+          </span>
+        )}
       </div>
+
+      {/* Alumni channel (during the 30-day bridge). Visible only to alumni;
+          their alumni_share posts surface to the current cohort below. */}
+      {alumniBridgeActive && (
+        <AlumniChannelCard
+          daysSince={alumniDaysSince ?? 0}
+          cohortId={cohortId}
+          onPosted={() => { void getCommunityPosts(cohortId).then(setPosts) }}
+        />
+      )}
+
+      {/* Week 10/11 peer-share banner — only during the arc-share window. */}
+      {(weekNumber === 10 || weekNumber === 11) && !showPeerCompose && (
+        <div style={{
+          background: `linear-gradient(135deg, ${ORANGE_PALE} 0%, #fff 70%)`,
+          border: '1px solid var(--line)', borderLeft: `3px solid ${ORANGE}`,
+          borderRadius: 12, padding: '18px 22px', marginBottom: 22,
+          display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+        }}>
+          <div style={{ flex: 1, minWidth: 280 }}>
+            <div style={{
+              fontSize: 11, fontWeight: 700, letterSpacing: '0.12em',
+              textTransform: 'uppercase', color: ORANGE, marginBottom: 6,
+            }}>
+              This week: share your arc
+            </div>
+            <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.6, margin: 0 }}>
+              In three sentences, tell your cohort: what you came in with, what
+              shifted, and who you are now. This is not a performance. It is
+              proof — for you and for the woman in this cohort who needs to see it.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowPeerCompose(true)}
+            style={primaryBtn}
+          >
+            Write my share →
+          </button>
+        </div>
+      )}
+
+      {/* Peer-share structured composer modal. */}
+      {showPeerCompose && (
+        <div style={{
+          background: 'var(--card)', border: `1px solid ${ORANGE}`,
+          borderRadius: 14, padding: 22, marginBottom: 22,
+          display: 'flex', flexDirection: 'column', gap: 14,
+        }}>
+          <div style={{
+            fontSize: 11, fontWeight: 700, letterSpacing: '0.12em',
+            textTransform: 'uppercase', color: ORANGE,
+          }}>
+            Peer share · Week {weekNumber}
+          </div>
+
+          <PeerField
+            label="What I came in with"
+            placeholder="When I started The Circle, I was someone who…"
+            value={peerCameInWith}
+            onChange={setPeerCameInWith}
+          />
+          <PeerField
+            label="What shifted"
+            placeholder="The moment things started to change was…"
+            value={peerShifted}
+            onChange={setPeerShifted}
+          />
+          <PeerField
+            label="Who I am now"
+            placeholder="I am now someone who…"
+            value={peerWhoIAmNow}
+            onChange={setPeerWhoIAmNow}
+          />
+
+          {peerError && <p style={{ fontSize: 12, color: 'var(--red)', margin: 0 }}>{peerError}</p>}
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <button
+              onClick={() => { setShowPeerCompose(false); setPeerError(null) }}
+              style={ghostBtn}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handlePeerSubmit}
+              disabled={postingPeer}
+              style={{
+                ...primaryBtn,
+                opacity: postingPeer ? 0.6 : 1,
+                cursor: postingPeer ? 'wait' : 'pointer',
+              }}
+            >
+              {postingPeer ? 'Posting…' : 'Share with cohort'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Feed (left) + filters/info (right) on desktop, stacked on mobile */}
       <div className="community-cols" style={{
@@ -645,6 +815,8 @@ function PostCard({
             </button>
           </div>
         </div>
+      ) : post.post_type === 'peer_share' ? (
+        <PeerShareBody post={post} />
       ) : (
         <p style={{
           fontSize: 14, lineHeight: 1.7, color: 'var(--text-soft)',
@@ -688,7 +860,7 @@ function PostCard({
         display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center',
         marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--line)',
       }}>
-        {EMOJIS.map(emoji => {
+        {(post.post_type === 'peer_share' ? [...EMOJIS, PEER_SHARE_EMOJI] : EMOJIS).map(emoji => {
           const r = post.reactions?.find(rx => rx.emoji === emoji)
           const active = r?.user_reacted ?? false
           return (
@@ -715,7 +887,7 @@ function PostCard({
             in the always-visible quick row — render them inline so they
             stay clickable + countable without forcing the quick row to grow. */}
         {(post.reactions ?? [])
-          .filter(r => !EMOJIS.includes(r.emoji))
+          .filter(r => !EMOJIS.includes(r.emoji) && r.emoji !== (post.post_type === 'peer_share' ? PEER_SHARE_EMOJI : ''))
           .map(r => (
             <button
               key={r.emoji}
@@ -863,5 +1035,158 @@ const menuItemStyle: React.CSSProperties = {
   cursor: 'pointer', fontFamily: 'inherit',
   textAlign: 'left',
   transition: 'background 0.12s',
+}
+
+// ── Peer-share UI ────────────────────────────────────────────────────────────
+
+function PeerField({
+  label, placeholder, value, onChange,
+}: { label: string; placeholder: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div>
+      <div style={{
+        fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
+        textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 6,
+      }}>
+        {label}
+      </div>
+      <textarea
+        value={value}
+        placeholder={placeholder}
+        onChange={e => onChange(e.target.value)}
+        onFocus={e => { e.currentTarget.style.borderColor = ORANGE }}
+        onBlur={e => { e.currentTarget.style.borderColor = 'var(--line-md)' }}
+        rows={3}
+        style={{
+          width: '100%', boxSizing: 'border-box',
+          padding: '10px 14px', borderRadius: 10,
+          border: '1px solid var(--line-md)',
+          fontSize: 14, lineHeight: 1.6, fontFamily: 'inherit',
+          resize: 'vertical', background: '#fff', color: 'var(--ink)',
+          outline: 'none', transition: 'border-color .15s',
+        }}
+      />
+    </div>
+  )
+}
+
+function PeerShareBody({ post }: { post: CirclePost }) {
+  // Fallback if the 3 structured fields are missing — should only happen
+  // for any peer_share row written before the columns existed (unlikely,
+  // but the body fallback preserves their words).
+  if (!post.peer_share_what_i_came_in_with && !post.peer_share_what_shifted && !post.peer_share_who_i_am_now) {
+    return (
+      <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--text-soft)', whiteSpace: 'pre-wrap', margin: 0 }}>
+        {post.body}
+      </p>
+    )
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <PeerShareSection label="Came in with" body={post.peer_share_what_i_came_in_with} />
+      <PeerShareSection label="What shifted" body={post.peer_share_what_shifted} />
+      <PeerShareSection label="Who I am now" body={post.peer_share_who_i_am_now} />
+    </div>
+  )
+}
+
+// Alumni 30-day bridge composer. Posts go in as post_type='alumni_share'
+// (visible to current cohort + other alumni alike).
+function AlumniChannelCard({
+  daysSince, cohortId, onPosted,
+}: { daysSince: number; cohortId: string; onPosted: () => void }) {
+  const [draft, setDraft]     = useState('')
+  const [posting, setPosting] = useState(false)
+  const [err, setErr]         = useState<string | null>(null)
+  const daysLeft = Math.max(0, 30 - daysSince)
+
+  async function handlePost() {
+    if (!draft.trim() || !cohortId) return
+    setPosting(true); setErr(null)
+    const ok = await createPost(cohortId, 'alumni_share' as PostType, draft.trim())
+    setPosting(false)
+    if (!ok) { setErr('Could not save the post. Try again.'); return }
+    setDraft(''); onPosted()
+  }
+
+  return (
+    <div style={{
+      background: '#fff',
+      border: '1px solid var(--line)',
+      borderLeft: `3px solid #3D3080`,
+      borderRadius: 12, padding: '16px 20px', marginBottom: 22,
+      display: 'flex', flexDirection: 'column', gap: 12,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: '0.12em',
+          textTransform: 'uppercase', color: '#3D3080',
+        }}>
+          Alumni channel
+        </div>
+        <span style={{
+          fontSize: 10, fontWeight: 600, color: 'var(--text-muted)',
+          background: 'var(--paper)', padding: '2px 8px', borderRadius: 999,
+        }}>
+          {daysLeft} day{daysLeft === 1 ? '' : 's'} left
+        </span>
+      </div>
+      <p style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.6, margin: 0 }}>
+        You graduated from The Circle. This space is yours for 30 more days.
+        Share what is holding, what is getting tested, and what you are
+        building next.
+      </p>
+      <textarea
+        value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onFocus={e => { e.currentTarget.style.borderColor = '#3D3080' }}
+        onBlur={e => { e.currentTarget.style.borderColor = 'var(--line-md)' }}
+        rows={3}
+        placeholder="What's holding? What's getting tested? What are you building next?"
+        style={{
+          width: '100%', boxSizing: 'border-box',
+          padding: '10px 14px', borderRadius: 10,
+          border: '1px solid var(--line-md)',
+          fontSize: 14, lineHeight: 1.6, fontFamily: 'inherit',
+          resize: 'vertical', background: '#fff', color: 'var(--ink)',
+          outline: 'none', transition: 'border-color .15s',
+        }}
+      />
+      {err && <p style={{ fontSize: 12, color: 'var(--red)', margin: 0 }}>{err}</p>}
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <button
+          onClick={handlePost}
+          disabled={posting || !draft.trim()}
+          style={{
+            ...primaryBtn,
+            background: posting || !draft.trim() ? 'var(--paper3)' : '#3D3080',
+            cursor: posting || !draft.trim() ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {posting ? 'Posting…' : 'Share with the cohort'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function PeerShareSection({ label, body }: { label: string; body: string | null }) {
+  if (!body) return null
+  return (
+    <div>
+      <div style={{
+        fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
+        textTransform: 'uppercase', color: ORANGE, marginBottom: 4,
+      }}>
+        {label}
+      </div>
+      <p style={{
+        fontSize: 14, lineHeight: 1.7, color: 'var(--text-soft)',
+        whiteSpace: 'pre-wrap', margin: 0,
+      }}>
+        {body}
+      </p>
+    </div>
+  )
 }
 

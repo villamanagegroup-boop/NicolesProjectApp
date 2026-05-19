@@ -121,6 +121,26 @@ export default function AdminDashboard() {
     setToday(new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }))
   }, [])
 
+  // Week 6 banner — surface when any active cohort is in week 6 and at
+  // least one member there still has week6_message_sent = false.
+  const [week6Pending, setWeek6Pending] = useState<{ cohortId: string; cohortName: string; pendingCount: number } | null>(null)
+  useEffect(() => {
+    const candidate = cohorts.find(c => c.status === 'active' && c.current_week === 6)
+    if (!candidate) { setWeek6Pending(null); return }
+    let cancelled = false
+    void supabaseClient
+      .from('circle_members')
+      .select('id', { count: 'exact', head: true })
+      .eq('cohort_id', candidate.id)
+      .eq('week6_message_sent', false)
+      .then(res => {
+        if (cancelled) return
+        const pending = res.count ?? 0
+        setWeek6Pending(pending > 0 ? { cohortId: candidate.id, cohortName: candidate.name, pendingCount: pending } : null)
+      })
+    return () => { cancelled = true }
+  }, [cohorts])
+
   return (
     <div>
       {/* Header */}
@@ -154,6 +174,53 @@ export default function AdminDashboard() {
           {redAlerts > 0 && ` (${redAlerts} at risk)`}
         </p>
       </div>
+
+      {/* Week 6 banner — surfaces only when a cohort hits the hardest week.
+          Phase 3 spec: the single most powerful dropout-prevention lever. */}
+      {week6Pending && (
+        <div style={{
+          background: 'linear-gradient(135deg, #fdf6f2 0%, #faecd0 100%)',
+          border: '1px solid rgba(184,134,46,0.4)',
+          borderLeft: '4px solid #B8862E',
+          borderRadius: 12, padding: '18px 22px',
+          marginBottom: 24,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: 16, flexWrap: 'wrap',
+        }}>
+          <div style={{ flex: 1, minWidth: 280 }}>
+            <div style={{
+              fontSize: 11, fontWeight: 700, letterSpacing: '0.12em',
+              textTransform: 'uppercase', color: '#B8862E', marginBottom: 6,
+            }}>
+              {week6Pending.cohortName}
+            </div>
+            <div style={{
+              fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500,
+              color: 'var(--ink)', marginBottom: 6, lineHeight: 1.3,
+            }}>
+              Week 6 has started. Time for personal check-ins.
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.55 }}>
+              This is the hardest week for your members. A personal message from you
+              right now is the single most powerful thing you can do to prevent dropout.
+              {' '}
+              <strong>{week6Pending.pendingCount}</strong> still to send.
+            </div>
+          </div>
+          <Link
+            href={`/admin/week6?cohort=${week6Pending.cohortId}`}
+            style={{
+              background: '#B8862E', color: '#fff',
+              padding: '11px 20px', borderRadius: 10,
+              fontSize: 13, fontWeight: 600, textDecoration: 'none',
+              whiteSpace: 'nowrap', fontFamily: 'inherit',
+              boxShadow: '0 4px 12px rgba(184,134,46,0.3)',
+            }}
+          >
+            Send Week 6 messages →
+          </Link>
+        </div>
+      )}
 
       {loading ? (
         <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Loading dashboard...</div>
