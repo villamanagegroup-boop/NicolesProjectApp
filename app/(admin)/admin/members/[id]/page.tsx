@@ -55,6 +55,13 @@ interface MemberRow {
   goal_90day: string | null
   partner_id: string | null
   joined_at: string
+  // Upgraded intake (migration 030) — privacy: life_changing_definition,
+  // program_fears are admin-readable, but letter_to_self must NEVER be
+  // rendered in the admin UI (it's strictly between the member and the
+  // 180-day letter dispatcher).
+  life_changing_definition: string | null
+  graduation_date: string | null
+  letter_sent_at: string | null
 }
 
 interface UserProfile {
@@ -181,6 +188,25 @@ export default function AdminMemberProfilePage() {
   const [savingProfile, setSavingProfile] = useState(false)
   const [profileError, setProfileError] = useState<string | null>(null)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+
+  // Graduation ceremony state
+  const [gradDateDraft, setGradDateDraft] = useState('')
+  const [savingGradDate, setSavingGradDate] = useState(false)
+  const [gradDateError, setGradDateError] = useState<string | null>(null)
+  const [showTeleprompter, setShowTeleprompter] = useState(false)
+
+  async function saveGraduationDate(next: string | null) {
+    if (!member) return
+    setSavingGradDate(true)
+    setGradDateError(null)
+    const { error: e } = await supabaseClient
+      .from('circle_members')
+      .update({ graduation_date: next })
+      .eq('id', member.id)
+    setSavingGradDate(false)
+    if (e) { setGradDateError(e.message); return }
+    setMember({ ...member, graduation_date: next })
+  }
 
   function openEdit() {
     if (!user || !member) return
@@ -901,6 +927,121 @@ export default function AdminMemberProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* ── Graduation ceremony ──────────────────────────────────────────── */}
+      <div style={S.section}>
+        <div style={S.sectionHead}>
+          <span style={S.sectionTitle}>Graduation ceremony</span>
+          {member.letter_sent_at && (
+            <span style={{ fontSize: 11, color: 'var(--green, #3c6f47)', fontWeight: 600 }}>
+              ✓ 180-day letter sent {new Date(member.letter_sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
+          )}
+        </div>
+        <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* What she said would make this life-changing */}
+          <div>
+            <div style={S.label}>What she said would make this life-changing</div>
+            {member.life_changing_definition ? (
+              <>
+                <blockquote style={{
+                  margin: '8px 0 10px', padding: '14px 16px',
+                  background: 'var(--paper)', borderLeft: '3px solid var(--gold)',
+                  borderRadius: 6, fontSize: 14, lineHeight: 1.7,
+                  color: 'var(--ink)', fontFamily: 'var(--font-display)',
+                  fontStyle: 'italic', whiteSpace: 'pre-wrap',
+                }}>
+                  {member.life_changing_definition}
+                </blockquote>
+                <button
+                  onClick={() => setShowTeleprompter(true)}
+                  style={{ ...S.btnPrimary }}
+                >
+                  Read back at graduation →
+                </button>
+              </>
+            ) : (
+              <div style={{ ...S.value, color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                No life-changing definition on file. They'll add this in their intake.
+              </div>
+            )}
+          </div>
+
+          {/* Set graduation date */}
+          <div>
+            <div style={S.label}>Graduation date</div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <input
+                type="date"
+                value={gradDateDraft || (member.graduation_date ?? '')}
+                onChange={e => setGradDateDraft(e.target.value)}
+                style={{ ...S.input, maxWidth: 220 }}
+              />
+              <button
+                onClick={() => saveGraduationDate(gradDateDraft || (member.graduation_date ?? null))}
+                disabled={savingGradDate || (!gradDateDraft && !member.graduation_date)}
+                style={{
+                  ...S.btnPrimary,
+                  opacity: savingGradDate || (!gradDateDraft && !member.graduation_date) ? 0.5 : 1,
+                }}
+              >
+                {savingGradDate ? 'Saving…' : 'Save date'}
+              </button>
+              {member.graduation_date && (
+                <button
+                  onClick={() => { setGradDateDraft(''); saveGraduationDate(null) }}
+                  disabled={savingGradDate}
+                  style={{
+                    fontSize: 12, color: 'var(--text-muted)', background: 'none',
+                    border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '6px 4px',
+                  }}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '8px 0 0', lineHeight: 1.5 }}>
+              Set this when the member completes Week 12. Their 6-month letter will send
+              automatically 180 days from this date.
+            </p>
+            {gradDateError && <p style={{ fontSize: 11, color: 'var(--red)', margin: '6px 0 0' }}>{gradDateError}</p>}
+          </div>
+        </div>
+      </div>
+
+      {/* Teleprompter modal — read-back at Week 12 call */}
+      {showTeleprompter && member.life_changing_definition && (
+        <div
+          onClick={() => setShowTeleprompter(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(15,15,15,0.92)',
+            display: 'flex', flexDirection: 'column',
+            padding: '40px 24px',
+            cursor: 'pointer',
+          }}
+        >
+          <div style={{
+            color: 'rgba(255,255,255,0.7)', fontSize: 12, letterSpacing: '0.08em',
+            textTransform: 'uppercase', textAlign: 'center', marginBottom: 24,
+          }}>
+            Read this back to {(user?.name?.split(' ')[0] ?? 'her')} during the Week 12 call · click anywhere to close
+          </div>
+          <div style={{
+            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            maxWidth: 820, margin: '0 auto', width: '100%',
+          }}>
+            <blockquote style={{
+              fontFamily: 'var(--font-display)', fontSize: 32, lineHeight: 1.45,
+              color: '#fff', fontWeight: 300, fontStyle: 'italic',
+              whiteSpace: 'pre-wrap', textAlign: 'center', margin: 0,
+              letterSpacing: '-0.005em',
+            }}>
+              {member.life_changing_definition}
+            </blockquote>
+          </div>
+        </div>
+      )}
 
       {/* ── Coaching notes ───────────────────────────────────────────────── */}
       <div style={S.section}>
