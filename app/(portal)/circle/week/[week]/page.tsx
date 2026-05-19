@@ -223,12 +223,21 @@ export default function WeekPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {universal.video_url && (
             <div style={{ aspectRatio: '16 / 9', borderRadius: 12, overflow: 'hidden', background: '#000' }}>
-              <iframe
-                src={universal.video_url}
-                style={{ width: '100%', height: '100%', border: 0 }}
-                allowFullScreen
-                title={`Week ${weekNum} teaching`}
-              />
+              {/\.(mp4|webm|mov|m4v|ogv)(\?|$)/i.test(universal.video_url) ? (
+                <video
+                  src={universal.video_url}
+                  controls
+                  preload="metadata"
+                  style={{ width: '100%', height: '100%', display: 'block' }}
+                />
+              ) : (
+                <iframe
+                  src={universal.video_url}
+                  style={{ width: '100%', height: '100%', border: 0 }}
+                  allowFullScreen
+                  title={`Week ${weekNum} teaching`}
+                />
+              )}
             </div>
           )}
           {universal.teaching && (

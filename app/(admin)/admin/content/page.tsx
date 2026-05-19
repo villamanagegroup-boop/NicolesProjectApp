@@ -3,13 +3,15 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import {
   fetchAdminCohorts, fetchContentSchedule, fetchLiveCalls, updateLiveCall, createLiveCall,
   insertContent, updateContent,
   type ContentRow, type AdminLiveCall,
 } from '@/lib/admin/hooks'
 import StlMediaManager from '@/components/admin/StlMediaManager'
+import FileDropZone from '@/components/ui/FileDropZone'
+import { uploadCircleAttachmentResult } from '@/lib/circle'
 
 type Archetype = ContentRow['archetype']
 type MonthName = ContentRow['month_name']
@@ -355,21 +357,21 @@ export default function ContentPage() {
               />
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 4 }}>Teaching video URL</div>
-                  <input
-                    placeholder="https://… (embeddable iframe URL)"
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 4 }}>Teaching video</div>
+                  <MediaUrlField
+                    type="video"
                     value={newContent.video_url}
-                    onChange={e => setNewContent({ ...newContent, video_url: e.target.value })}
-                    style={S.input}
+                    onChange={url => setNewContent({ ...newContent, video_url: url })}
+                    inputStyle={S.input}
                   />
                 </div>
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 4 }}>Monday voice note URL</div>
-                  <input
-                    placeholder="https://… (audio file)"
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 4 }}>Monday voice note</div>
+                  <MediaUrlField
+                    type="audio"
                     value={newContent.monday_voice_note_url}
-                    onChange={e => setNewContent({ ...newContent, monday_voice_note_url: e.target.value })}
-                    style={S.input}
+                    onChange={url => setNewContent({ ...newContent, monday_voice_note_url: url })}
+                    inputStyle={S.input}
                   />
                 </div>
               </div>
@@ -502,19 +504,21 @@ export default function ContentPage() {
                         />
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                           <div>
-                            <FieldLabel>Teaching video URL</FieldLabel>
-                            <input
+                            <FieldLabel>Teaching video</FieldLabel>
+                            <MediaUrlField
+                              type="video"
                               value={(e.video_url ?? c.video_url) ?? ''}
-                              onChange={ev => patchRowEdit(c.id, { video_url: ev.target.value })}
-                              style={S.input}
+                              onChange={url => patchRowEdit(c.id, { video_url: url })}
+                              inputStyle={S.input}
                             />
                           </div>
                           <div>
-                            <FieldLabel>Monday voice note URL</FieldLabel>
-                            <input
+                            <FieldLabel>Monday voice note</FieldLabel>
+                            <MediaUrlField
+                              type="audio"
                               value={(e.monday_voice_note_url ?? c.monday_voice_note_url) ?? ''}
-                              onChange={ev => patchRowEdit(c.id, { monday_voice_note_url: ev.target.value })}
-                              style={S.input}
+                              onChange={url => patchRowEdit(c.id, { monday_voice_note_url: url })}
+                              inputStyle={S.input}
                             />
                           </div>
                         </div>
@@ -692,6 +696,88 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
     }}>
       {children}
     </div>
+  )
+}
+
+function MediaUrlField({
+  type, value, onChange, inputStyle,
+}: {
+  type: 'video' | 'audio'
+  value: string
+  onChange: (next: string) => void
+  inputStyle: CSSProperties
+}) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleFile(file: File) {
+    setBusy(true); setError(null)
+    const result = await uploadCircleAttachmentResult(file)
+    setBusy(false)
+    if (!result.url) { setError(result.error ?? 'Upload failed.'); return }
+    onChange(result.url)
+  }
+
+  const isUploaded = value.includes('/storage/v1/object/public/circle-uploads/')
+  const placeholder = type === 'video'
+    ? 'Paste embed URL (Vimeo/YouTube) or drop a video file'
+    : 'Paste audio URL or drop a voice note file'
+
+  return (
+    <FileDropZone
+      onFiles={files => { if (files[0]) handleFile(files[0]) }}
+      acceptPrefixes={[type === 'video' ? 'video/' : 'audio/']}
+      disabled={busy}
+    >
+      <input
+        placeholder={placeholder}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        style={inputStyle}
+      />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: -2, marginBottom: 8, flexWrap: 'wrap' }}>
+        <label style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '6px 12px', borderRadius: 7,
+          cursor: busy ? 'wait' : 'pointer',
+          background: busy ? 'var(--line)' : 'var(--gold-pale)',
+          color: busy ? 'var(--text-muted)' : 'var(--gold)',
+          border: '1px solid ' + (busy ? 'var(--line-md)' : 'var(--gold-line)'),
+          fontSize: 11, fontWeight: 600, fontFamily: 'inherit',
+          opacity: busy ? 0.7 : 1,
+        }}>
+          {busy ? 'Uploading…' : (type === 'video' ? '🎬 Drop or choose video' : '🎙 Drop or choose voice note')}
+          <input
+            type="file"
+            accept={type === 'video' ? 'video/*' : 'audio/*'}
+            style={{ display: 'none' }}
+            disabled={busy}
+            onChange={e => {
+              const f = e.target.files?.[0]
+              e.target.value = ''
+              if (f) handleFile(f)
+            }}
+          />
+        </label>
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            disabled={busy}
+            style={{
+              fontSize: 11, color: 'var(--text-muted)', background: 'none',
+              border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0,
+            }}
+          >
+            Clear
+          </button>
+        )}
+        {isUploaded && (
+          <span style={{ fontSize: 10, color: 'var(--green)', fontWeight: 600 }}>✓ Uploaded</span>
+        )}
+      </div>
+      {error && <p style={{ fontSize: 11, color: 'var(--red)', margin: '0 0 6px' }}>{error}</p>}
+    </FileDropZone>
   )
 }
 
