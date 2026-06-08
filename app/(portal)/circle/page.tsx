@@ -315,6 +315,7 @@ export default function CirclePage() {
                     partner_checkin_sent_at: null, journal_entry: null, completed_at: null,
                     monday_response: null, monday_completed_at: null,
                     friday_win: null, friday_completed_at: null,
+                    archetype_video_seen_at: null,
                   }]
               return next
             })
@@ -361,6 +362,7 @@ export default function CirclePage() {
                     partner_checkin_sent_at: stamp, journal_entry: null, completed_at: null,
                     monday_response: null, monday_completed_at: null,
                     friday_win: null, friday_completed_at: null,
+                    archetype_video_seen_at: null,
                   }]
             })
           }}

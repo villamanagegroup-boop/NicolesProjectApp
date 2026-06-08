@@ -8,12 +8,15 @@ import {
   getWeekContent,
   getMyProgress,
   markWeekComplete,
+  markArchetypeVideoSeen,
+  getCurrentWeekNumber,
   type WeeklyContent,
   type MemberProgress,
 } from '@/lib/circle'
 import WeeklyWinsFeed from '@/components/circle/WeeklyWinsFeed'
 import ActionCompleteScreen from '@/components/circle/ActionCompleteScreen'
 import FirstInterruptionScreen from '@/components/circle/FirstInterruptionScreen'
+import ArchetypeVideoModal from '@/components/circle/ArchetypeVideoModal'
 import DailyPromptCard from '@/components/circle/DailyPromptCard'
 
 const ORANGE      = '#B8862E'
@@ -60,6 +63,9 @@ export default function WeekPage() {
   // /api/circle/first-action returns { first: true } — i.e. when this is
   // the member's very first action completion ever.
   const [firstInterruption, setFirstInterruption] = useState(false)
+  // Archetype welcome video modal. Auto-opens once on the current week when the
+  // admin flagged it; the smaller on-page player reopens it any time after.
+  const [videoModalOpen, setVideoModalOpen] = useState(false)
 
   useEffect(() => {
     if (appLoading) return
@@ -80,13 +86,18 @@ export default function WeekPage() {
       const { data: { user: authed } } = await supabaseClient.auth.getUser()
       if (authed) setAuthUserId(authed.id)
 
-      const [content, prog, countRes] = await Promise.all([
+      const [content, prog, countRes, cohortRes] = await Promise.all([
         getWeekContent(weekNum, member.archetype, member.cohort_id),
         getMyProgress(member.id),
         supabaseClient
           .from('circle_members')
           .select('id', { count: 'exact', head: true })
           .eq('cohort_id', member.cohort_id),
+        supabaseClient
+          .from('circle_cohorts')
+          .select('starts_at')
+          .eq('id', member.cohort_id)
+          .single(),
       ])
 
       setUniversal(content.universal)
@@ -97,9 +108,34 @@ export default function WeekPage() {
       setProgress(weekProg ?? null)
       if (weekProg?.journal_entry) setJournalText(weekProg.journal_entry)
 
+      // Auto-popup the archetype welcome video: only on the *current* week,
+      // only if the admin enabled it for this week, and only the first time
+      // (until archetype_video_seen_at is stamped on dismissal).
+      const startsAt = cohortRes.data?.starts_at as string | undefined
+      const isCurrentWeek = startsAt ? getCurrentWeekNumber(startsAt) === weekNum : false
+      if (
+        content.personal?.video_url &&
+        content.personal.archetype_video_popup &&
+        isCurrentWeek &&
+        !weekProg?.archetype_video_seen_at
+      ) {
+        setVideoModalOpen(true)
+      }
+
       setLoading(false)
     })()
   }, [appLoading, weekNum, router, isAuthed])
+
+  // Close the archetype welcome video and stamp it seen so it stops
+  // auto-popping. Local progress is updated optimistically so it won't re-open
+  // this session. The on-page player can still reopen it manually.
+  async function handleCloseVideoModal() {
+    setVideoModalOpen(false)
+    if (memberId && !progress?.archetype_video_seen_at) {
+      await markArchetypeVideoSeen(memberId, weekNum)
+      setProgress(prev => ({ ...(prev ?? {}), archetype_video_seen_at: new Date().toISOString() }))
+    }
+  }
 
   // Re-pull progress from the DB; used by DailyPromptStack after a card saves.
   async function refreshProgress() {
@@ -258,6 +294,13 @@ export default function WeekPage() {
               )}
             </div>
           )}
+          {personal?.video_url && (
+            <ArchetypeVideoCard
+              archetype={archetype}
+              tint={month.tint}
+              onOpen={() => setVideoModalOpen(true)}
+            />
+          )}
           {universal.teaching && (
             <Panel>
               <Eyebrow>This week&apos;s teaching</Eyebrow>
@@ -407,6 +450,19 @@ export default function WeekPage() {
         }}
         onClose={() => setFirstInterruption(false)}
       />
+
+      {/* Archetype welcome video — auto-pops once on the current week when the
+          admin enabled it; reopenable from the on-page player all week. */}
+      {personal?.video_url && (
+        <ArchetypeVideoModal
+          open={videoModalOpen}
+          videoUrl={personal.video_url}
+          archetype={archetype}
+          weekNumber={weekNum}
+          monthName={personal.month_name ?? universal?.month_name ?? null}
+          onClose={handleCloseVideoModal}
+        />
+      )}
     </div>
   )
 }
@@ -430,6 +486,46 @@ function Eyebrow({ children, color }: { children: React.ReactNode; color?: strin
     }}>
       {children}
     </span>
+  )
+}
+
+// Compact, on-page entry to the archetype welcome video. Smaller than the
+// universal player above it; clicking opens the full ArchetypeVideoModal.
+// Always available so the member can rewatch their welcome all week.
+function ArchetypeVideoCard({
+  archetype, tint, onOpen,
+}: { archetype: string; tint: string; onOpen: () => void }) {
+  return (
+    <button
+      onClick={onOpen}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 14, width: '100%',
+        textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit',
+        background: ORANGE_PALE, border: `1px solid ${tint}`,
+        borderRadius: 12, padding: '12px 14px',
+      }}
+    >
+      <span style={{
+        flexShrink: 0, width: 42, height: 42, borderRadius: '50%',
+        background: tint, color: '#fff',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+          <polygon points="8 5 19 12 8 19 8 5" />
+        </svg>
+      </span>
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+        <span style={{
+          fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
+          textTransform: 'uppercase', color: tint,
+        }}>
+          {ARCHETYPE_LABELS[archetype] ?? 'Your path'} · Welcome
+        </span>
+        <span style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.4 }}>
+          A short welcome to your week — tap to watch
+        </span>
+      </span>
+    </button>
   )
 }
 

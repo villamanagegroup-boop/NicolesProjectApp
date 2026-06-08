@@ -52,6 +52,7 @@ export default function ContentPage() {
     wins_prompt: string
     video_url: string
     monday_voice_note_url: string
+    archetype_video_popup: boolean
     live_call_week: boolean
     cohort_scope: 'this_cohort' | 'global'
   }>({
@@ -67,6 +68,7 @@ export default function ContentPage() {
     wins_prompt: '',
     video_url: '',
     monday_voice_note_url: '',
+    archetype_video_popup: false,
     live_call_week: false,
     cohort_scope: 'this_cohort',
   })
@@ -122,6 +124,7 @@ export default function ContentPage() {
       wins_prompt: newContent.wins_prompt || null,
       video_url: newContent.video_url || null,
       monday_voice_note_url: newContent.monday_voice_note_url || null,
+      archetype_video_popup: newContent.archetype_video_popup,
       live_call_week: newContent.live_call_week,
     })
     setCreatingContent(false)
@@ -135,6 +138,7 @@ export default function ContentPage() {
       teaching: '', journal_prompt: '', weekly_action: '',
       monday_prompt: '', wednesday_prompt: '', friday_prompt: '', wins_prompt: '',
       video_url: '', monday_voice_note_url: '',
+      archetype_video_popup: false,
       live_call_week: false, cohort_scope: 'this_cohort',
     })
     fetchContentSchedule(cohortId).then(setContent)
@@ -375,6 +379,22 @@ export default function ContentPage() {
                   />
                 </div>
               </div>
+              {newContent.archetype !== 'universal' && (
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: 'var(--text-soft)', marginBottom: 8, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={newContent.archetype_video_popup}
+                    onChange={e => setNewContent({ ...newContent, archetype_video_popup: e.target.checked })}
+                    style={{ marginTop: 2 }}
+                  />
+                  <span>
+                    Auto-popup archetype video at start of week
+                    <span style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)' }}>
+                      The video above welcomes this archetype to the week — it pops once, then stays in the on-page player.
+                    </span>
+                  </span>
+                </label>
+              )}
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text-soft)', marginBottom: 8, cursor: 'pointer' }}>
                 <input
                   type="checkbox"
@@ -522,6 +542,22 @@ export default function ContentPage() {
                             />
                           </div>
                         </div>
+                        {c.archetype !== 'universal' && (
+                          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: 'var(--text-soft)', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={(e.archetype_video_popup ?? c.archetype_video_popup) ?? false}
+                              onChange={ev => patchRowEdit(c.id, { archetype_video_popup: ev.target.checked })}
+                              style={{ marginTop: 2 }}
+                            />
+                            <span>
+                              Auto-popup archetype video at start of week
+                              <span style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)' }}>
+                                Pops the archetype video once on the current week, then stays in the on-page player.
+                              </span>
+                            </span>
+                          </label>
+                        )}
                         {rowError && editingRowId === c.id && (
                           <p style={{ fontSize: 12, color: 'var(--red)', margin: '6px 0' }}>{rowError}</p>
                         )}

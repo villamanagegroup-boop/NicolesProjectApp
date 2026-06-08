@@ -58,6 +58,12 @@ export interface WeeklyContent {
   /** Pre-populated copy used as the starter text in the weekly wins composer. */
   wins_prompt: string | null
   video_url: string | null
+  /**
+   * Archetype track only: when true, this week's archetype video (video_url)
+   * auto-pops as a welcome modal the first time the member opens the current
+   * week. Admin-controlled per week. Ignored on the universal track.
+   */
+  archetype_video_popup: boolean
   live_call_week: boolean
 }
 
@@ -77,6 +83,8 @@ export interface MemberProgress {
   /** Private Friday win text (migration 027). The cohort-posted version is a circle_post. */
   friday_win: string | null
   friday_completed_at: string | null
+  /** When the archetype welcome video popup was dismissed for this week (migration 034). */
+  archetype_video_seen_at: string | null
 }
 
 export type DailyPromptDay = 'monday' | 'wednesday' | 'friday'
@@ -346,6 +354,22 @@ export async function markPartnerCheckinSent(memberId: string, weekNumber: numbe
       member_id: memberId,
       week_number: weekNumber,
       partner_checkin_sent_at: new Date().toISOString(),
+    }, { onConflict: 'member_id,week_number' })
+  return !error
+}
+
+/**
+ * Stamp `archetype_video_seen_at` on the member's progress row for this week,
+ * so the archetype welcome video stops auto-popping. The member can still open
+ * it from the smaller on-page player all week. Safe to call repeatedly.
+ */
+export async function markArchetypeVideoSeen(memberId: string, weekNumber: number) {
+  const { error } = await supabase
+    .from('circle_member_progress')
+    .upsert({
+      member_id: memberId,
+      week_number: weekNumber,
+      archetype_video_seen_at: new Date().toISOString(),
     }, { onConflict: 'member_id,week_number' })
   return !error
 }

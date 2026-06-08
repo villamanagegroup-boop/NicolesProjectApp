@@ -155,6 +155,11 @@ export interface ContentRow {
   video_url: string | null
   /** Audio for the Monday voice note card on /circle home (migration 025). */
   monday_voice_note_url: string | null
+  /**
+   * Archetype track only: auto-popup this week's archetype video_url as a
+   * welcome modal the first time the member opens the current week (migration 034).
+   */
+  archetype_video_popup: boolean
   live_call_week: boolean
 }
 
@@ -562,6 +567,7 @@ export async function insertContent(input: {
   wins_prompt?: string | null
   video_url?: string | null
   monday_voice_note_url?: string | null
+  archetype_video_popup?: boolean
   live_call_week?: boolean
 }) {
   return supabase.from('circle_weekly_content').insert({
@@ -579,6 +585,7 @@ export async function insertContent(input: {
     wins_prompt:            input.wins_prompt           ?? null,
     video_url:              input.video_url             ?? null,
     monday_voice_note_url:  input.monday_voice_note_url ?? null,
+    archetype_video_popup:  input.archetype_video_popup ?? false,
     live_call_week:         input.live_call_week        ?? false,
   }).select().single()
 }
