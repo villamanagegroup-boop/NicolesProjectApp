@@ -41,6 +41,8 @@ export interface AdminCohortSummary {
   engagement_rate: number
   next_call: AdminLiveCall | null
   alert_counts: { amber: number; orange: number; red: number }
+  /** Program-level "Welcome to the program" video (migration 035). */
+  welcome_video_url: string | null
 }
 
 export interface AdminMemberRow {
@@ -291,6 +293,7 @@ export async function fetchAdminCohorts(): Promise<AdminCohortSummary[]> {
       engagement_rate: engagementRate,
       next_call: calls?.[0] ?? null,
       alert_counts: alertCounts,
+      welcome_video_url: c.welcome_video_url ?? null,
     })
   }
 
@@ -732,6 +735,7 @@ export async function updateCohort(id: string, updates: {
   ends_at?: string
   max_members?: number
   is_active?: boolean
+  welcome_video_url?: string | null
 }) {
   return supabase.from('circle_cohorts').update(updates).eq('id', id)
 }

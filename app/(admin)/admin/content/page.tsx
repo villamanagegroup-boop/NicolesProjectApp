@@ -6,8 +6,8 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import {
   fetchAdminCohorts, fetchContentSchedule, fetchLiveCalls, updateLiveCall, createLiveCall,
-  insertContent, updateContent,
-  type ContentRow, type AdminLiveCall,
+  insertContent, updateContent, updateCohort,
+  type ContentRow, type AdminLiveCall, type AdminCohortSummary,
 } from '@/lib/admin/hooks'
 import StlMediaManager from '@/components/admin/StlMediaManager'
 import FileDropZone from '@/components/ui/FileDropZone'
@@ -27,7 +27,11 @@ const PHASE_COLORS: Record<string, string> = { root: 'var(--green)', rebuild: 'v
 
 export default function ContentPage() {
   const [cohortId, setCohortId] = useState('')
-  const [cohorts, setCohorts] = useState<{ id: string; name: string }[]>([])
+  const [cohorts, setCohorts] = useState<AdminCohortSummary[]>([])
+  // Program-level "Welcome to the program" video for the selected cohort.
+  const [welcomeVideoUrl, setWelcomeVideoUrl] = useState('')
+  const [savingWelcome, setSavingWelcome] = useState(false)
+  const [welcomeMsg, setWelcomeMsg] = useState<string | null>(null)
   const [content, setContent] = useState<ContentRow[]>([])
   const [calls, setCalls] = useState<AdminLiveCall[]>([])
   const [tab, setTab] = useState<'schedule' | 'calls' | 'stl_media'>('schedule')
@@ -188,6 +192,24 @@ export default function ContentPage() {
       .then(([c, l]) => { setContent(c); setCalls(l) })
   }, [cohortId])
 
+  // Keep the welcome-video field in sync with whichever cohort is selected.
+  useEffect(() => {
+    const c = cohorts.find(x => x.id === cohortId)
+    setWelcomeVideoUrl(c?.welcome_video_url ?? '')
+    setWelcomeMsg(null)
+  }, [cohortId, cohorts])
+
+  async function handleSaveWelcomeVideo() {
+    if (!cohortId) return
+    setSavingWelcome(true); setWelcomeMsg(null)
+    const { error } = await updateCohort(cohortId, { welcome_video_url: welcomeVideoUrl.trim() || null })
+    setSavingWelcome(false)
+    if (error) { setWelcomeMsg(error.message); return }
+    setWelcomeMsg('Saved')
+    // Refresh cohorts so the synced value reflects the save.
+    fetchAdminCohorts().then(c => setCohorts(c.filter(x => x.status === 'active')))
+  }
+
   async function saveCallEdits(callId: string) {
     setSaving(callId)
     await updateLiveCall(callId, callEdits[callId] ?? {})
@@ -253,6 +275,37 @@ export default function ContentPage() {
       </div>
 
       {tab === 'stl_media' && <StlMediaManager />}
+
+      {tab === 'schedule' && (
+        <div style={{ ...S.weekCard, marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>
+            Welcome to the program video
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>
+            One video for this whole cohort. Pops up the first time a member enters the program, then becomes a “Start here” button on their home page. Leave blank to hide it.
+          </div>
+          <MediaUrlField
+            type="video"
+            value={welcomeVideoUrl}
+            onChange={setWelcomeVideoUrl}
+            inputStyle={S.input}
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+            <button
+              onClick={handleSaveWelcomeVideo}
+              disabled={savingWelcome || !cohortId}
+              style={{ ...S.btn('primary'), opacity: (savingWelcome || !cohortId) ? 0.5 : 1 }}
+            >
+              {savingWelcome ? 'Saving…' : 'Save welcome video'}
+            </button>
+            {welcomeMsg && (
+              <span style={{ fontSize: 12, color: welcomeMsg === 'Saved' ? 'var(--green)' : 'var(--red)' }}>
+                {welcomeMsg}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {tab === 'schedule' && (
         <div style={{ marginBottom: 12 }}>

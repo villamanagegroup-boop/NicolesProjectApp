@@ -39,6 +39,8 @@ export interface CircleMember {
   partner_id: string | null
   joined_at: string
   onboarded_at: string | null
+  /** When the member first dismissed the "Welcome to the program" video (migration 035). */
+  welcome_video_seen_at: string | null
 }
 
 export interface WeeklyContent {
@@ -371,6 +373,20 @@ export async function markArchetypeVideoSeen(memberId: string, weekNumber: numbe
       week_number: weekNumber,
       archetype_video_seen_at: new Date().toISOString(),
     }, { onConflict: 'member_id,week_number' })
+  return !error
+}
+
+/**
+ * Stamp `welcome_video_seen_at` on the member's row so the "Welcome to the
+ * program" video stops auto-popping. The Circle home page then shows it as a
+ * minimized "Start here" button the member can reopen any time. Safe to call
+ * repeatedly.
+ */
+export async function markWelcomeVideoSeen(memberId: string) {
+  const { error } = await supabase
+    .from('circle_members')
+    .update({ welcome_video_seen_at: new Date().toISOString() })
+    .eq('id', memberId)
   return !error
 }
 

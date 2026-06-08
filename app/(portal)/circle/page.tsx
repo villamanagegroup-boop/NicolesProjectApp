@@ -36,6 +36,7 @@ import {
   type MemberProgress,
 } from '@/lib/circle'
 import CommunityPreviewCard from '@/components/circle/CommunityPreviewCard'
+import WelcomeVideoCard from '@/components/circle/WelcomeVideoCard'
 
 const ORANGE      = '#B8862E'
 const ORANGE_DEEP = '#8c6520'
@@ -131,6 +132,7 @@ export default function CirclePage() {
   const [currentWeek, setCurrentWeek]     = useState<number | null>(null)
   const [universal, setUniversal]         = useState<WeeklyContent | null>(null)
   const [personal,  setPersonal]          = useState<WeeklyContent | null>(null)
+  const [welcomeVideoUrl, setWelcomeVideoUrl] = useState<string | null>(null)
 
   useEffect(() => {
     if (loading) return
@@ -191,12 +193,13 @@ export default function CirclePage() {
         getAllWeeksOverview(member.cohort_id),
         getMyProgress(member.id),
         getLiveCalls(member.cohort_id),
-        supabaseClient.from('circle_cohorts').select('starts_at').eq('id', member.cohort_id).maybeSingle(),
+        supabaseClient.from('circle_cohorts').select('starts_at, welcome_video_url').eq('id', member.cohort_id).maybeSingle(),
       ])
       setPartner(partnerData as typeof partner)
       setWeeks(weeksData)
       setProgress(progressData as MemberProgress[])
       setCalls(callsData)
+      setWelcomeVideoUrl((cohortRow.data?.welcome_video_url as string | null) ?? null)
 
       let wn: number | null = null
       if (cohortRow.data) wn = getCurrentWeekNumber(cohortRow.data.starts_at as string)
@@ -253,6 +256,20 @@ export default function CirclePage() {
 
       {/* The top menu is mounted by app/(portal)/circle/layout.tsx so it
           stays consistent across every Circle page. */}
+
+      {/* ────────────────────────────────────────────────────────────
+          0. "Welcome to the program" video — week 1 only. Pops up on first
+          entry, then collapses to a Start-here button the member can reopen
+          any time during week 1. Hidden after week 1, and hidden entirely if
+          no welcome video is set on the cohort.
+          ──────────────────────────────────────────────────────────── */}
+      {welcomeVideoUrl && currentWeek === 1 && (
+        <WelcomeVideoCard
+          videoUrl={welcomeVideoUrl}
+          initiallySeen={!!member.welcome_video_seen_at}
+          memberId={member.id}
+        />
+      )}
 
       {/* ────────────────────────────────────────────────────────────
           1. Welcome header — name, archetype, affirmation
