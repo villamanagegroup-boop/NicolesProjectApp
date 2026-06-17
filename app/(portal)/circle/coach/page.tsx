@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabaseClient } from '@/lib/supabase/client'
 import { useApp } from '@/context/AppContext'
@@ -24,6 +24,14 @@ const ORANGE      = '#B8862E'
 const ORANGE_PALE = '#fdf6f2'
 
 export default function CoachChatPage() {
+  return (
+    <Suspense fallback={<div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Loading…</div>}>
+      <CoachChatInner />
+    </Suspense>
+  )
+}
+
+function CoachChatInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { loading, isAuthed, user } = useApp()

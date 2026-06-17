@@ -15,7 +15,7 @@
 // at the bottom with the date sent, so Nicole can see her progress
 // through the cohort without losing context.
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabaseClient } from '@/lib/supabase/client'
@@ -42,6 +42,14 @@ function defaultBody(firstName: string): string {
 }
 
 export default function Week6Page() {
+  return (
+    <Suspense fallback={<div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Loading…</div>}>
+      <Week6Inner />
+    </Suspense>
+  )
+}
+
+function Week6Inner() {
   const router = useRouter()
   const params = useSearchParams()
   const targetCohortId = params?.get('cohort') ?? ''
