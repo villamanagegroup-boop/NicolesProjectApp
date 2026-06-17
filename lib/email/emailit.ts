@@ -23,19 +23,38 @@ interface SendEmailInput {
   /** Idempotency key — Emailit dedupes for 24 hours. Use for at-most-once
    *  delivery on user-triggered events (e.g. seal-day-7). */
   idempotencyKey?: string
+  /** Custom message headers (e.g. List-Unsubscribe). Sent to recipients as
+   *  real email headers via Emailit's `headers` body field. */
+  headers?: Record<string, string>
 }
 
 export interface SendEmailResult {
   sent: boolean
-  reason?: 'not_configured' | 'http_error' | 'exception'
+  reason?: 'not_configured' | 'http_error' | 'exception' | 'paused'
   status?: number
   body?: unknown
+}
+
+/** Global kill switch. Set EMAIL_SENDING_PAUSED=true (or 1) in the environment
+ *  to make every send a no-op without touching any call site — the emergency
+ *  brake for "stop all outbound email NOW". Note this only stops emails this
+ *  app sends; Emailit-side campaigns/automations must be paused in Emailit. */
+export function emailSendingPaused(): boolean {
+  const v = (process.env.EMAIL_SENDING_PAUSED ?? '').toLowerCase()
+  return v === 'true' || v === '1' || v === 'yes'
 }
 
 const EMAILIT_BASE = 'https://api.emailit.com/v2'
 const EMAILIT_ENDPOINT = `${EMAILIT_BASE}/emails`
 
 export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
+  if (emailSendingPaused()) {
+    console.log('[email] skipped — EMAIL_SENDING_PAUSED is set', {
+      to: input.to, subject: input.subject,
+    })
+    return { sent: false, reason: 'paused' }
+  }
+
   const apiKey = process.env.EMAILIT_API_KEY
   const from   = input.from ?? process.env.EMAILIT_FROM
   const replyTo = input.replyTo ?? process.env.EMAILIT_REPLY_TO
@@ -59,8 +78,9 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
     subject: input.subject,
     html: input.html,
   }
-  if (input.text)  body.text     = input.text
-  if (replyTo)     body.reply_to = replyTo
+  if (input.text)            body.text     = input.text
+  if (replyTo)               body.reply_to = replyTo
+  if (input.headers && Object.keys(input.headers).length) body.headers = input.headers
 
   try {
     const res = await fetch(EMAILIT_ENDPOINT, {

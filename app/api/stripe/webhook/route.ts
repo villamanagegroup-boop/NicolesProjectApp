@@ -145,7 +145,15 @@ export async function POST(request: NextRequest) {
         if (path === 'A') {
           const buyersAudience = process.env.EMAILIT_BUYERS_AUDIENCE_ID
           if (buyersAudience) {
-            void addSubscriber({ audienceId: buyersAudience, email, firstName })
+            // Stamp purchased_seal on the contact too — the Quiz Funnel
+            // automation's exit Condition checks this field to pull buyers
+            // out of the 21-day nurture once they've purchased.
+            void addSubscriber({
+              audienceId: buyersAudience,
+              email,
+              firstName,
+              customFields: { purchased_seal: 'yes' },
+            })
           }
         }
         break

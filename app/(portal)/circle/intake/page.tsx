@@ -771,8 +771,8 @@ function TimezoneSelect({ value, onChange }: { value: string; onChange: (v: stri
   // runtime is older we fall back to a curated short list rather than blow up.
   const zones = useMemo(() => {
     try {
-      // @ts-expect-error — supportedValuesOf is in Intl but missing from older lib.dom typings
-      const list = Intl.supportedValuesOf('timeZone') as string[]
+      const list = (Intl as { supportedValuesOf?: (key: string) => string[] })
+        .supportedValuesOf?.('timeZone') as string[]
       if (Array.isArray(list) && list.length > 0) return list
     } catch {}
     return [

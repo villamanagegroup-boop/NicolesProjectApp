@@ -412,7 +412,7 @@ function ResponseFeed({
         {items.map(r => {
           const accent = r.is_admin
             ? '#3D3080'
-            : (r.member_archetype ? (ARCHETYPE_COLOR[r.member_archetype] ?? ORANGE) : ORANGE)
+            : (r.member_archetype ? (ARCHETYPE_COLOR[r.member_archetype as keyof typeof ARCHETYPE_COLOR] ?? ORANGE) : ORANGE)
           const archetypeLabel = r.member_archetype ? (ARCHETYPE_LABELS[r.member_archetype] ?? r.member_archetype) : ''
           const isMe = !!highlightMemberId && r.member_id === highlightMemberId
           return (

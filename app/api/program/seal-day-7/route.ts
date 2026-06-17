@@ -27,6 +27,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/email/emailit'
+import { canEmailUser } from '@/lib/email/guard'
+import { listUnsubscribeHeaders } from '@/lib/email/unsubscribe'
 import { sealDay7UserEmail, sealDay7AdminEmail } from '@/lib/email/templates/sealDay7'
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
@@ -110,19 +112,23 @@ export async function POST(request: NextRequest) {
   //    Idempotency-key keyed on user + day so a re-seal in the same window
   //    can't double-send. Emailit dedupes for 24h.
   if (granted && userEmail) {
-    const tpl = sealDay7UserEmail({
-      firstName,
-      daysRemaining: 30,
-      expiresAt: expiry.toISOString(),
-      appBaseUrl,
-    })
-    void sendEmail({
-      to: userEmail,
-      subject: tpl.subject,
-      html: tpl.html,
-      text: tpl.text,
-      idempotencyKey: `seal-day-7-user-${row.id}`,
-    }).catch(err => console.error('seal-day-7: user email error', err))
+    const gate = await canEmailUser(admin, row.id as string)
+    if (gate.allowed) {
+      const tpl = sealDay7UserEmail({
+        firstName,
+        daysRemaining: 30,
+        expiresAt: expiry.toISOString(),
+        appBaseUrl,
+      })
+      void sendEmail({
+        to: userEmail,
+        subject: tpl.subject,
+        html: tpl.html,
+        text: tpl.text,
+        idempotencyKey: `seal-day-7-user-${row.id}`,
+        headers: listUnsubscribeHeaders(appBaseUrl, row.id as string),
+      }).catch(err => console.error('seal-day-7: user email error', err))
+    }
   }
 
   // 2. Admin alert — fired the first time seal_completed_at is set,

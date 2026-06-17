@@ -19,12 +19,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/email/emailit'
+import { canEmailUser } from '@/lib/email/guard'
+import { listUnsubscribeHeaders } from '@/lib/email/unsubscribe'
 
 export const runtime  = 'nodejs'
 export const dynamic  = 'force-dynamic'
 
 const FROM = 'Nicole <nicole@theenergyleader.com>'
 const SUBJECT = 'Your accountability partner is here'
+const APP_BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://theenergyleader.com'
 const NO_INTAKE_FALLBACK = 'Their intake is still in progress.'
 
 const ARCHETYPE_LABELS: Record<string, string> = {
@@ -191,6 +194,11 @@ export async function POST(request: NextRequest) {
   let sent = 0
 
   for (const [recipient, partner] of [[sideA, sideB], [sideB, sideA]] as const) {
+    const gate = await canEmailUser(admin, recipient.userId)
+    if (!gate.allowed) {
+      errors.push(`${recipient.memberId}: skipped — recipient opted out (${gate.reason})`)
+      continue
+    }
     const result = await sendEmail({
       to: recipient.email,
       from: FROM,
@@ -200,6 +208,7 @@ export async function POST(request: NextRequest) {
       // Idempotency: same pair => same key => Emailit dedupes within 24h.
       // Order the IDs so memberA+memberB and memberB+memberA hash the same.
       idempotencyKey: `pair_intro_${[memberAId, memberBId].sort().join('_')}_${recipient.memberId}`,
+      headers: listUnsubscribeHeaders(APP_BASE_URL, recipient.userId),
     })
     if (result.sent) sent += 1
     else errors.push(`${recipient.memberId}: ${result.reason ?? 'send failed'}${result.status ? ` ${result.status}` : ''}`)

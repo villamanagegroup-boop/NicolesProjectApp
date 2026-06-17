@@ -979,6 +979,7 @@ function placeholderFor(t: PostType): string {
     case 'partner_checkin': return 'A note from your partner check-in worth sharing…'
     case 'general':         return "What's on your mind…"
     case 'coach_note':      return 'A note to the cohort…'
+    default:                return "What's on your mind…"
   }
 }
 

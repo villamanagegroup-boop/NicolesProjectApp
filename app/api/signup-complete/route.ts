@@ -16,6 +16,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { sendEmail, removeSubscriber } from '@/lib/email/emailit'
+import { canEmailUser } from '@/lib/email/guard'
+import { listUnsubscribeHeaders } from '@/lib/email/unsubscribe'
 import {
   signupCompleteUserEmail,
   signupCompleteAdminEmail,
@@ -105,9 +107,11 @@ export async function POST(request: NextRequest) {
     process.env.NEXT_PUBLIC_APP_URL ??
     `${request.nextUrl.protocol}//${request.nextUrl.host}`
 
-  // 1. User welcome email
+  // 1. User welcome email — respect a global opt-out (a user who unsubscribed
+  //    from everything shouldn't be pulled back in by a re-signup).
   let userSent = false
-  if (userEmail) {
+  const welcomeGate = await canEmailUser(admin, row.id as string)
+  if (userEmail && welcomeGate.allowed) {
     const next = nextStepFor(path, appBaseUrl)
     const tpl = signupCompleteUserEmail({
       firstName,
@@ -126,6 +130,7 @@ export async function POST(request: NextRequest) {
       html: tpl.html,
       text: tpl.text,
       idempotencyKey: `signup-user-${row.id}`,
+      headers: listUnsubscribeHeaders(appBaseUrl, row.id as string),
     }).catch(err => {
       console.error('signup-complete: user email error', err)
       return { sent: false } as const

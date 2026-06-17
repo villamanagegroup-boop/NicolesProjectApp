@@ -8,8 +8,10 @@
 
 import crypto from 'crypto'
 
-// kinds users can opt out of — must match column keys in notification_prefs
-export type NotificationKind = 'daily_reminder' | 'weekly_digest' | 'milestone_alerts'
+// kinds users can opt out of — the three map to keys in notification_prefs;
+// 'all' is a global opt-out that suppresses every non-critical email and sets
+// the users.email_opt_out flag.
+export type NotificationKind = 'daily_reminder' | 'weekly_digest' | 'milestone_alerts' | 'all'
 
 const VERSION = 'v1'
 
@@ -62,7 +64,12 @@ export function verifyUnsubscribeToken(token: string): { userId: string; kind: N
   const [version, userId, kindRaw] = payload.split('.')
   if (version !== VERSION) return null
   if (!userId) return null
-  if (kindRaw !== 'daily_reminder' && kindRaw !== 'weekly_digest' && kindRaw !== 'milestone_alerts') {
+  if (
+    kindRaw !== 'daily_reminder' &&
+    kindRaw !== 'weekly_digest' &&
+    kindRaw !== 'milestone_alerts' &&
+    kindRaw !== 'all'
+  ) {
     return null
   }
   return { userId, kind: kindRaw }
@@ -72,6 +79,37 @@ export function verifyUnsubscribeToken(token: string): { userId: string; kind: N
 export function unsubscribeUrl(appBaseUrl: string, userId: string, kind: NotificationKind): string {
   const token = signUnsubscribeToken(userId, kind)
   return `${appBaseUrl.replace(/\/$/, '')}/unsubscribe?token=${encodeURIComponent(token)}`
+}
+
+/** Global "unsubscribe from everything" URL — flips users.email_opt_out and
+ *  turns off all notification_prefs. Used as the List-Unsubscribe target. */
+export function globalUnsubscribeUrl(appBaseUrl: string, userId: string): string {
+  return unsubscribeUrl(appBaseUrl, userId, 'all')
+}
+
+/** RFC 8058 one-click unsubscribe headers. Gmail/Yahoo's bulk-sender rules
+ *  expect these — they're one of the highest-leverage deliverability signals.
+ *  The List-Unsubscribe-Post value tells clients the URL accepts a one-click
+ *  POST (handled by the POST export in /api/unsubscribe). The mailto gives a
+ *  fallback for clients that prefer it. */
+export function listUnsubscribeHeaders(
+  appBaseUrl: string,
+  userId: string,
+  kind: NotificationKind = 'all',
+): Record<string, string> {
+  const url = unsubscribeUrl(appBaseUrl, userId, kind)
+  const headers: Record<string, string> = {
+    'List-Unsubscribe': `<${url}>`,
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+  }
+  const mailto = process.env.EMAILIT_REPLY_TO || process.env.EMAILIT_FROM
+  if (mailto) {
+    // Pull a bare address out of a "Name <addr>" form if needed.
+    const m = /<([^>]+)>/.exec(mailto)
+    const addr = (m ? m[1] : mailto).trim()
+    headers['List-Unsubscribe'] = `<mailto:${addr}?subject=unsubscribe>, <${url}>`
+  }
+  return headers
 }
 
 /** HTML snippet for the footer of marketing emails. CAN-SPAM compliant. */

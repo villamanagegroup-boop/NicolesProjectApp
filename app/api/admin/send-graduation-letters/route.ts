@@ -24,6 +24,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/email/emailit'
+import { canEmailUser } from '@/lib/email/guard'
+import { listUnsubscribeHeaders } from '@/lib/email/unsubscribe'
 
 export const runtime = 'nodejs'
 // Letting Vercel cache this would be a disaster — every run must hit the DB.
@@ -31,6 +33,7 @@ export const dynamic = 'force-dynamic'
 
 const GRADUATION_FROM = 'Nicole <nicole@theenergyleader.com>'
 const SUBJECT         = 'A letter you wrote to yourself — 6 months ago'
+const APP_BASE_URL    = process.env.NEXT_PUBLIC_APP_URL ?? 'https://theenergyleader.com'
 
 let _admin: SupabaseClient | null = null
 function getAdmin(): SupabaseClient {
@@ -110,6 +113,17 @@ async function sendLetters(): Promise<{ sent: number; errors: string[] }> {
         continue
       }
 
+      // Honor a global opt-out. Stamp letter_sent_at so the daily cron stops
+      // re-evaluating this row forever, but record it as skipped.
+      const gate = await canEmailUser(admin, row.user_id)
+      if (!gate.allowed) {
+        await admin.from('circle_members')
+          .update({ letter_sent_at: new Date().toISOString() })
+          .eq('id', row.id)
+        errors.push(`${row.id}: skipped — recipient opted out (${gate.reason})`)
+        continue
+      }
+
       const result = await sendEmail({
         to: u.user.email,
         from: GRADUATION_FROM,
@@ -117,6 +131,7 @@ async function sendLetters(): Promise<{ sent: number; errors: string[] }> {
         html: renderLetterHtml(row.letter_to_self),
         text: renderLetterText(row.letter_to_self),
         idempotencyKey: `graduation_letter_${row.id}`,
+        headers: listUnsubscribeHeaders(APP_BASE_URL, row.user_id),
       })
 
       if (!result.sent) {
