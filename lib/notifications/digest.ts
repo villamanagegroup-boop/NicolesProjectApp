@@ -194,14 +194,16 @@ export async function buildDigest(
           try {
             const { data: wc } = await admin
               .from('circle_weekly_content')
-              .select('week_title, video_url, archetype')
-              .eq('cohort_id', member.cohort_id)
+              .select('week_title, video_url, archetype, cohort_id')
+              .or(`cohort_id.eq.${member.cohort_id},cohort_id.is.null`)
               .eq('week_number', week)
             const rows = wc ?? []
+            // Prefer a cohort-specific row over the global template per track.
+            const pickArch = (a: string | null) =>
+              rows.find(r => r.archetype === a && r.cohort_id === member!.cohort_id) ??
+              rows.find(r => r.archetype === a && !r.cohort_id)
             const pick =
-              rows.find(r => r.archetype === member!.archetype) ??
-              rows.find(r => r.archetype === 'universal') ??
-              rows[0]
+              pickArch(member!.archetype) ?? pickArch('universal') ?? rows[0]
             detail = pick?.week_title ?? undefined
             hasVideo = !!pick?.video_url
           } catch { /* still surface the week */ }

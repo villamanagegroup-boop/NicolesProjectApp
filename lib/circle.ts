@@ -373,19 +373,23 @@ export async function getWeekContent(
   archetype: Archetype,
   cohortId: string
 ): Promise<{ universal: WeeklyContent | null; personal: WeeklyContent | null }> {
+  // Include global content (cohort_id null) — the curriculum can be authored
+  // once as a shared template that every cohort inherits.
   const { data, error } = await supabase
     .from('circle_weekly_content')
     .select('*')
-    .eq('cohort_id', cohortId)
+    .or(`cohort_id.eq.${cohortId},cohort_id.is.null`)
     .eq('week_number', weekNumber)
     .in('archetype', ['universal', archetype])
 
   if (error || !data) return { universal: null, personal: null }
 
-  return {
-    universal: (data.find(d => d.archetype === 'universal') as WeeklyContent) ?? null,
-    personal:  (data.find(d => d.archetype === archetype)   as WeeklyContent) ?? null,
-  }
+  // Prefer a cohort-specific override over the global template per track.
+  const pick = (a: string): WeeklyContent | null =>
+    ((data.find(d => d.archetype === a && d.cohort_id === cohortId)
+      ?? data.find(d => d.archetype === a && !d.cohort_id)) as WeeklyContent) ?? null
+
+  return { universal: pick('universal'), personal: pick(archetype) }
 }
 
 /**
@@ -395,13 +399,22 @@ export async function getWeekContent(
 export async function getAllWeeksOverview(cohortId: string): Promise<WeeklyContent[]> {
   const { data, error } = await supabase
     .from('circle_weekly_content')
-    .select('week_number, week_title, month_name, live_call_week')
-    .eq('cohort_id', cohortId)
+    .select('week_number, week_title, month_name, live_call_week, cohort_id')
+    .or(`cohort_id.eq.${cohortId},cohort_id.is.null`)
     .eq('archetype', 'universal')
     .order('week_number', { ascending: true })
 
   if (error || !data) return []
-  return data as WeeklyContent[]
+
+  // One row per week, preferring a cohort-specific override over the global row.
+  const byWeek = new Map<number, (typeof data)[number]>()
+  for (const row of data) {
+    const existing = byWeek.get(row.week_number)
+    if (!existing || (row.cohort_id === cohortId && existing.cohort_id == null)) {
+      byWeek.set(row.week_number, row)
+    }
+  }
+  return Array.from(byWeek.values()).sort((a, b) => a.week_number - b.week_number) as unknown as WeeklyContent[]
 }
 
 // ─── PROGRESS ───────────────────────────────────────────────

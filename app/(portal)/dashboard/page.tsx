@@ -102,10 +102,13 @@ export default function DashboardPage() {
         const phase = week <= 4 ? 'Root' : week <= 8 ? 'Rebuild' : 'Rise'
         const { data: content } = await supabaseClient
           .from('circle_weekly_content')
-          .select('week_title')
-          .eq('cohort_id', cohortId)
+          .select('week_title, cohort_id')
+          // Include the global template; cohort-specific override wins (nulls last).
+          .or(`cohort_id.eq.${cohortId},cohort_id.is.null`)
           .eq('week_number', week)
           .eq('archetype', 'universal')
+          .order('cohort_id', { ascending: false, nullsFirst: false })
+          .limit(1)
           .maybeSingle()
         if (cancelled) return
         setCircleWeek({ week, title: (content?.week_title as string | null) ?? null, phase })
