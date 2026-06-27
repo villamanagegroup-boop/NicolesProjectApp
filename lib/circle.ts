@@ -87,6 +87,44 @@ export interface MemberProgress {
   friday_completed_at: string | null
   /** When the archetype welcome video popup was dismissed for this week (migration 034). */
   archetype_video_seen_at: string | null
+  /** Member's Monday-prompt file uploads — any type (migration 039). */
+  monday_attachments?: MondayAttachment[] | null
+}
+
+/** A member-uploaded file attached to their Monday prompt response. */
+export interface MondayAttachment {
+  url: string
+  name: string
+  kind: 'image' | 'video' | 'audio' | 'file'
+}
+
+/** Classify an uploaded file (by MIME, falling back to extension) into one of
+ *  the renderable kinds. */
+export function attachmentKind(mime: string, name: string): MondayAttachment['kind'] {
+  if (mime.startsWith('image/')) return 'image'
+  if (mime.startsWith('video/')) return 'video'
+  if (mime.startsWith('audio/')) return 'audio'
+  const ext = (name.split('.').pop() ?? '').toLowerCase()
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'heic'].includes(ext)) return 'image'
+  if (['mp4', 'webm', 'mov', 'm4v', 'ogv'].includes(ext)) return 'video'
+  if (['mp3', 'm4a', 'wav', 'aac', 'ogg', 'oga'].includes(ext)) return 'audio'
+  return 'file'
+}
+
+/** Persist the member's Monday attachment list on their weekly progress row.
+ *  Does not touch the completion timestamp. */
+export async function saveMondayAttachments(
+  memberId: string,
+  weekNumber: number,
+  attachments: MondayAttachment[],
+): Promise<boolean> {
+  const { error } = await supabase
+    .from('circle_member_progress')
+    .upsert(
+      { member_id: memberId, week_number: weekNumber, monday_attachments: attachments },
+      { onConflict: 'member_id,week_number' },
+    )
+  return !error
 }
 
 export type DailyPromptDay = 'monday' | 'wednesday' | 'friday'

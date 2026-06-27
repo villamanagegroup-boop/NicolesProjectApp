@@ -13,7 +13,11 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { saveDailyPrompt, saveDailyPromptDraft, type DailyPromptDay } from '@/lib/circle'
+import {
+  saveDailyPrompt, saveDailyPromptDraft, saveMondayAttachments,
+  uploadCircleAttachmentResult, attachmentKind,
+  type DailyPromptDay, type MondayAttachment,
+} from '@/lib/circle'
 
 function ChevronDownIcon() {
   return (
@@ -54,15 +58,23 @@ interface Props {
   defaultMinimized: boolean
   /** Show partner's first name for Wednesday's "send to partner" copy. */
   partnerName?: string | null
+  /** Wednesday only: the coach's voice note for this week (a recording the
+   *  admin uploaded). Rendered as an inline audio player. */
+  voiceNoteUrl?: string | null
+  /** Monday only: the member's previously-uploaded files for this week. */
+  initialAttachments?: MondayAttachment[]
   onSaved?: () => void
 }
 
 export default function DailyPromptCard({
-  day, memberId, weekNumber, prompt, initialText, completed, defaultMinimized, partnerName, onSaved,
+  day, memberId, weekNumber, prompt, initialText, completed, defaultMinimized,
+  partnerName, voiceNoteUrl, initialAttachments, onSaved,
 }: Props) {
   const router = useRouter()
   const meta = DAY_META[day]
   const [text, setText] = useState(initialText ?? '')
+  const [attachments, setAttachments] = useState<MondayAttachment[]>(initialAttachments ?? [])
+  const [uploading, setUploading] = useState(false)
   const [expanded, setExpanded] = useState(!defaultMinimized)
   const [saving, setSaving] = useState(false)
   const [savedFlash, setSavedFlash] = useState(false)
@@ -72,17 +84,51 @@ export default function DailyPromptCard({
     setText(initialText ?? '')
   }, [initialText])
 
+  useEffect(() => {
+    setAttachments(initialAttachments ?? [])
+  }, [initialAttachments])
+
+  // Monday: upload any file type (photo, video, voice note, doc) and persist
+  // it to the member's weekly progress immediately.
+  async function handleUpload(file: File) {
+    setUploading(true); setError('')
+    const result = await uploadCircleAttachmentResult(file)
+    if (!result.url) { setUploading(false); setError(result.error ?? 'Upload failed.'); return }
+    const next = [...attachments, {
+      url: result.url,
+      name: file.name,
+      kind: attachmentKind(file.type, file.name),
+    }]
+    setAttachments(next)
+    await saveMondayAttachments(memberId, weekNumber, next)
+    setUploading(false)
+    onSaved?.()
+  }
+
+  async function removeAttachment(url: string) {
+    const next = attachments.filter(a => a.url !== url)
+    setAttachments(next)
+    await saveMondayAttachments(memberId, weekNumber, next)
+    onSaved?.()
+  }
+
   // Slots are always rendered for stack consistency; when there's no prompt
   // text for the week, the card stays in a non-expandable placeholder state.
-  const hasContent = !!prompt && prompt.trim().length > 0
+  // Wednesday counts the coach voice note as content so members can still
+  // expand the card to hear it even when there's no written prompt.
+  const hasContent = (!!prompt && prompt.trim().length > 0)
+    || (day === 'wednesday' && !!voiceNoteUrl)
 
   // Show prompt body in textarea? Friday & Monday have a response; Wednesday is action-only.
   const hasTextArea = day !== 'wednesday'
-  const needsText = hasTextArea // require text before completion
+  // Monday is satisfied by text OR an uploaded file; Friday needs text.
+  const hasResponse = day === 'monday'
+    ? (!!text.trim() || attachments.length > 0)
+    : !!text.trim()
 
   async function markComplete(): Promise<boolean> {
-    if (needsText && !text.trim()) {
-      setError('Add a response before marking complete.')
+    if (hasTextArea && !hasResponse) {
+      setError('Add a response or upload a file before marking complete.')
       return false
     }
     setSaving(true); setError('')
@@ -122,11 +168,13 @@ export default function DailyPromptCard({
   // for this week, this becomes a non-clickable placeholder so the user can
   // see which day is missing copy.
   if (!expanded) {
+    // Wednesday with only a voice note (no written prompt) reads as the coach note.
+    const summaryText = prompt.trim() || (day === 'wednesday' && voiceNoteUrl ? '🎙 Voice note from your coach' : '')
     const body = !hasContent
       ? <em style={{ color: 'var(--text-muted)' }}>{meta.label} — not yet posted for this week</em>
       : completed
-        ? <><strong style={{ color: 'var(--ink)', fontWeight: 600 }}>✓ {meta.label}</strong> — {text.trim() || prompt}</>
-        : <>{meta.label} — {prompt}</>
+        ? <><strong style={{ color: 'var(--ink)', fontWeight: 600 }}>✓ {meta.label}</strong> — {text.trim() || summaryText}</>
+        : <>{meta.label} — {summaryText}</>
 
     return (
       <button
@@ -195,6 +243,23 @@ export default function DailyPromptCard({
         {prompt}
       </p>
 
+      {/* Wednesday: the coach's voice note for this week (plays for any week,
+          so members can revisit past weeks). */}
+      {day === 'wednesday' && voiceNoteUrl && (
+        <div style={{
+          background: '#fff', border: `1px solid ${meta.miniBorder}`,
+          borderRadius: 10, padding: '12px 14px',
+        }}>
+          <p style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
+            color: meta.accent, margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 6,
+          }}>
+            🎙 Voice note from your coach
+          </p>
+          <audio controls preload="metadata" src={voiceNoteUrl} style={{ width: '100%', display: 'block' }} />
+        </div>
+      )}
+
       {hasTextArea && (
         <textarea
           value={text}
@@ -217,6 +282,35 @@ export default function DailyPromptCard({
         />
       )}
 
+      {/* Monday: attach any file the prompt asks for — photo, video, voice
+          note, document. Uploads save immediately. */}
+      {day === 'monday' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {attachments.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {attachments.map(a => (
+                <AttachmentPreview key={a.url} att={a} onRemove={() => removeAttachment(a.url)} />
+              ))}
+            </div>
+          )}
+          <label style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8, alignSelf: 'flex-start',
+            padding: '8px 14px', borderRadius: 10, cursor: uploading ? 'wait' : 'pointer',
+            background: '#fff', border: '1px dashed var(--line-md)',
+            fontSize: 12.5, fontWeight: 600, color: 'var(--text-soft)', fontFamily: 'inherit',
+            opacity: uploading ? 0.6 : 1,
+          }}>
+            {uploading ? 'Uploading…' : '📎 Add a file — photo, video, voice note, doc'}
+            <input
+              type="file"
+              style={{ display: 'none' }}
+              disabled={uploading}
+              onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) handleUpload(f) }}
+            />
+          </label>
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         {/* Monday: save / mark complete */}
         {day === 'monday' && (
@@ -230,8 +324,8 @@ export default function DailyPromptCard({
             </button>
             <button
               onClick={markComplete}
-              disabled={saving || !text.trim()}
-              style={{ ...btnPrimaryStyle(meta.accent), opacity: (saving || !text.trim()) ? 0.6 : 1 }}
+              disabled={saving || !hasResponse}
+              style={{ ...btnPrimaryStyle(meta.accent), opacity: (saving || !hasResponse) ? 0.6 : 1 }}
             >
               {completed ? 'Update & mark complete' : meta.cta}
             </button>
@@ -321,4 +415,46 @@ function btnPrimaryStyle(accent: string): React.CSSProperties {
     cursor: 'pointer',
     transition: 'opacity .15s',
   }
+}
+
+// Renders a member's uploaded Monday file inline by kind, with a remove button.
+function AttachmentPreview({ att, onRemove }: { att: MondayAttachment; onRemove: () => void }) {
+  return (
+    <div style={{
+      position: 'relative', background: '#fff', border: '1px solid var(--line)',
+      borderRadius: 10, padding: 10,
+    }}>
+      <button
+        onClick={onRemove}
+        aria-label="Remove file"
+        style={{
+          position: 'absolute', top: 6, right: 6, zIndex: 1,
+          width: 22, height: 22, borderRadius: '50%', border: 'none',
+          background: 'rgba(0,0,0,0.55)', color: '#fff', cursor: 'pointer',
+          fontSize: 13, lineHeight: 1, fontFamily: 'inherit',
+        }}
+      >
+        ×
+      </button>
+      {att.kind === 'image' ? (
+        <img src={att.url} alt={att.name} style={{ width: '100%', borderRadius: 8, display: 'block' }} />
+      ) : att.kind === 'video' ? (
+        <video src={att.url} controls preload="metadata" style={{ width: '100%', borderRadius: 8, display: 'block' }} />
+      ) : att.kind === 'audio' ? (
+        <audio src={att.url} controls preload="metadata" style={{ width: '100%', display: 'block' }} />
+      ) : (
+        <a
+          href={att.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ fontSize: 13, color: 'var(--green)', textDecoration: 'none', fontWeight: 600, wordBreak: 'break-all' }}
+        >
+          📄 {att.name}
+        </a>
+      )}
+      {att.kind !== 'file' && (
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6, wordBreak: 'break-all' }}>{att.name}</div>
+      )}
+    </div>
+  )
 }

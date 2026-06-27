@@ -316,6 +316,7 @@ export default function WeekPage() {
               mondayPrompt={personal?.monday_prompt ?? universal.monday_prompt ?? null}
               wednesdayPrompt={universal.wednesday_prompt ?? null}
               fridayPrompt={universal.friday_prompt ?? null}
+              voiceNoteUrl={universal.monday_voice_note_url ?? personal?.monday_voice_note_url ?? null}
               progress={progress}
               onChange={() => refreshProgress()}
             />
@@ -573,13 +574,15 @@ function StepCheckbox({ done, active }: { done: boolean; active: boolean }) {
 // the prior prompt collapses to a single line above the active card. A
 // completed prompt also defaults to minimized but remains expandable.
 function DailyPromptStack({
-  memberId, weekNumber, mondayPrompt, wednesdayPrompt, fridayPrompt, progress, onChange,
+  memberId, weekNumber, mondayPrompt, wednesdayPrompt, fridayPrompt, voiceNoteUrl, progress, onChange,
 }: {
   memberId: string
   weekNumber: number
   mondayPrompt: string | null
   wednesdayPrompt: string | null
   fridayPrompt: string | null
+  /** Coach's voice note for this week (rendered on the Wednesday card). */
+  voiceNoteUrl: string | null
   progress: Partial<MemberProgress> | null
   onChange: () => void
 }) {
@@ -614,6 +617,7 @@ function DailyPromptStack({
         weekNumber={weekNumber}
         prompt={mondayPrompt ?? ''}
         initialText={progress?.monday_response ?? ''}
+        initialAttachments={progress?.monday_attachments ?? []}
         completed={monCompleted}
         defaultMinimized={monMinimized}
         onSaved={onChange}
@@ -624,6 +628,7 @@ function DailyPromptStack({
         weekNumber={weekNumber}
         prompt={wednesdayPrompt ?? ''}
         initialText=""
+        voiceNoteUrl={voiceNoteUrl}
         completed={wedCompleted}
         defaultMinimized={wedMinimized}
         onSaved={onChange}
