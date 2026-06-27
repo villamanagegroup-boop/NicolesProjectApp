@@ -57,12 +57,17 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     let cancelled = false
+    // Deep-link scope: the sidebar's per-program "People" links pass
+    // ?path=A|B|C so this opens pre-filtered to that program.
+    const p = new URLSearchParams(window.location.search).get('path')
     Promise.all([
       fetchAllUsersAdmin(),
       fetchAllTags(),
       fetchTagAssignments(),
     ]).then(([rows, t, a]) => {
-      if (!cancelled) { setUsers(rows); setTags(t); setAssignments(a); setLoading(false) }
+      if (cancelled) return
+      setUsers(rows); setTags(t); setAssignments(a); setLoading(false)
+      if (p === 'A' || p === 'B' || p === 'C' || p === 'none') setFilter(p)
     })
     return () => { cancelled = true }
   }, [])

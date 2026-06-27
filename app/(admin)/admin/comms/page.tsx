@@ -97,7 +97,17 @@ export default function CommsPage() {
     // Pull every signed-up user so admins can DM 365 / Seal-the-Leak users
     // alongside Circle members. circle_coach_messages is keyed by auth user_id
     // so the same plumbing works regardless of path.
-    fetchAllUsersAdmin().then(setAllUsers)
+    // Deep-link scope: the sidebar's per-program "Messages" links pass
+    // ?path=A|B|C so the DM picker + broadcast audience open scoped to that
+    // program. Apply inside the async callback to avoid a synchronous setState.
+    const p = new URLSearchParams(window.location.search).get('path')
+    fetchAllUsersAdmin().then(u => {
+      setAllUsers(u)
+      if (p === 'A' || p === 'B' || p === 'C') {
+        setDmFilter(p)
+        setNotePaths([p])
+      }
+    })
   }, [])
 
   // Show last few messages for the picked user so the admin has context.

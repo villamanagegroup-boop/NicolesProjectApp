@@ -15,38 +15,68 @@ import { supabaseClient } from '@/lib/supabase/client'
 import { signOut } from '@/lib/supabase/auth'
 import RoleBadge from '@/components/layout/RoleBadge'
 
-// Sidebar IA: top-level items + two collapsible groups (Programs, Tools).
-// Labels chosen to read like English, not jargon — Nicole isn't a developer.
-type NavLeaf = { href: string; icon: string; label: string; sub: string }
-type NavGroup = { groupKey: string; label: string; icon: string; items: NavLeaf[] }
+// Sidebar IA: program-centric. Top-level items + collapsible groups, where
+// "Programs" nests one level deeper — each program (Cards / Seal / Circle)
+// has People · Curriculum · Messages. Leaves deep-link into shared admin
+// pages with a ?path= scope so the destination opens pre-filtered to that
+// program. Labels read like English — Nicole isn't a developer.
+type NavLeaf = { href: string; icon?: string; label: string; sub?: string }
+type NavGroup = { groupKey: string; label: string; icon: string; items: NavEntry[] }
 type NavEntry = NavLeaf | NavGroup
 
 function isGroup(e: NavEntry): e is NavGroup {
   return (e as NavGroup).items !== undefined
 }
 
+// Does this entry (or any descendant) match the current path? Compares against
+// the pathname only (query strings scope the page but don't change the route).
+function entryIsActive(e: NavEntry, pathname: string | null): boolean {
+  if (isGroup(e)) return e.items.some(i => entryIsActive(i, pathname))
+  const base = e.href.split('?')[0]
+  return base === '/admin' ? pathname === '/admin' : !!pathname?.startsWith(base)
+}
+
 const NAV_ITEMS: NavEntry[] = [
-  { href: '/admin',         icon: '◎', label: 'Home',     sub: 'Dashboard' },
-  { href: '/admin/users',   icon: '⬡', label: 'People',   sub: 'Everyone in the portal' },
-  { href: '/admin/pairs',   icon: '⬡', label: 'Pairs',    sub: 'Accountability map' },
+  { href: '/admin', icon: '◎', label: 'Dashboard', sub: 'Overview' },
   {
-    groupKey: 'programs', label: 'Programs', icon: '⬡',
+    groupKey: 'programs', label: 'Programs', icon: '◫',
     items: [
-      { href: '/admin/cards',    icon: '·', label: '365 Cards',   sub: 'Edit the daily deck' },
-      { href: '/admin/cohorts',  icon: '·', label: 'Cohorts',     sub: 'Circle programs' },
-      { href: '/admin/content',  icon: '·', label: 'Curriculum',  sub: 'Weekly content + calls' },
+      {
+        groupKey: 'prog-cards', label: '365 Cards', icon: '·',
+        items: [
+          { href: '/admin/users?path=B',   label: 'People',     sub: 'Cards members' },
+          { href: '/admin/cards',          label: 'Curriculum', sub: 'The daily deck' },
+          { href: '/admin/comms?path=B',   label: 'Messages',   sub: 'Announce + DM' },
+        ],
+      },
+      {
+        groupKey: 'prog-seal', label: 'Seal the Leak', icon: '·',
+        items: [
+          { href: '/admin/users?path=A',          label: 'People',     sub: 'Seal members' },
+          { href: '/admin/content?program=seal',  label: 'Curriculum', sub: 'Seal media + program' },
+          { href: '/admin/comms?path=A',          label: 'Messages',   sub: 'Announce + DM' },
+        ],
+      },
+      {
+        groupKey: 'prog-circle', label: 'The Circle', icon: '·',
+        items: [
+          { href: '/admin/members',        label: 'People',     sub: 'Cohort members' },
+          { href: '/admin/content',        label: 'Curriculum', sub: '12 weeks + calls' },
+          { href: '/admin/comms?path=C',   label: 'Messages',   sub: 'Broadcast + post' },
+          { href: '/admin/pairs',          label: 'Pairs',      sub: 'Accountability map' },
+        ],
+      },
     ],
   },
-  { href: '/admin/comms',   icon: '⬡', label: 'Messages', sub: 'Announce + DM' },
-  { href: '/admin/money',   icon: '⬡', label: 'Money',    sub: 'Payments + access' },
+  { href: '/admin/money',   icon: '$', label: 'Finances', sub: 'Payments by program' },
   { href: '/admin/reports', icon: '⬡', label: 'Reports',  sub: 'Exports + analytics' },
   {
     groupKey: 'tools', label: 'Tools', icon: '⬡',
     items: [
-      { href: '/admin/preview', icon: '·', label: 'Preview as user', sub: 'Walk in their shoes' },
-      { href: '/admin/sitemap', icon: '·', label: 'Site map',        sub: 'Open any page directly' },
-      { href: '/admin/support', icon: '·', label: 'Bug reports',     sub: 'Member-submitted issues' },
-      { href: '/admin/audit',   icon: '·', label: 'History',         sub: 'Admin action log' },
+      { href: '/admin/preview', label: 'Preview as user', sub: 'Walk in their shoes' },
+      { href: '/admin/sitemap', label: 'Site map',        sub: 'Open any page directly' },
+      { href: '/admin/support', label: 'Bug reports',     sub: 'Member-submitted issues' },
+      { href: '/admin/audit',   label: 'History',         sub: 'Admin action log' },
     ],
   },
 ]
@@ -83,10 +113,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
   useEffect(() => {
     const next: Record<string, boolean> = {}
-    for (const e of NAV_ITEMS) {
-      if (!('items' in e)) continue
-      next[e.groupKey] = e.items.some(i => pathname?.startsWith(i.href))
+    const walk = (entries: NavEntry[]) => {
+      for (const e of entries) {
+        if (!isGroup(e)) continue
+        next[e.groupKey] = entryIsActive(e, pathname)
+        walk(e.items)
+      }
     }
+    walk(NAV_ITEMS)
     setOpenGroups(prev => ({ ...next, ...prev }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -138,18 +172,129 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // dismisses the overlay before the page swap.
   useEffect(() => { setMobileOpen(false) }, [pathname])
 
-  // Walk the nav tree (groups + leaves) to find the current page's label.
+  // Walk the nav tree (nested groups + leaves) to find the current page's label.
   const currentLabel = (() => {
-    for (const e of NAV_ITEMS) {
-      if (isGroup(e)) {
-        const hit = e.items.find(i => pathname?.startsWith(i.href))
-        if (hit) return hit.label
-      } else if (e.href === '/admin' ? pathname === '/admin' : pathname?.startsWith(e.href)) {
-        return e.label
+    let label = 'Admin'
+    const walk = (entries: NavEntry[]) => {
+      for (const e of entries) {
+        if (isGroup(e)) { walk(e.items); continue }
+        const base = e.href.split('?')[0]
+        const active = base === '/admin' ? pathname === '/admin' : pathname?.startsWith(base)
+        if (active) label = e.label
       }
     }
-    return 'Admin'
+    walk(NAV_ITEMS)
+    return label
   })()
+
+  // Recursive nav renderer — handles arbitrarily nested groups. depth 0 leaves
+  // get the full icon+label+sub treatment; nested leaves render compact.
+  function renderEntry(entry: NavEntry, depth: number): React.ReactNode {
+    if (isGroup(entry)) {
+      const expanded = openGroups[entry.groupKey] ?? false
+      const groupActive = entryIsActive(entry, pathname)
+      return (
+        <div key={entry.groupKey} style={{ marginBottom: 2 }}>
+          <button
+            type="button"
+            onClick={() => setOpenGroups(g => ({ ...g, [entry.groupKey]: !expanded }))}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+              padding: depth === 0 ? '9px 10px' : '7px 10px', borderRadius: 8,
+              background: groupActive && !expanded ? 'var(--green-pale)' : 'transparent',
+              border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+            }}
+          >
+            <span style={{
+              fontSize: depth === 0 ? 16 : 12, color: groupActive ? 'var(--green)' : 'var(--text-muted)',
+              flexShrink: 0, width: 20, textAlign: 'center',
+            }}>{entry.icon}</span>
+            {sidebarOpen && (
+              <>
+                <span style={{
+                  flex: 1, fontSize: depth === 0 ? 13 : 12.5, fontWeight: groupActive ? 600 : 500,
+                  color: groupActive ? 'var(--ink)' : 'var(--text-soft)',
+                }}>{entry.label}</span>
+                <span style={{
+                  fontSize: 10, color: 'var(--text-muted)',
+                  transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform .15s',
+                }}>▶</span>
+              </>
+            )}
+          </button>
+          {sidebarOpen && expanded && (
+            <div style={{ marginLeft: 14, paddingLeft: 8, borderLeft: '1px solid var(--line)' }}>
+              {entry.items.map(i => renderEntry(i, depth + 1))}
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    const item = entry
+    const base = item.href.split('?')[0]
+    const isActive = base === '/admin' ? pathname === '/admin' : pathname?.startsWith(base)
+    const showAlertBadge   = base === '/admin/members'
+    const showSupportBadge = base === '/admin/support'
+
+    const badges = (
+      <>
+        {showAlertBadge && alertCount > 0 && (
+          <span style={{ fontSize: 10, fontWeight: 700, background: 'var(--red-pale)', color: 'var(--red)', padding: '1px 6px', borderRadius: 10 }}>{alertCount}</span>
+        )}
+        {showSupportBadge && supportCount > 0 && (
+          <span style={{ fontSize: 10, fontWeight: 700, background: 'var(--gold-pale)', color: 'var(--gold)', padding: '1px 6px', borderRadius: 10, border: '1px solid var(--gold-line)' }}>{supportCount}</span>
+        )}
+      </>
+    )
+
+    // Nested (depth > 0) leaf — compact.
+    if (depth > 0) {
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          onClick={() => setMobileOpen(false)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '7px 10px', borderRadius: 6,
+            textDecoration: 'none', fontSize: 12, fontWeight: isActive ? 600 : 500,
+            color: isActive ? 'var(--ink)' : 'var(--text-soft)',
+            background: isActive ? 'var(--green-pale)' : 'transparent',
+          }}
+        >
+          <span>{item.label}</span>
+          {badges}
+        </Link>
+      )
+    }
+
+    // Top-level leaf — full treatment.
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        onClick={() => setMobileOpen(false)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '9px 10px', borderRadius: 8, marginBottom: 2, textDecoration: 'none',
+          background: isActive ? 'var(--green-pale)' : 'transparent',
+          borderLeft: isActive ? '2px solid var(--gold)' : '2px solid transparent',
+          transition: 'all .15s',
+        }}
+      >
+        <span style={{ fontSize: 16, color: isActive ? 'var(--green)' : 'var(--text-muted)', flexShrink: 0, width: 20, textAlign: 'center' }}>{item.icon}</span>
+        {sidebarOpen && (
+          <div style={{ flex: 1, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 13, fontWeight: isActive ? 600 : 500, color: isActive ? 'var(--ink)' : 'var(--text-soft)', whiteSpace: 'nowrap' }}>{item.label}</span>
+              {badges}
+            </div>
+            {item.sub && <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 1 }}>{item.sub}</div>}
+          </div>
+        )}
+      </Link>
+    )
+  }
 
   return (
     <div
@@ -260,125 +405,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Nav */}
         <nav style={{ padding: '12px 8px', flex: 1, overflowY: 'auto' }}>
-          {NAV_ITEMS.map(entry => {
-            if (isGroup(entry)) {
-              const expanded = openGroups[entry.groupKey] ?? false
-              const groupActive = entry.items.some(i => pathname?.startsWith(i.href))
-              return (
-                <div key={entry.groupKey} style={{ marginBottom: 2 }}>
-                  <button
-                    type="button"
-                    onClick={() => setOpenGroups(g => ({ ...g, [entry.groupKey]: !expanded }))}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      width: '100%', padding: '9px 10px', borderRadius: 8,
-                      background: groupActive && !expanded ? 'var(--green-pale)' : 'transparent',
-                      border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                      textAlign: 'left',
-                    }}
-                  >
-                    <span style={{
-                      fontSize: 16, color: groupActive ? 'var(--green)' : 'var(--text-muted)',
-                      flexShrink: 0, width: 20, textAlign: 'center',
-                    }}>{entry.icon}</span>
-                    {sidebarOpen && (
-                      <>
-                        <span style={{
-                          flex: 1, fontSize: 13, fontWeight: groupActive ? 600 : 500,
-                          color: groupActive ? 'var(--ink)' : 'var(--text-soft)',
-                        }}>
-                          {entry.label}
-                        </span>
-                        <span style={{
-                          fontSize: 10, color: 'var(--text-muted)',
-                          transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
-                          transition: 'transform .15s',
-                        }}>▶</span>
-                      </>
-                    )}
-                  </button>
-                  {sidebarOpen && expanded && (
-                    <div style={{ marginLeft: 14, paddingLeft: 8, borderLeft: '1px solid var(--line)' }}>
-                      {entry.items.map(item => {
-                        const isActive = pathname?.startsWith(item.href)
-                        return (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => setMobileOpen(false)}
-                            style={{
-                              display: 'block', padding: '7px 10px', borderRadius: 6,
-                              textDecoration: 'none',
-                              fontSize: 12, fontWeight: isActive ? 600 : 500,
-                              color: isActive ? 'var(--ink)' : 'var(--text-soft)',
-                              background: isActive ? 'var(--green-pale)' : 'transparent',
-                            }}
-                          >
-                            {item.label}
-                          </Link>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              )
-            }
-
-            const item = entry
-            const isActive = item.href === '/admin'
-              ? pathname === '/admin'
-              : pathname?.startsWith(item.href)
-            const showAlertBadge   = item.href === '/admin/users'
-            const showSupportBadge = item.href === '/admin/support'
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '9px 10px', borderRadius: 8, marginBottom: 2,
-                  textDecoration: 'none',
-                  background: isActive ? 'var(--green-pale)' : 'transparent',
-                  borderLeft: isActive ? '2px solid var(--gold)' : '2px solid transparent',
-                  transition: 'all .15s',
-                }}
-              >
-                <span style={{
-                  fontSize: 16, color: isActive ? 'var(--green)' : 'var(--text-muted)',
-                  flexShrink: 0, width: 20, textAlign: 'center',
-                }}>{item.icon}</span>
-                {sidebarOpen && (
-                  <div style={{ flex: 1, overflow: 'hidden' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{
-                        fontSize: 13, fontWeight: isActive ? 600 : 500,
-                        color: isActive ? 'var(--ink)' : 'var(--text-soft)',
-                        whiteSpace: 'nowrap',
-                      }}>{item.label}</span>
-                      {showAlertBadge && alertCount > 0 && (
-                        <span style={{
-                          fontSize: 10, fontWeight: 700,
-                          background: 'var(--red-pale)', color: 'var(--red)',
-                          padding: '1px 6px', borderRadius: 10,
-                        }}>{alertCount}</span>
-                      )}
-                      {showSupportBadge && supportCount > 0 && (
-                        <span style={{
-                          fontSize: 10, fontWeight: 700,
-                          background: 'var(--gold-pale)', color: 'var(--gold)',
-                          padding: '1px 6px', borderRadius: 10,
-                          border: '1px solid var(--gold-line)',
-                        }}>{supportCount}</span>
-                      )}
-                    </div>
-                    <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 1 }}>{item.sub}</div>
-                  </div>
-                )}
-              </Link>
-            )
-          })}
+          {NAV_ITEMS.map(entry => renderEntry(entry, 0))}
         </nav>
 
         {/* Bottom — settings + admin user + member-app shortcut + sign out */}

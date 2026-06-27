@@ -88,10 +88,15 @@ export default function ContentPage() {
 
   // ─── Data loads ───────────────────────────────────────────────
   useEffect(() => {
+    // Deep-link: the sidebar's "Seal the Leak → Curriculum" opens the Seal
+    // media tab directly. Applied in the async callback to avoid a synchronous
+    // setState in the effect body.
+    const isSeal = new URLSearchParams(window.location.search).get('program') === 'seal'
     fetchAdminCohorts().then(c => {
       const active = c.filter(x => x.status === 'active')
       setCohorts(active)
       if (active[0]) setCohortId(active[0].id)
+      if (isSeal) setTab('stl_media')
     })
   }, [])
 
