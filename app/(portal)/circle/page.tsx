@@ -20,6 +20,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabaseClient } from '@/lib/supabase/client'
 import { useApp } from '@/context/AppContext'
+import { usePreviewMode } from '@/hooks/usePreviewMode'
 import {
   getMyCircleMember,
   getMyPartner,
@@ -31,6 +32,7 @@ import {
   markWeekComplete,
   markPartnerCheckinSent,
   pickEnrollmentCohort,
+  getPreviewMemberForCohort,
   type CircleMember,
   type WeeklyContent,
   type LiveCall,
@@ -115,6 +117,7 @@ type LoadState =
 export default function CirclePage() {
   const router = useRouter()
   const { authUser, loading, isAuthed, user } = useApp()
+  const { preview } = usePreviewMode()
 
   // Snapshot "now" on mount so render-time time math stays pure across
   // re-renders. The countdown can be slightly stale until a refresh —
@@ -140,7 +143,46 @@ export default function CirclePage() {
     if (!isAuthed) { router.replace('/login'); return }
     if (user.selectedPath !== 'C' && !user.isAdmin) return
 
+    // Shared: once we have a member (real or preview), load everything keyed
+    // to their cohort + archetype and flip the page to ready.
+    async function hydrate(member: CircleMember) {
+      setState({ kind: 'ready', member })
+
+      const [partnerData, weeksData, progressData, callsData, cohortRow] = await Promise.all([
+        member.partner_id ? getMyPartner(member.partner_id) : Promise.resolve(null),
+        getAllWeeksOverview(member.cohort_id),
+        getMyProgress(member.id),
+        getLiveCalls(member.cohort_id),
+        supabaseClient.from('circle_cohorts').select('starts_at, welcome_video_url').eq('id', member.cohort_id).maybeSingle(),
+      ])
+      setPartner(partnerData as typeof partner)
+      setWeeks(weeksData)
+      setProgress(progressData as MemberProgress[])
+      setCalls(callsData)
+      setWelcomeVideoUrl((cohortRow.data?.welcome_video_url as string | null) ?? null)
+
+      let wn: number | null = null
+      if (cohortRow.data) wn = getCurrentWeekNumber(cohortRow.data.starts_at as string)
+      setCurrentWeek(wn)
+
+      if (wn) {
+        const c = await getWeekContent(wn, member.archetype, member.cohort_id)
+        setUniversal(c.universal)
+        setPersonal(c.personal)
+      }
+    }
+
     (async () => {
+      // Admin/coach drop-in: when previewing a specific cohort (set from a
+      // cohort's "View as cohort member"), render THAT cohort's experience —
+      // even if the admin isn't enrolled in it. No quiz/intake/welcome gates.
+      if (user.isAdmin && preview?.cohortId) {
+        const pm = await getPreviewMemberForCohort(preview.cohortId, preview.archetypeOverride ?? null)
+        if (!pm) { setState({ kind: 'no-cohort' }); return }
+        await hydrate(pm)
+        return
+      }
+
       let member = await getMyCircleMember()
 
       if (!member && authUser) {
@@ -193,34 +235,9 @@ export default function CirclePage() {
         return
       }
 
-      setState({ kind: 'ready', member })
-
-      const [partnerData, weeksData, progressData, callsData, cohortRow] = await Promise.all([
-        member.partner_id ? getMyPartner(member.partner_id) : Promise.resolve(null),
-        getAllWeeksOverview(member.cohort_id),
-        getMyProgress(member.id),
-        getLiveCalls(member.cohort_id),
-        supabaseClient.from('circle_cohorts').select('starts_at, welcome_video_url').eq('id', member.cohort_id).maybeSingle(),
-      ])
-      setPartner(partnerData as typeof partner)
-      setWeeks(weeksData)
-      setProgress(progressData as MemberProgress[])
-      setCalls(callsData)
-      setWelcomeVideoUrl((cohortRow.data?.welcome_video_url as string | null) ?? null)
-
-      let wn: number | null = null
-      if (cohortRow.data) wn = getCurrentWeekNumber(cohortRow.data.starts_at as string)
-      setCurrentWeek(wn)
-
-      // Load the current week's universal + archetype content for the
-      // 4-step card, partner prompt, and voice note source URL.
-      if (wn) {
-        const c = await getWeekContent(wn, member.archetype, member.cohort_id)
-        setUniversal(c.universal)
-        setPersonal(c.personal)
-      }
+      await hydrate(member)
     })()
-  }, [loading, isAuthed, authUser, user.selectedPath, user.isAdmin, router])
+  }, [loading, isAuthed, authUser, user.selectedPath, user.isAdmin, preview?.cohortId, preview?.archetypeOverride, router])
 
   if (state.kind === 'loading') {
     return <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading your Circle…</p>

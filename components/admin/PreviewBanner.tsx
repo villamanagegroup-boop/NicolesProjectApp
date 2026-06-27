@@ -55,17 +55,19 @@ export default function PreviewBanner() {
 
       {/* Path A only: in-place archetype switcher so the admin can flip
           between the four variants without leaving the program view. */}
-      {preview.path === 'A' && (
+      {(preview.path === 'A' || preview.path === 'C') && (
         <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}>
           <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-            Archetype
+            {preview.path === 'C' ? 'View track' : 'Archetype'}
           </span>
           {ARCHETYPE_CHIPS.map(a => {
             const on = preview.archetypeOverride === a.id
             return (
               <button
                 key={a.id}
-                onClick={() => setPreview({ ...preview, archetypeOverride: a.id })}
+                // Toggle: click an active chip to clear and return to the
+                // default view (your own membership, for a cohort you're in).
+                onClick={() => setPreview({ ...preview, archetypeOverride: on ? null : a.id })}
                 style={{
                   fontSize: 10, fontWeight: 700, letterSpacing: '0.04em',
                   padding: '3px 9px', borderRadius: 999,

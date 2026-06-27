@@ -246,6 +246,58 @@ export async function getMyCircleMember(): Promise<CircleMember | null> {
 }
 
 /**
+ * Resolve a CircleMember for an admin/coach dropping into a specific cohort's
+ * member experience — WITHOUT requiring enrollment in that cohort.
+ *
+ * If the admin happens to have a real membership in this cohort, that's used.
+ * Otherwise we synthesize a read-only "viewer" member: a valid all-zero UUID
+ * id (matches no progress rows, so the page renders empty progress with no
+ * type errors) scoped to the requested cohort + archetype track. Returns null
+ * only if the cohort doesn't exist.
+ */
+export async function getPreviewMemberForCohort(
+  cohortId: string,
+  archetypeOverride?: Archetype | null,
+): Promise<CircleMember | null> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  // Confirm the cohort exists before fabricating a viewer for it.
+  const { data: cohort } = await supabase
+    .from('circle_cohorts').select('id').eq('id', cohortId).maybeSingle()
+  if (!cohort) return null
+
+  // Plain drop-in (no archetype picked): if the admin actually has a
+  // membership in this cohort, show their real view. When they explicitly pick
+  // an archetype in the preview banner, we skip this so they can walk EVERY
+  // archetype's experience, not just their own.
+  if (!archetypeOverride) {
+    const { data: real } = await supabase
+      .from('circle_members').select('*')
+      .eq('user_id', user.id).eq('cohort_id', cohortId)
+      .maybeSingle()
+    if (real) return real as CircleMember
+  }
+
+  // Synthetic read-only viewer scoped to the cohort + chosen archetype track.
+  const nowIso = new Date().toISOString()
+  return {
+    id: '00000000-0000-0000-0000-000000000000',
+    user_id: user.id,
+    cohort_id: cohortId,
+    archetype: archetypeOverride ?? 'door',
+    enneagram_type: null,
+    attachment_style: null,
+    feedback_pref: null,
+    goal_90day: null,
+    partner_id: null,
+    joined_at: nowIso,
+    onboarded_at: nowIso,
+    welcome_video_seen_at: nowIso,
+  } as CircleMember
+}
+
+/**
  * Pick the cohort a new member should be enrolled in.
  *
  * Multiple cohorts can be active at once (overlapping enrollment windows).
