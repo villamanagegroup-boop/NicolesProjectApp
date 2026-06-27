@@ -29,6 +29,10 @@ const ARCHETYPES: Exclude<Archetype, 'universal'>[] = ['door', 'throne', 'engine
 const ARCHETYPE_LABEL: Record<string, string> = {
   universal: 'Universal', door: 'Door', throne: 'Throne', engine: 'Engine', push: 'Push',
 }
+// Accent color per track — matches ARCHETYPE_COLOR in lib/circle (universal = gold).
+const TRACK_ACCENT: Record<string, string> = {
+  universal: 'var(--gold)', door: '#1B4332', throne: '#1a1a2e', engine: '#7B1D1D', push: '#3d2c0e',
+}
 const WEEKS = Array.from({ length: 12 }, (_, i) => i + 1)
 
 function phaseFromWeek(week: number): MonthName {
@@ -539,8 +543,20 @@ export default function ContentPage() {
   function renderEditor(week: number, archetype: Archetype) {
     if (!(editingTrack?.week === week && editingTrack.archetype === archetype)) return null
     const isUniversal = archetype === 'universal'
+    const accent = TRACK_ACCENT[archetype]
     return (
-      <div style={{ marginTop: 11, paddingTop: 11, borderTop: '1px solid var(--line)' }}>
+      <div style={{
+        marginTop: 11, paddingTop: 11, borderTop: '1px solid var(--line)',
+        borderLeft: `4px solid ${accent}`, paddingLeft: 13, marginLeft: -2, background: 'rgba(0,0,0,0.012)', borderRadius: 8,
+      }}>
+        {/* Clear confirmation of which track is being edited */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <span style={{ width: 9, height: 9, borderRadius: '50%', background: accent, flex: '0 0 auto' }} />
+          <span style={{ fontSize: 13, fontWeight: 700, color: accent }}>
+            Editing {ARCHETYPE_LABEL[archetype]} track
+          </span>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>· Week {week}</span>
+        </div>
         {isUniversal && (
           <>
             <FieldLabel>Week title</FieldLabel>
@@ -575,7 +591,7 @@ export default function ContentPage() {
             <MediaUrlField type="video" value={draft.video_url} onChange={url => patchDraft({ video_url: url })} inputStyle={S.input} />
           </div>
           <div>
-            <FieldLabel>Monday voice note</FieldLabel>
+            <FieldLabel>Wednesday voice note</FieldLabel>
             <MediaUrlField type="audio" value={draft.monday_voice_note_url} onChange={url => patchDraft({ monday_voice_note_url: url })} inputStyle={S.input} />
           </div>
         </div>
