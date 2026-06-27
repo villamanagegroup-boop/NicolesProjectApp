@@ -44,6 +44,7 @@ export default function AdminUserProfilePage() {
   // Add-to-cohort form state
   const [addCohortId, setAddCohortId] = useState('')
   const [addArchetype, setAddArchetype] = useState<'door' | 'throne' | 'engine' | 'push'>('door')
+  const [addSkipOnboarding, setAddSkipOnboarding] = useState(true)
   const [adding, setAdding] = useState(false)
 
   // Activity panel
@@ -256,7 +257,7 @@ export default function AdminUserProfilePage() {
   async function handleAdd() {
     if (!user || !addCohortId) return
     setAdding(true)
-    const { error } = await adminAddUserToCohort(user.id, addCohortId, addArchetype)
+    const { error } = await adminAddUserToCohort(user.id, addCohortId, addArchetype, { skipOnboarding: addSkipOnboarding })
     setAdding(false)
     if (error) {
       alert(`Could not add to cohort: ${error.message}`)
@@ -925,6 +926,27 @@ export default function AdminUserProfilePage() {
             >
               {adding ? 'Adding…' : 'Add'}
             </button>
+
+            {/* Manual-onboard toggle — admin assigns the archetype above and the
+                member skips the quiz/onboarding entirely. Uncheck to instead
+                send them through the normal quiz flow on first login. */}
+            <label style={{
+              flexBasis: '100%', display: 'flex', alignItems: 'flex-start', gap: 8,
+              fontSize: 12, color: 'var(--text-soft)', cursor: 'pointer', marginTop: 2,
+            }}>
+              <input
+                type="checkbox"
+                checked={addSkipOnboarding}
+                onChange={e => setAddSkipOnboarding(e.target.checked)}
+                style={{ marginTop: 2 }}
+              />
+              <span>
+                Skip quiz &amp; onboarding — member lands straight in The Circle
+                <span style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)' }}>
+                  Uses the archetype above and marks them onboarded. Uncheck to make them take the quiz on first login instead.
+                </span>
+              </span>
+            </label>
           </div>
         )}
       </div>

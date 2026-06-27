@@ -1447,17 +1447,33 @@ export async function fetchAllCohortsForAdmin(): Promise<CohortOption[]> {
 
 /** Enroll a user as a member of a cohort. archetype defaults to 'door' if
  *  the user hasn't taken the quiz yet — admin can edit it later from the
- *  member detail page. */
+ *  member detail page.
+ *
+ *  When `skipOnboarding` is set, the admin is manually onboarding this member:
+ *  we stamp `onboarded_at` on the membership and clear the user-level quiz /
+ *  onboarding guards so they land straight in /circle instead of being bounced
+ *  through the path-chooser, the Enneagram quiz, or the intake form. We only
+ *  claim the Circle path (selected_path = 'C') when the user doesn't already
+ *  have one — never clobber an existing Path A/B user's program access. */
 export async function adminAddUserToCohort(
   userId: string,
   cohortId: string,
   archetype: 'door' | 'throne' | 'engine' | 'push' = 'door',
+  opts?: { skipOnboarding?: boolean },
 ) {
-  return supabase.from('circle_members').upsert({
-    user_id:   userId,
-    cohort_id: cohortId,
-    archetype,
-  }, { onConflict: 'user_id,cohort_id' })
+  const memberRow: { user_id: string; cohort_id: string; archetype: string; onboarded_at?: string } = {
+    user_id: userId, cohort_id: cohortId, archetype,
+  }
+  if (opts?.skipOnboarding) memberRow.onboarded_at = new Date().toISOString()
+
+  const memberRes = await supabase.from('circle_members')
+    .upsert(memberRow, { onConflict: 'user_id,cohort_id' })
+  if (memberRes.error || !opts?.skipOnboarding) return memberRes
+
+  const { data: u } = await supabase.from('users').select('selected_path').eq('id', userId).maybeSingle()
+  const updates: { onboarding_complete: boolean; selected_path?: 'C' } = { onboarding_complete: true }
+  if (!u?.selected_path) updates.selected_path = 'C'
+  return supabase.from('users').update(updates).eq('id', userId)
 }
 
 /** Remove a member from their cohort. Drops the circle_members row by id.

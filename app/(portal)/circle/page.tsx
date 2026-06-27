@@ -172,9 +172,16 @@ export default function CirclePage() {
 
       if (!member) { setState({ kind: 'needs-intake' }); return }
 
+      // Force the intake form only when the member hasn't been set up yet.
+      // `onboarded_at` is stamped by the welcome tour OR by an admin who
+      // manually onboarded them (archetype assigned, quiz skipped) — in both
+      // cases the intake is optional, so we don't bounce them out of /circle.
+      // (Normal users can't reach here with onboarded_at set while still
+      // missing fields: the intake gate runs before the welcome tour that
+      // would stamp it, so this only ever frees admin-onboarded members.)
       const missing = !member.enneagram_type || !member.attachment_style
                    || !member.feedback_pref  || !member.goal_90day
-      if (missing && !user.isAdmin) {
+      if (missing && !member.onboarded_at && !user.isAdmin) {
         router.replace('/circle/intake')
         return
       }
