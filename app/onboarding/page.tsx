@@ -3,6 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabaseClient } from '@/lib/supabase/client'
+import { pickEnrollmentCohort } from '@/lib/circle'
 import { useApp } from '@/context/AppContext'
 
 type Archetype = 'door' | 'throne' | 'engine' | 'push'
@@ -250,19 +251,16 @@ export default function OnboardingPage() {
     // "not joined" state until an admin activates one.
     let enrolled = false
     if (appUser.selectedPath === 'C' && state.archetype) {
-      const { data: cohort } = await supabaseClient
-        .from('circle_cohorts')
-        .select('id')
-        .eq('is_active', true)
-        .limit(1)
-        .maybeSingle()
+      // Newest active cohort wins; ?cohort=<slug> can target a specific one.
+      const slug = new URLSearchParams(window.location.search).get('cohort')
+      const cohortId = await pickEnrollmentCohort(slug)
 
-      if (cohort) {
+      if (cohortId) {
         const { error: enrollError } = await supabaseClient
           .from('circle_members')
           .upsert({
             user_id:          user.id,
-            cohort_id:        cohort.id,
+            cohort_id:        cohortId,
             archetype:        state.archetype,
             enneagram_type:   state.ennea,
             attachment_style: state.attach,

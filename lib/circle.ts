@@ -229,6 +229,44 @@ export async function getMyCircleMember(): Promise<CircleMember | null> {
 }
 
 /**
+ * Pick the cohort a new member should be enrolled in.
+ *
+ * Multiple cohorts can be active at once (overlapping enrollment windows).
+ * The default rule is "newest active cohort wins" — ordered by starts_at
+ * descending — so as a new cohort opens, fresh signups flow into it while
+ * older cohorts keep running for their existing members.
+ *
+ * Pass a `slug` (e.g. from a `?cohort=` link) to deliberately route into a
+ * specific active cohort regardless of start date. If the slug doesn't match
+ * an active cohort, we fall back to the newest-active default rather than
+ * leaving the user un-enrolled.
+ *
+ * Returns the cohort id, or null if no active cohort exists yet.
+ */
+export async function pickEnrollmentCohort(slug?: string | null): Promise<string | null> {
+  if (slug) {
+    const { data: bySlug } = await supabase
+      .from('circle_cohorts')
+      .select('id')
+      .eq('is_active', true)
+      .eq('slug', slug)
+      .limit(1)
+      .maybeSingle()
+    if (bySlug) return bySlug.id
+    // Unknown/inactive slug → fall through to the newest-active default.
+  }
+
+  const { data: newest } = await supabase
+    .from('circle_cohorts')
+    .select('id')
+    .eq('is_active', true)
+    .order('starts_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  return newest?.id ?? null
+}
+
+/**
  * Get the current user's accountability partner profile.
  * Returns null if not yet paired.
  */

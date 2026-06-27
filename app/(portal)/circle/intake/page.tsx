@@ -23,6 +23,7 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabaseClient } from '@/lib/supabase/client'
+import { pickEnrollmentCohort } from '@/lib/circle'
 import { useApp } from '@/context/AppContext'
 
 const ORANGE      = '#B8862E'
@@ -137,14 +138,12 @@ export default function CircleIntakePage() {
         setLifeContext(member.life_context ?? '')
         setPartnerNeeds(member.partner_needs ?? '')
       } else {
-        // No circle_members row yet — find the active cohort so submit can create one.
-        const { data: cohort } = await supabaseClient
-          .from('circle_cohorts')
-          .select('id')
-          .eq('is_active', true)
-          .limit(1)
-          .maybeSingle()
-        if (cohort) setCohortId(cohort.id)
+        // No circle_members row yet — pick the cohort so submit can create one.
+        // Newest active cohort wins; an optional ?cohort=<slug> link overrides
+        // to route into a specific active cohort when several overlap.
+        const slug = new URLSearchParams(window.location.search).get('cohort')
+        const cohortId = await pickEnrollmentCohort(slug)
+        if (cohortId) setCohortId(cohortId)
       }
 
       // Detect timezone from the browser if we don't already have one stored.

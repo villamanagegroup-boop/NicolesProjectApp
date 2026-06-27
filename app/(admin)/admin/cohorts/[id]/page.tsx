@@ -44,12 +44,18 @@ export default function CohortDetailPage() {
   // Status toggle (activate/archive) state
   const [savingStatus, setSavingStatus] = useState(false)
 
+  // Slug editor state
+  const [slugDraft, setSlugDraft] = useState('')
+  const [savingSlug, setSavingSlug] = useState(false)
+  const [slugSaved, setSlugSaved] = useState(false)
+
   useEffect(() => {
     if (!cohortId) return
     setLoading(true)
     ;(async () => {
       const c = await fetchCohortById(cohortId)
       setCohort(c)
+      setSlugDraft(c?.slug ?? '')
       if (c) {
         const [m, p, l] = await Promise.all([
           fetchAdminMembers(c.id, c.current_week),
@@ -61,6 +67,24 @@ export default function CohortDetailPage() {
       setLoading(false)
     })()
   }, [cohortId])
+
+  async function saveSlug() {
+    if (!cohort) return
+    setSavingSlug(true)
+    setSlugSaved(false)
+    const clean = slugDraft.trim() || null
+    const { error } = await updateCohort(cohort.id, { slug: clean })
+    if (error) {
+      // Most likely a unique-constraint collision with another cohort's slug.
+      alert(`Could not save slug: ${error.message}`)
+    } else {
+      const refreshed = await fetchCohortById(cohort.id)
+      setCohort(refreshed)
+      setSlugDraft(refreshed?.slug ?? '')
+      setSlugSaved(true)
+    }
+    setSavingSlug(false)
+  }
 
   async function toggleActive() {
     if (!cohort) return
@@ -148,6 +172,44 @@ export default function CohortDetailPage() {
           <Stat label="Pairs"          value={cohort.pair_count} />
           <Stat label="Engagement"     value={`${cohort.engagement_rate}%`} />
           <Stat label="Days remaining" value={cohort.days_remaining} />
+        </div>
+
+        {/* Enrollment slug — optional short code for ?cohort= links */}
+        <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid var(--line)' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 6 }}>
+            Enrollment slug
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <input
+              value={slugDraft}
+              onChange={e => { setSlugSaved(false); setSlugDraft(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-')) }}
+              placeholder="e.g. summer-2026"
+              style={{
+                flex: '1 1 220px', background: 'var(--paper)', border: '1px solid var(--line)',
+                borderRadius: 8, color: 'var(--ink)', fontSize: 13, padding: '8px 12px',
+                outline: 'none', fontFamily: 'inherit',
+              }}
+            />
+            <button
+              onClick={saveSlug}
+              disabled={savingSlug || slugDraft === (cohort.slug ?? '')}
+              style={{
+                fontSize: 12, fontWeight: 600, padding: '8px 14px', borderRadius: 8, border: 'none',
+                background: 'var(--gold)', color: '#fff',
+                cursor: (savingSlug || slugDraft === (cohort.slug ?? '')) ? 'default' : 'pointer',
+                opacity: (savingSlug || slugDraft === (cohort.slug ?? '')) ? 0.5 : 1,
+                fontFamily: 'inherit',
+              }}
+            >
+              {savingSlug ? 'Saving…' : 'Save slug'}
+            </button>
+            {slugSaved && <span style={{ fontSize: 12, color: 'var(--green)' }}>Saved ✓</span>}
+          </div>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '8px 0 0', lineHeight: 1.5 }}>
+            {cohort.slug
+              ? <>Direct enrollment link: <code>/circle/intake?cohort={cohort.slug}</code></>
+              : <>Leave blank to use the default rule (newest active cohort). Set a slug to route specific signups here while cohorts overlap.</>}
+          </p>
         </div>
       </div>
 

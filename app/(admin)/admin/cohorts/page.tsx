@@ -75,6 +75,15 @@ export default function CohortsPage() {
                       {c.status}
                     </div>
                     <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4 }}>{c.name}</div>
+                    {c.slug && (
+                      <div style={{
+                        display: 'inline-block', marginTop: 5, padding: '2px 7px',
+                        borderRadius: 5, background: 'var(--paper)', border: '1px solid var(--line)',
+                        fontSize: 11, fontFamily: 'var(--font-mono, monospace)', color: 'var(--text-soft)',
+                      }}>
+                        ?cohort={c.slug}
+                      </div>
+                    )}
                   </div>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                     {new Date(c.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}

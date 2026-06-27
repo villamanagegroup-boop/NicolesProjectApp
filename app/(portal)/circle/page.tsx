@@ -30,6 +30,7 @@ import {
   getWeekContent,
   markWeekComplete,
   markPartnerCheckinSent,
+  pickEnrollmentCohort,
   type CircleMember,
   type WeeklyContent,
   type LiveCall,
@@ -143,13 +144,12 @@ export default function CirclePage() {
       let member = await getMyCircleMember()
 
       if (!member && authUser) {
-        const { data: cohort } = await supabaseClient
-          .from('circle_cohorts')
-          .select('id')
-          .eq('is_active', true)
-          .limit(1)
-          .maybeSingle()
-        if (!cohort) { setState({ kind: 'no-cohort' }); return }
+        // Auto-enroll fallback: newest active cohort wins (an optional
+        // ?cohort=<slug> link can target a specific overlapping cohort).
+        const slug = new URLSearchParams(window.location.search).get('cohort')
+        const cohortId = await pickEnrollmentCohort(slug)
+        if (!cohortId) { setState({ kind: 'no-cohort' }); return }
+        const cohort = { id: cohortId }
 
         const { data: assessment } = await supabaseClient
           .from('onboarding_assessments')

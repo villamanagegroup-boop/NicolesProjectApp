@@ -16,6 +16,7 @@ const btn: React.CSSProperties = { fontSize: 13, fontWeight: 600, padding: '8px 
 export default function NewCohortPage() {
   const router = useRouter()
   const [name, setName] = useState('')
+  const [slug, setSlug] = useState('')
   const [startsAt, setStartsAt] = useState('')
   const [endsAt, setEndsAt] = useState('')
   const [maxMembers, setMaxMembers] = useState(16)
@@ -30,6 +31,7 @@ export default function NewCohortPage() {
     setError(null)
     const { data, error } = await createCohort({
       name: name.trim(),
+      slug: slug.trim() || null,
       starts_at: startsAt,
       ends_at: endsAt,
       max_members: maxMembers,
@@ -62,6 +64,19 @@ export default function NewCohortPage() {
       <form onSubmit={handleSubmit} style={card}>
         <label style={label}>Name</label>
         <input style={input} value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Cohort 2 — Summer 2026" required />
+
+        <label style={label}>Slug <span style={{ textTransform: 'none', fontWeight: 400 }}>(optional — for enrollment links)</span></label>
+        <input
+          style={input}
+          value={slug}
+          onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-'))}
+          placeholder="e.g. summer-2026"
+        />
+        {slug.trim() && (
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '-8px 0 14px' }}>
+            Enrollment link: <code>/circle/intake?cohort={slug.trim()}</code>
+          </p>
+        )}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           <div>
