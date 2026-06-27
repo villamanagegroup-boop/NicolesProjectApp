@@ -12,7 +12,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import {
   fetchAdminUserById, fetchUserCohorts, fetchAllCohortsForAdmin,
-  adminUpdateUser, adminAddUserToCohort, adminRemoveMember,
+  adminUpdateUser, adminAddUserToCohort, adminRemoveMember, adminMarkMemberOnboarded,
   fetchUserJournalEntries, fetchUserWins, fetchUserCheckIns, fetchUserReflections,
   fetchPendingPurchaseByEmail, adminClaimPurchaseForUser, adminSetCardsDay,
   adminSetCardsAddOn, getUserPrograms,
@@ -46,6 +46,7 @@ export default function AdminUserProfilePage() {
   const [addArchetype, setAddArchetype] = useState<'door' | 'throne' | 'engine' | 'push'>('door')
   const [addSkipOnboarding, setAddSkipOnboarding] = useState(true)
   const [adding, setAdding] = useState(false)
+  const [markingId, setMarkingId] = useState<string | null>(null)
 
   // Activity panel
   const [tab, setTab] = useState<'journal' | 'wins' | 'reflections' | 'checkins'>('journal')
@@ -264,6 +265,18 @@ export default function AdminUserProfilePage() {
       return
     }
     setAddCohortId('')
+    await reload()
+  }
+
+  async function handleMarkOnboarded(memberId: string) {
+    if (!user) return
+    setMarkingId(memberId)
+    const { error } = await adminMarkMemberOnboarded(memberId, user.id)
+    setMarkingId(null)
+    if (error) {
+      alert(`Could not mark onboarded: ${error.message}`)
+      return
+    }
     await reload()
   }
 
@@ -842,6 +855,32 @@ export default function AdminUserProfilePage() {
                 <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                   joined {cm.joined_at ? new Date(cm.joined_at).toLocaleDateString() : '—'}
                 </span>
+                {cm.onboarded_at ? (
+                  <span
+                    title="Member is onboarded — they skip the quiz and land straight in The Circle."
+                    style={{
+                      fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 6,
+                      background: 'var(--green-pale, #eaf2ec)', color: 'var(--green)',
+                      border: '1px solid rgba(31,92,58,0.25)',
+                    }}
+                  >
+                    ✓ Onboarded
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => handleMarkOnboarded(cm.member_id)}
+                    disabled={markingId === cm.member_id}
+                    title="Skip the quiz/onboarding — stamp this member onboarded and drop them straight into The Circle."
+                    style={{
+                      fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 6,
+                      border: '1px solid var(--gold-line)', background: 'var(--gold-pale)',
+                      color: 'var(--gold)', cursor: markingId === cm.member_id ? 'wait' : 'pointer',
+                      fontFamily: 'inherit', opacity: markingId === cm.member_id ? 0.6 : 1,
+                    }}
+                  >
+                    {markingId === cm.member_id ? 'Marking…' : 'Mark onboarded'}
+                  </button>
+                )}
                 <Link
                   href={`/admin/members/${cm.member_id}`}
                   style={{

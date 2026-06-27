@@ -1365,6 +1365,9 @@ export interface UserCohortMembership {
   cohort_active: boolean
   archetype: string
   joined_at: string | null
+  /** Set once the member has been onboarded (welcome tour done, or admin
+   *  manually marked them ready). null = still gets the quiz/onboarding flow. */
+  onboarded_at: string | null
 }
 
 export interface CohortOption {
@@ -1422,7 +1425,7 @@ export async function adminSetCardsDay(
 export async function fetchUserCohorts(userId: string): Promise<UserCohortMembership[]> {
   const { data } = await supabase
     .from('circle_members')
-    .select('id, cohort_id, archetype, created_at, circle_cohorts!inner(name, is_active)')
+    .select('id, cohort_id, archetype, created_at, onboarded_at, circle_cohorts!inner(name, is_active)')
     .eq('user_id', userId)
     .order('created_at', { ascending: true })
   if (!data) return []
@@ -1433,7 +1436,25 @@ export async function fetchUserCohorts(userId: string): Promise<UserCohortMember
     cohort_active: row.circle_cohorts.is_active,
     archetype:     row.archetype,
     joined_at:     row.created_at,
+    onboarded_at:  row.onboarded_at,
   }))
+}
+
+/** Manually onboard an already-enrolled member: stamp the membership's
+ *  onboarded_at and clear the user-level quiz/onboarding guards so they land
+ *  straight in /circle. Mirrors the skip-onboarding path of adminAddUserToCohort
+ *  but works for members who are already in a cohort. selected_path is only
+ *  claimed when the user has none (won't clobber Path A/B access). */
+export async function adminMarkMemberOnboarded(memberId: string, userId: string) {
+  const memberRes = await supabase.from('circle_members')
+    .update({ onboarded_at: new Date().toISOString() })
+    .eq('id', memberId)
+  if (memberRes.error) return memberRes
+
+  const { data: u } = await supabase.from('users').select('selected_path').eq('id', userId).maybeSingle()
+  const updates: { onboarding_complete: boolean; selected_path?: 'C' } = { onboarding_complete: true }
+  if (!u?.selected_path) updates.selected_path = 'C'
+  return supabase.from('users').update(updates).eq('id', userId)
 }
 
 /** All cohorts available to add a user to (newest first). */
