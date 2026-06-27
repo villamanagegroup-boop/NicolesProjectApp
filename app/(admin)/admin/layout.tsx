@@ -61,6 +61,7 @@ const NAV_ITEMS: NavEntry[] = [
         groupKey: 'prog-circle', label: 'The Circle', icon: '·',
         items: [
           { href: '/admin/members',        label: 'People',     sub: 'Cohort members' },
+          { href: '/admin/cohorts',        label: 'Cohorts',    sub: 'Create + manage cohorts' },
           { href: '/admin/content',        label: 'Curriculum', sub: '12 weeks + calls' },
           { href: '/admin/comms?path=C',   label: 'Messages',   sub: 'Broadcast + post' },
           { href: '/admin/pairs',          label: 'Pairs',      sub: 'Accountability map' },
