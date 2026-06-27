@@ -218,14 +218,31 @@ export async function getMyCircleMember(): Promise<CircleMember | null> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
+  // A user can belong to more than one cohort (admin re-enrollment, overlapping
+  // cohorts). Never use .single() here — it throws on >1 row, which made the
+  // app think a multi-cohort member had no membership at all. Fetch all rows
+  // and pick the one that represents their "current" Circle: prefer a
+  // membership in an active cohort, then the newest-starting cohort.
   const { data, error } = await supabase
     .from('circle_members')
-    .select('*')
+    .select('*, circle_cohorts!inner(is_active, starts_at)')
     .eq('user_id', user.id)
-    .single()
 
-  if (error || !data) return null
-  return data as CircleMember
+  if (error || !data || data.length === 0) return null
+
+  const sorted = [...data].sort((a, b) => {
+    const aActive = (a as any).circle_cohorts?.is_active ? 1 : 0
+    const bActive = (b as any).circle_cohorts?.is_active ? 1 : 0
+    if (aActive !== bActive) return bActive - aActive
+    const aStart = new Date((a as any).circle_cohorts?.starts_at ?? 0).getTime()
+    const bStart = new Date((b as any).circle_cohorts?.starts_at ?? 0).getTime()
+    return bStart - aStart
+  })
+
+  // Strip the joined cohort object so we return a clean CircleMember.
+  const chosen = { ...(sorted[0] as Record<string, unknown>) }
+  delete chosen.circle_cohorts
+  return chosen as unknown as CircleMember
 }
 
 /**

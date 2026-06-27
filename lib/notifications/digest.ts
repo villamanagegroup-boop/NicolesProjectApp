@@ -109,10 +109,14 @@ export async function buildDigest(
     let member: MemberRow | null = null
     let cohort: CohortRow | null = null
     try {
+      // A member can be in >1 cohort — order + limit(1) so maybeSingle never
+      // throws on multiple rows (it would, otherwise, and drop their digest).
       const { data: m } = await admin
         .from('circle_members')
         .select('id, cohort_id, partner_id, archetype')
         .eq('user_id', user.id)
+        .order('joined_at', { ascending: false })
+        .limit(1)
         .maybeSingle()
       member = (m as MemberRow | null) ?? null
       if (member?.cohort_id) {
